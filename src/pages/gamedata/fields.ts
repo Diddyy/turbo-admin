@@ -34,3 +34,30 @@ export const FIELDS: FieldInfo[] = [
     { key: 'rare', label: 'Rare', kind: 'bool' },
     { key: 'excludeddynamic', label: 'Excluded dynamic', kind: 'bool' },
 ];
+
+/** What furnidata's specialtype says a furniture is, as the server's FurnitureCategory names them. */
+export const SPECIAL_TYPES: { value: number; label: string }[] = [
+    { value: 1, label: 'Default' },
+    { value: 2, label: 'Wallpaper' },
+    { value: 3, label: 'Floor' },
+    { value: 4, label: 'Landscape' },
+    { value: 5, label: 'Post-it' },
+    { value: 6, label: 'Poster' },
+    { value: 7, label: 'Sound set' },
+    { value: 8, label: 'Trax song' },
+    { value: 9, label: 'Present' },
+    { value: 10, label: 'Ecotron box' },
+    { value: 11, label: 'Trophy' },
+    { value: 12, label: 'Credit furni' },
+    { value: 13, label: 'Pet shampoo' },
+    { value: 14, label: 'Pet custom part' },
+    { value: 15, label: 'Pet custom part shampoo' },
+    { value: 16, label: 'Pet saddle' },
+    { value: 17, label: 'Group furni' },
+    { value: 18, label: 'Game furni' },
+    { value: 19, label: 'Monsterplant seed' },
+    { value: 20, label: 'Monsterplant revival' },
+    { value: 21, label: 'Monsterplant rebreed' },
+    { value: 22, label: 'Monsterplant fertilize' },
+    { value: 23, label: 'Purchasable clothing' },
+];

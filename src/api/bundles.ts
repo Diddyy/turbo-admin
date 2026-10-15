@@ -295,22 +295,118 @@ const send = async (path: string, init: RequestInit) => {
 /** Sends a form with files as the signed-in player; the browser sets its boundary. */
 const postForm = async <T>(path: string, form: FormData) => (await (await send(path, { method: 'POST', body: form })).json()) as T;
 
-export const useUploadBundle = () => {
+/** A gamedata file an upload was found to be, by what it holds. */
+export type GamedataFileKind = 'furnidata' | 'productdata' | 'figuredata' | 'figuremap' | 'effectmap' | 'texts' | 'variables';
+
+export const GAMEDATA_FILE_NAMES: Record<GamedataFileKind, string> = {
+    furnidata: 'furniture data',
+    productdata: 'product data',
+    figuredata: 'figure data',
+    figuremap: 'figure map',
+    effectmap: 'effect map',
+    texts: 'external texts',
+    variables: 'client config',
+};
+
+/**
+ * What an upload was found to be: a library kept as the bundle its content says it is, a gamedata
+ * file recognised (not taken), or neither - `unknown`, with why, which is a warning and not a
+ * failure.
+ */
+export type AssetUpload
+    = | { type: 'bundle'; bundle: AssetBundle }
+        | { type: 'gamedata'; gamedata: GamedataFileKind }
+        | { type: 'unknown'; message: string };
+
+/**
+ * Uploads any file and has the server say what it is. The server answers 422 for a file whose
+ * content says nothing of what it is; that comes back as `unknown` rather than an error.
+ */
+export const useUploadFile = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ file, kind, name }: { file: File; kind: BundleKind; name: string }) => {
+        mutationFn: async ({ file, name }: { file: File; name?: string }): Promise<AssetUpload> => {
             const form = new FormData();
 
             form.append('file', file);
-            form.append('kind', kind);
 
-            if (name.trim())
+            if (name?.trim())
                 form.append('name', name.trim());
 
-            return postForm<AssetBundle>('/assets/bundles', form);
+            try {
+                const result = await postForm<{ type: 'bundle' | 'gamedata'; bundle: AssetBundle | null; gamedata: GamedataFileKind | null }>('/assets/upload', form);
+
+                return result.type === 'bundle' ? { type: 'bundle', bundle: result.bundle! } : { type: 'gamedata', gamedata: result.gamedata! };
+            } catch (error) {
+                if (error instanceof ApiError && error.status === 422)
+                    return { type: 'unknown', message: error.message };
+
+                throw error;
+            }
         },
-        onSuccess: () => refresh(queryClient),
+        onSuccess: (result) => {
+            if (result.type === 'bundle') {
+                refresh(queryClient);
+                void queryClient.invalidateQueries({ queryKey: [ 'gamedata' ] });
+            }
+        },
+    });
+};
+
+/** One of Habbo's libraries a sync would download, and why. */
+export interface AssetSyncPending {
+    name: string;
+    reason: 'new' | 'updated';
+    habboRevision: string;
+    /** The revision the hotel has; null when it has no row of it. */
+    hotelRevision: string | null;
+    /** Why the hotel's last try failed, when it did. */
+    error: string | null;
+}
+
+export interface AssetSyncKind {
+    kind: BundleKind;
+    /** False when Habbo's list of this kind (the figure map, the effect map) could not be read. */
+    listed: boolean;
+    habboLibraries: number;
+    upToDate: number;
+    uploads: number;
+    new: number;
+    updated: number;
+    items: AssetSyncPending[];
+    truncated: boolean;
+}
+
+/** What a sync from Habbo would download now, kind by kind, without downloading it. */
+export interface AssetSyncPreview {
+    domain: string;
+    revision: string;
+    listedAt: string;
+    kinds: AssetSyncKind[];
+}
+
+const PENDING_KEY = [ 'assets', 'pending' ];
+
+/**
+ * What a sync would take: Habbo's lists as the server last read them (it reads them again once
+ * they are a while old) against the hotel's bundles as they are now.
+ */
+export const useSyncPreview = (enabled = true) => useQuery({
+    queryKey: PENDING_KEY,
+    queryFn: () => api<AssetSyncPreview>('/assets/pending'),
+    enabled,
+    staleTime: 60_000,
+    retry: false,
+});
+
+/** Reads Habbo's lists of libraries again, now. */
+export const useRelist = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: () => api<AssetSyncPreview>('/assets/pending?relist=true'),
+        onSuccess: preview => queryClient.setQueryData(PENDING_KEY, preview),
     });
 };
 

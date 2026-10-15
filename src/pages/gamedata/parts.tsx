@@ -62,6 +62,8 @@ interface HabboUpdateProps {
     takeError: unknown;
     /** The changes, one per line, shown when reviewed. */
     children: ReactNode;
+    /** Start with the changes shown, as the Updates tab does. */
+    defaultOpen?: boolean;
 }
 
 /**
@@ -69,8 +71,8 @@ interface HabboUpdateProps {
  * would add, update and keep, the changes to review, and taking it in. Every data tab heads with
  * one, so each reads the same way.
  */
-export const HabboUpdate = ({ title, version, preview, error, extra, file, canManage, canTake, confirm, onTake, taking, takeError, children }: HabboUpdateProps) => {
-    const [ open, setOpen ] = useState(false);
+export const HabboUpdate = ({ title, version, preview, error, extra, file, canManage, canTake, confirm, onTake, taking, takeError, children, defaultOpen = false }: HabboUpdateProps) => {
+    const [ open, setOpen ] = useState(defaultOpen);
     const check = useCheckHabbo();
     const { data: jobData } = useImportJob();
     const job = jobData?.job?.file === file ? jobData.job : null;

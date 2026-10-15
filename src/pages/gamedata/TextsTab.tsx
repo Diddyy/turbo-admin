@@ -12,13 +12,14 @@ import { cx } from '#/lib/cx';
 import { HabboDiffers, HabboUpdate, OpenRow, ReviewItem } from './parts';
 
 /** Habbo's newest texts: what taking them in would change. */
-const HabboTexts = ({ status }: { status: GamedataStatus }) => {
+export const HabboTexts = ({ status, defaultOpen }: { status: GamedataStatus; defaultOpen?: boolean }) => {
     const version = status.latestTexts;
     const { data: preview, error } = useTextImportPreview(version !== null);
     const take = useTextImport();
 
     return (
         <HabboUpdate
+            defaultOpen={defaultOpen}
             title="texts"
             version={version && { name: version.hash.slice(0, 10), holds: `${version.textCount.toLocaleString()} texts`, foundAt: version.foundAt, importedAt: version.importedAt }}
             preview={preview && { ...preview, listed: preview.items.length }}

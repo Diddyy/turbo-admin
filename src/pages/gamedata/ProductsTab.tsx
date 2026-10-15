@@ -12,13 +12,14 @@ import { cx } from '#/lib/cx';
 import { FieldChanges, HabboDiffers, HabboUpdate, OpenRow, ReviewItem } from './parts';
 
 /** Habbo's newest product data: what taking it in would change. */
-const HabboProducts = ({ status }: { status: GamedataStatus }) => {
+export const HabboProducts = ({ status, defaultOpen }: { status: GamedataStatus; defaultOpen?: boolean }) => {
     const version = status.latestProducts;
     const { data: preview, error } = useProductImportPreview(version !== null);
     const take = useProductImport();
 
     return (
         <HabboUpdate
+            defaultOpen={defaultOpen}
             title="product data"
             version={version && { name: version.hash.slice(0, 10), holds: `${version.productCount.toLocaleString()} products`, foundAt: version.foundAt, importedAt: version.importedAt }}
             preview={preview && { ...preview, listed: preview.items.length }}

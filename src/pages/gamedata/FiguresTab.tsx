@@ -1,8 +1,11 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { useSearchParams } from 'react-router';
 
 import { FILES, type GamedataStatus, useFigureImport, useFigureImportPreview, useGrantClothing, useOwnedClothing } from '#/api/gamedata';
 import { Badge, Button, ErrorNotice, Input, Labeled, Panel, Segmented, SuccessNotice } from '#/components/ui';
+import { BundleList } from '#/pages/assets/BundleList';
+import { BundleUpdate } from '#/pages/assets/BundleUpdate';
 
 import { ClothingEditor } from './ClothingEditor';
 import { PaletteEditor } from './PaletteEditor';
@@ -13,16 +16,18 @@ const KIND_NAMES: Record<number, string> = { 0: 'colour', 1: 'kind', 2: 'piece' 
 const VIEWS = [
     { value: 'clothing', label: 'Clothing' },
     { value: 'colours', label: 'Colours' },
+    { value: 'bundles', label: 'Bundles' },
 ];
 
 /** Habbo's newest figure data: what taking it in would change. */
-const HabboFigures = ({ status }: { status: GamedataStatus }) => {
+export const HabboFigures = ({ status, defaultOpen }: { status: GamedataStatus; defaultOpen?: boolean }) => {
     const version = status.latestFigures;
     const { data: preview, error } = useFigureImportPreview(version !== null);
     const take = useFigureImport();
 
     return (
         <HabboUpdate
+            defaultOpen={defaultOpen}
             title="figure data"
             version={version && { name: version.hash.slice(0, 10), holds: `${version.setCount.toLocaleString()} pieces, ${version.colorCount.toLocaleString()} colours`, foundAt: version.foundAt, importedAt: version.importedAt }}
             preview={preview && { ...preview, listed: preview.items.length }}
@@ -85,15 +90,19 @@ const PlayerClothing = () => {
  * on is fitted to these rules; what they may not wear comes off.
  */
 export const FiguresTab = ({ status }: { status: GamedataStatus }) => {
-    const [ view, setView ] = useState('clothing');
+    const [ params ] = useSearchParams();
+    const [ view, setView ] = useState(() => (VIEWS.some(x => x.value === params.get('view')) ? params.get('view')! : 'clothing'));
 
     return (
         <>
             <HabboFigures status={status} />
-            <div className="w-full sm:w-64">
+            <BundleUpdate kind="figure" canManage={status.canManage} />
+            <div className="w-full sm:w-80">
                 <Segmented label="Show" value={view} onChange={setView} options={VIEWS} />
             </div>
-            {view === 'colours' ? <PaletteEditor canManage={status.canManage} /> : <ClothingEditor canManage={status.canManage} />}
+            {view === 'colours' && <PaletteEditor canManage={status.canManage} />}
+            {view === 'clothing' && <ClothingEditor canManage={status.canManage} />}
+            {view === 'bundles' && <BundleList kind="figure" canManage={status.canManage} />}
             {status.canManage && view === 'clothing' && <PlayerClothing />}
         </>
     );

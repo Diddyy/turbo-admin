@@ -1,205 +1,29 @@
-import { Save, Undo2 } from 'lucide-react';
-import { type ReactNode, useState } from 'react';
+import { Box, ChevronRight } from 'lucide-react';
+import { useDeferredValue, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
-import { FILES, FURNITURE_KINDS, type FurnitureDefinition, type GamedataStatus, useFurnitureDefinition, useFurnitureSearch, useImport, useImportPreview, useUpdateDefinition } from '#/api/gamedata';
+import { furniIconUrl, useClientAssets } from '#/api/assets';
+import { FILES, FURNITURE_KINDS, FURNITURE_TAGS, type FurnitureListItem, type FurnitureTag, type GamedataStatus, useFurnitureList, useImport, useImportPreview } from '#/api/gamedata';
+import { ListToolbar } from '#/components/ListToolbar';
 import { SearchInput } from '#/components/SearchInput';
-import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, Panel, SuccessNotice, Switch, WarningNotice } from '#/components/ui';
+import { Badge, Button, EmptyState, ErrorNotice, Loading, Panel, Segmented, Select } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import { BundleList } from '#/pages/assets/BundleList';
+import { BundleUpdate } from '#/pages/assets/BundleUpdate';
 
-import { type FieldInfo, FIELDS } from './fields';
+import { FurnitureEditor } from './FurnitureEditor';
 import { HabboValuesPanel } from './HabboValuesPanel';
-import { showValue } from './labels';
-import { FieldChanges, FieldGroup, HabboDiffers, HabboUpdate, ReviewItem } from './parts';
-
-type Item = Record<string, unknown>;
-
-/** The text fields, the numbers and the flags: how the editor groups a definition's fields. */
-const TEXT_FIELDS = [ 'name', 'description', 'category', 'furniline', 'environment', 'adurl', 'customparams' ];
-
-/** A field's value as its control holds it: text for text and numbers, a flag for a flag. */
-const toInput = (field: FieldInfo, value: unknown): string | boolean => {
-    if (field.kind === 'bool')
-        return value === true;
-
-    if (field.kind === 'colors')
-        return value && typeof value === 'object' && 'color' in value && Array.isArray(value.color) ? value.color.join(', ') : '';
-
-    return value === null || value === undefined ? '' : String(value);
-};
-
-/** The control's value as the server takes it. */
-const fromInput = (field: FieldInfo, input: string | boolean): unknown => {
-    if (field.kind === 'bool')
-        return input === true;
-
-    const text = String(input);
-
-    if (field.kind === 'int' || field.kind === 'number')
-        return text.trim() === '' ? 0 : Number(text);
-
-    if (field.kind === 'colors') {
-        const colors = text.split(',').map(x => x.trim()).filter(x => x.length > 0);
-
-        return colors.length ? { color: colors } : null;
-    }
-
-    return text;
-};
-
-interface FileInfo {
-    logic?: string | null;
-    visualization?: string | null;
-    states: number;
-    stateAnimations: number[];
-    otherAnimations: number[];
-    dimensionX?: number | null;
-    dimensionY?: number | null;
-    dimensionZ?: number | null;
-    directions: number[];
-    colors: number[];
-    layerCount?: number | null;
-}
-
-/** One fact in the editor's summary strip. */
-const Fact = ({ label, children }: { label: string; children: ReactNode }) => (
-    <div className="min-w-0">
-        <dt className="font-mono text-[11px] tracking-[0.08em] text-muted uppercase">{label}</dt>
-        <dd className="mt-0.5 truncate font-mono text-[13px]">{children}</dd>
-    </div>
-);
-
-/** Where the furniture is sold, and what Habbo's asset file said of it. */
-const Facts = ({ definition, item }: { definition: FurnitureDefinition; item: Item }) => {
-    const list = (values: number[]) => (values.length ? values.join(', ') : '-');
-    let file: FileInfo | null = null;
-
-    if (definition.habboFile && definition.habboFileRead)
-        file = JSON.parse(definition.habboFile) as FileInfo;
-
-    return (
-        <div className="flex flex-col gap-3">
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
-                <Fact label="Offer">{showValue(JSON.stringify(item.offerid))}</Fact>
-                <Fact label="Builders Club offer">{showValue(JSON.stringify(item.bcofferid))}</Fact>
-                {file && <Fact label="Logic">{file.logic ?? '-'}</Fact>}
-                {file && <Fact label="Visualization">{file.visualization ?? '-'}</Fact>}
-                {file && <Fact label="States in file">{file.states}{file.otherAnimations.length ? ` (+${file.otherAnimations.length} other)` : ''}</Fact>}
-                {file && <Fact label="Size in file">{[ file.dimensionX, file.dimensionY, file.dimensionZ ].map(x => x ?? '-').join(' × ')}</Fact>}
-                {file && <Fact label="Directions">{list(file.directions)}</Fact>}
-                {file && <Fact label="Layers, colours">{file.layerCount ?? '-'}, {list(file.colors)}</Fact>}
-            </dl>
-            {definition.habboFile && !definition.habboFileRead && <WarningNotice>Habbo's asset file couldn't be read: {definition.habboFile}</WarningNotice>}
-        </div>
-    );
-};
-
-/** A definition's furnidata fields to change, grouped, with Habbo's beside any the hotel changed. */
-const Editor = ({ definition, canManage }: { definition: FurnitureDefinition; canManage: boolean }) => {
-    // The item as the file writes it, and its states, which the file does not carry.
-    const item: Item = { ...(JSON.parse(definition.item) as Item), states: definition.states };
-    const habbo = definition.habbo ? JSON.parse(definition.habbo) as Item : null;
-    const isWall = definition.productType === 1;
-    const fields = FIELDS.filter(field => !(isWall && field.floor));
-    const original = Object.fromEntries(fields.map(field => [ field.key, toInput(field, item[field.key]) ]));
-    const [ draft, setDraft ] = useState<Record<string, string | boolean>>(original);
-    const update = useUpdateDefinition(definition.id);
-    const changed = fields.filter(field => draft[field.key] !== original[field.key]);
-    const set = (key: string, value: string | boolean) => setDraft(current => ({ ...current, [key]: value }));
-
-    const habboOf = (field: FieldInfo) => (habbo ? toInput(field, habbo[field.key]) : null);
-    const differs = (field: FieldInfo) => {
-        const value = habboOf(field);
-
-        return value !== null && value !== draft[field.key];
-    };
-    const shown = (field: FieldInfo) => {
-        const value = habboOf(field);
-
-        return field.kind === 'bool' ? (value ? 'yes' : 'no') : (value === '' ? '-' : String(value));
-    };
-
-    const input = (field: FieldInfo) => (
-        <div key={field.key} className="flex flex-col gap-1">
-            <Labeled label={field.label}>
-                <Input
-                    value={String(draft[field.key] ?? '')}
-                    onChange={event => set(field.key, event.target.value)}
-                    inputMode={field.kind === 'int' ? 'numeric' : field.kind === 'number' ? 'decimal' : undefined}
-                    disabled={!canManage}
-                    className={cx('w-full', differs(field) && 'border-warn', field.kind !== 'text' && 'font-mono')}
-                />
-            </Labeled>
-            {differs(field) && <HabboDiffers habbo={shown(field)} canManage={canManage} onUse={() => set(field.key, habboOf(field)!)} />}
-        </div>
-    );
-
-    const texts = fields.filter(field => TEXT_FIELDS.includes(field.key));
-    const numbers = fields.filter(field => field.kind !== 'bool' && !TEXT_FIELDS.includes(field.key));
-    const flags = fields.filter(field => field.kind === 'bool');
-    const habboChanged = fields.filter(differs).length;
-
-    return (
-        <Panel
-            className="overflow-clip"
-            title={<span className="font-mono">{definition.className}</span>}
-            description={(
-                <span className="flex flex-wrap items-center gap-1.5">
-                    <Badge>{FURNITURE_KINDS[definition.productType] ?? 'furniture'}</Badge>
-                    <Badge>sprite {String(item.id)}</Badge>
-                    {habbo ? <Badge tone="accent">habbo</Badge> : <Badge tone="green">hotel's own</Badge>}
-                    {habboChanged > 0 && <Badge tone="amber">{habboChanged} changed from Habbo's</Badge>}
-                </span>
-            )}
-        >
-            <div className="flex flex-col gap-6 p-4">
-                <Facts definition={definition} item={item} />
-                <FieldGroup title="Text">
-                    <div className="grid gap-3 sm:grid-cols-2">{texts.map(input)}</div>
-                </FieldGroup>
-                <FieldGroup title={isWall ? 'Numbers' : 'Size and numbers'}>
-                    <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">{numbers.map(input)}</div>
-                </FieldGroup>
-                <FieldGroup title="Behaviour">
-                    <div className="grid gap-x-6 sm:grid-cols-2 lg:grid-cols-3">
-                        {flags.map(field => (
-                            <div key={field.key} className="border-b border-line last:border-b-0 sm:border-b-0">
-                                <Switch label={field.label} checked={draft[field.key] === true} onChange={checked => set(field.key, checked)} disabled={!canManage} />
-                                {differs(field) && <div className="-mt-1 pb-2"><HabboDiffers habbo={shown(field)} canManage={canManage} onUse={() => set(field.key, habboOf(field)!)} /></div>}
-                            </div>
-                        ))}
-                    </div>
-                </FieldGroup>
-            </div>
-            {(update.error || (update.isSuccess && changed.length === 0)) && (
-                <div className="px-4 pb-4">
-                    {update.error && <ErrorNotice error={update.error} />}
-                    {update.isSuccess && changed.length === 0 && <SuccessNotice>Saved. Habbo's later updates leave the fields you changed as they are.</SuccessNotice>}
-                </div>
-            )}
-            {canManage && changed.length > 0 && (
-                <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur">
-                    <span className="text-sm text-muted">{changed.length} unsaved {changed.length === 1 ? 'change' : 'changes'}: {changed.map(x => x.label).join(', ')}</span>
-                    <div className="flex gap-2">
-                        <Button variant="ghost" icon={<Undo2 />} onClick={() => setDraft(original)}>Discard</Button>
-                        <Button icon={<Save />} disabled={update.isPending} onClick={() => update.mutate(Object.fromEntries(changed.map(field => [ field.key, fromInput(field, draft[field.key]!) ])))}>
-                            Save
-                        </Button>
-                    </div>
-                </div>
-            )}
-        </Panel>
-    );
-};
+import { FieldChanges, HabboUpdate, ReviewItem } from './parts';
 
 /** Habbo's newest release: what taking its furniture in would change. */
-const HabboFurniture = ({ status }: { status: GamedataStatus }) => {
+export const HabboFurniture = ({ status, defaultOpen }: { status: GamedataStatus; defaultOpen?: boolean }) => {
     const release = status.latestRelease;
     const { data: preview, error } = useImportPreview(release !== null);
     const take = useImport();
 
     return (
         <HabboUpdate
+            defaultOpen={defaultOpen}
             title="furniture"
             version={release && { name: release.revision.replace(/^PRODUCTION-/, ''), holds: `${release.furnitureCount.toLocaleString()} items`, foundAt: release.foundAt, importedAt: release.importedAt }}
             preview={preview && { ...preview, listed: preview.items.length }}
@@ -222,65 +46,163 @@ const HabboFurniture = ({ status }: { status: GamedataStatus }) => {
     );
 };
 
-/**
- * The hotel's furniture as the client's furnidata has it: Habbo's newest release to review and
- * take in, any definition to find and change, and Habbo's values to put back across them all.
- */
-export const FurnitureTab = ({ status }: { status: GamedataStatus }) => {
+const VIEWS = [
+    { value: 'definitions', label: 'Definitions' },
+    { value: 'bundles', label: 'Bundles' },
+];
+
+const FurniIcon = ({ className }: { className: string }) => {
+    const assets = useClientAssets();
+    const url = furniIconUrl(assets, className);
+    const [ failed, setFailed ] = useState<string | null>(null);
+
+    return (
+        <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-subtle">
+            {url && failed !== url
+                ? <img key={url} src={url} alt="" loading="lazy" className="max-h-[85%] max-w-[85%] [image-rendering:pixelated]" onError={() => setFailed(url)} />
+                : <Box className="size-4 text-muted" aria-hidden />}
+        </span>
+    );
+};
+
+const Tags = ({ tags }: { tags: FurnitureTag[] }) => (
+    <span className="flex flex-wrap gap-1">
+        {FURNITURE_TAGS.filter(x => tags.includes(x.value)).map(x => (
+            <span key={x.value} title={x.meaning}><Badge tone={x.tone}>{x.label}</Badge></span>
+        ))}
+    </span>
+);
+
+const DefinitionRow = ({ item, onOpen }: { item: FurnitureListItem; onOpen: () => void }) => (
+    <li>
+        <button
+            type="button"
+            onClick={onOpen}
+            className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-subtle/60 focus-visible:bg-subtle focus-visible:outline-none sm:px-4"
+        >
+            <FurniIcon className={item.className} />
+            <span className="flex min-w-0 flex-1 flex-col gap-1">
+                <span className="flex min-w-0 items-baseline gap-2">
+                    <span className="truncate font-mono text-[13px] font-medium">{item.className}</span>
+                    <span className="truncate text-sm text-muted max-sm:hidden">{item.name}</span>
+                </span>
+                <Tags tags={item.tags} />
+            </span>
+            <span className="hidden w-28 shrink-0 truncate text-xs text-muted lg:block" title={item.furniLine ?? undefined}>{item.furniLine || '-'}</span>
+            <span className="hidden w-16 shrink-0 text-right font-mono text-xs text-muted tabular-nums md:block">{item.spriteId}</span>
+            <span className="hidden w-12 shrink-0 md:block"><Badge>{FURNITURE_KINDS[item.productType] ?? '?'}</Badge></span>
+            <ChevronRight className="size-4 shrink-0 text-muted" aria-hidden />
+        </button>
+    </li>
+);
+
+/** A tag to narrow the list by, with how many of those found carry it. */
+const TagChip = ({ label, count, tone, active, title, onClick }: { label: string; count: number | undefined; tone?: string; active: boolean; title?: string; onClick: () => void }) => (
+    <button
+        type="button"
+        title={title}
+        aria-pressed={active}
+        onClick={onClick}
+        className={cx(
+            'inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 text-xs transition-colors sm:min-h-7',
+            active ? 'border-accent bg-accent-soft text-accent' : 'border-line hover:border-accent hover:text-accent',
+        )}
+    >
+        {tone && <span className={cx('size-1.5 rounded-full', tone)} aria-hidden />}
+        {label}
+        <span className="font-semibold tabular-nums">{(count ?? 0).toLocaleString()}</span>
+    </button>
+);
+
+const TONE_DOTS: Record<string, string> = { red: 'bg-bad', amber: 'bg-warn', accent: 'bg-accent', green: 'bg-good', neutral: 'bg-muted' };
+
+/** Every definition, found by words, kind and tag; one opens in the editor. */
+const Definitions = ({ status }: { status: GamedataStatus }) => {
     const [ params ] = useSearchParams();
     // Opened from the search: what it found, and the piece picked there.
     const [ text, setText ] = useState(() => params.get('q') ?? '');
-    const [ selected, setSelected ] = useState<number | null>(() => Number(params.get('id')) || null);
+    const [ type, setType ] = useState<'' | 'floor' | 'wall'>('');
+    const [ tag, setTag ] = useState<FurnitureTag | ''>(() => (FURNITURE_TAGS.some(x => x.value === params.get('tag')) ? params.get('tag') as FurnitureTag : ''));
+    const [ page, setPage ] = useState(0);
+    const [ open, setOpen ] = useState<number | null>(() => Number(params.get('id')) || null);
     const [ bulk, setBulk ] = useState(false);
-    const { data: results, isFetching } = useFurnitureSearch(text);
-    const { data: definition, error } = useFurnitureDefinition(selected);
+    const q = useDeferredValue(text.trim());
+    const { data, error, isFetching } = useFurnitureList(q, type, tag, page);
+    const pageSize = data?.pageSize ?? 60;
+
+    const pick = (next: FurnitureTag | '') => {
+        setTag(next);
+        setPage(0);
+    };
 
     return (
         <>
-            <HabboFurniture status={status} />
-            <div className="grid items-start gap-4 lg:grid-cols-[20rem_1fr]">
-                <Panel className="overflow-clip lg:sticky lg:top-6">
-                    <div className="border-b border-line p-3">
-                        <SearchInput value={text} onValueChange={setText} placeholder="Classname or id" aria-label="Find furniture" />
-                    </div>
-                    {!text.trim() && <EmptyState>Type a classname or id.</EmptyState>}
-                    {text.trim() && !results && isFetching && <Loading />}
-                    {results && results.length === 0 && <EmptyState>No furniture by that name or id.</EmptyState>}
-                    {results && results.length > 0 && (
-                        <ul className="max-h-[calc(100vh-14rem)] divide-y divide-line overflow-y-auto">
-                            {results.map(result => (
-                                <li key={result.id}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelected(result.id)}
-                                        className={cx(
-                                            'flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-subtle/60',
-                                            selected === result.id && 'bg-subtle shadow-[inset_2px_0_0_var(--color-accent)]',
-                                        )}
-                                    >
-                                        <span className="min-w-0 flex-1 truncate font-mono text-[13px]">{result.name}</span>
-                                        <span className="font-mono text-[11px] text-muted tabular-nums">{result.spriteId}</span>
-                                        <Badge>{result.type}</Badge>
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </Panel>
-                <div className="flex min-w-0 flex-col gap-4">
-                    {error && <ErrorNotice error={error} />}
-                    {selected === null && (
-                        <Panel>
-                            <div className="flex flex-col items-start gap-1 px-4 py-10 text-sm">
-                                <span className="font-medium">No furniture open</span>
-                                <span className="text-muted">Find one on the left to see and change what the client's furnidata says of it.</span>
-                            </div>
-                        </Panel>
-                    )}
-                    {selected !== null && !definition && !error && <Panel><Loading /></Panel>}
-                    {definition && <Editor key={`${definition.id}:${definition.item}`} definition={definition} canManage={status.canManage} />}
+            <section className="overflow-clip rounded-xl border border-line bg-surface">
+                <ListToolbar
+                    watch={[ q, type, tag, page ]}
+                    page={{ offset: page * pageSize, limit: pageSize, total: data?.total, onChange: offset => setPage(Math.round(offset / pageSize)) }}
+                >
+                    <SearchInput
+                        value={text}
+                        onValueChange={(value) => {
+                            setText(value);
+                            setPage(0);
+                        }}
+                        placeholder="Classname, name or id"
+                        aria-label="Find furniture"
+                        className="w-full sm:w-64"
+                    />
+                    <Select
+                        aria-label="Kind"
+                        value={type}
+                        onChange={(event) => {
+                            setType(event.target.value as '' | 'floor' | 'wall');
+                            setPage(0);
+                        }}
+                        className="w-full sm:w-32"
+                    >
+                        <option value="">Floor and wall</option>
+                        <option value="floor">Floor</option>
+                        <option value="wall">Wall</option>
+                    </Select>
+                </ListToolbar>
+                <div className="flex flex-wrap gap-1.5 border-b border-line px-3 py-2.5 sm:px-4">
+                    <TagChip label="All" count={data?.searched} active={tag === ''} onClick={() => pick('')} />
+                    {FURNITURE_TAGS.map(x => (
+                        <TagChip
+                            key={x.value}
+                            label={x.label}
+                            title={x.meaning}
+                            tone={TONE_DOTS[x.tone]}
+                            count={data?.tagCounts[x.value]}
+                            active={tag === x.value}
+                            onClick={() => pick(tag === x.value ? '' : x.value)}
+                        />
+                    ))}
                 </div>
-            </div>
+
+                {error && <div className="p-4"><ErrorNotice error={error} /></div>}
+                {!data && !error && <Loading />}
+                {data && data.items.length === 0 && (
+                    <EmptyState>{q || type || tag ? 'No furniture is like that.' : 'No furniture yet: take Habbo\'s in on the Updates tab.'}</EmptyState>
+                )}
+                {data && data.items.length > 0 && (
+                    <>
+                        <div className="hidden items-center gap-3 border-b border-line px-4 py-2 font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase md:flex">
+                            <span className="w-10 shrink-0" />
+                            <span className="flex-1">Furniture</span>
+                            <span className="hidden w-28 shrink-0 lg:block">Line</span>
+                            <span className="w-16 shrink-0 text-right">Sprite</span>
+                            <span className="w-12 shrink-0" />
+                            <span className="w-4 shrink-0" />
+                        </div>
+                        <ul className={cx('divide-y divide-line transition-opacity', isFetching && 'opacity-70')}>
+                            {data.items.map(item => <DefinitionRow key={item.id} item={item} onOpen={() => setOpen(item.id)} />)}
+                        </ul>
+                    </>
+                )}
+            </section>
+
             {status.canManage && (
                 bulk
                     ? <HabboValuesPanel onClose={() => setBulk(false)} />
@@ -296,6 +218,29 @@ export const FurnitureTab = ({ status }: { status: GamedataStatus }) => {
                             </Panel>
                         )
             )}
+
+            <FurnitureEditor id={open} canManage={status.canManage} onClose={() => setOpen(null)} />
+        </>
+    );
+};
+
+/**
+ * The hotel's furniture: Habbo's newest release and bundles to take in, at the top as every
+ * kind's tab has them; then every definition with what it lacks (a bundle, an offer) and what
+ * waits for it, to open and change; or the furniture bundles themselves.
+ */
+export const FurnitureTab = ({ status }: { status: GamedataStatus }) => {
+    const [ params ] = useSearchParams();
+    const [ view, setView ] = useState(params.get('view') === 'bundles' ? 'bundles' : 'definitions');
+
+    return (
+        <>
+            <HabboFurniture status={status} />
+            <BundleUpdate kind="furniture" canManage={status.canManage} />
+            <div className="w-full sm:w-72">
+                <Segmented label="Show" value={view} onChange={setView} options={VIEWS} />
+            </div>
+            {view === 'bundles' ? <BundleList kind="furniture" canManage={status.canManage} /> : <Definitions status={status} />}
         </>
     );
 };

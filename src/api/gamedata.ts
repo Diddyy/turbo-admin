@@ -1,5 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import type { BadgeTone } from '#/components/ui';
+
 import { api, post, put } from './client';
 
 /** Floor (0) or wall (1), as the server's ProductType numbers them. */
@@ -181,7 +183,56 @@ export interface FurnitureDefinition {
     habboFileRead: boolean;
     /** Its total_states, which furnidata does not carry. */
     states: number;
+    /** The bundle it is drawn from: its classname without the *N colour. */
+    assetName: string;
+    tags: FurnitureTag[];
 }
+
+/** Something to know about a furniture definition at a glance, as the server's FurnitureTag names it. */
+export type FurnitureTag = 'hotel-own' | 'habbo-update' | 'edited' | 'no-bundle' | 'bundle-failed' | 'bundle-outdated' | 'not-sold';
+
+/** Each tag in the order the list shows them: its words, its colour and what it means. */
+export const FURNITURE_TAGS: { value: FurnitureTag; label: string; tone: BadgeTone; meaning: string }[] = [
+    { value: 'no-bundle', label: 'no bundle', tone: 'red', meaning: 'No bundle has its asset: the client draws a placeholder.' },
+    { value: 'bundle-failed', label: 'bundle failed', tone: 'red', meaning: 'Its bundle could not be downloaded or converted.' },
+    { value: 'bundle-outdated', label: 'bundle outdated', tone: 'accent', meaning: 'Habbo has a newer revision of its bundle; a sync takes it.' },
+    { value: 'habbo-update', label: 'Habbo update', tone: 'accent', meaning: 'Habbo\'s newest release changes fields the hotel left alone; taking it in brings them.' },
+    { value: 'edited', label: 'edited', tone: 'amber', meaning: 'It holds values of the hotel\'s own where Habbo has others.' },
+    { value: 'not-sold', label: 'not sold', tone: 'neutral', meaning: 'No visible offer on a page players can reach sells it.' },
+    { value: 'hotel-own', label: 'hotel\'s own', tone: 'green', meaning: 'Habbo has no furniture of its kind and classname.' },
+];
+
+export const furnitureTag = (tag: FurnitureTag) => FURNITURE_TAGS.find(x => x.value === tag)!;
+
+/** A furniture definition in the list. */
+export interface FurnitureListItem {
+    id: number;
+    productType: number;
+    className: string;
+    name: string | null;
+    spriteId: number;
+    furniLine: string | null;
+    category: string | null;
+    /** The bundle it is drawn from: its classname without the *N colour. */
+    assetName: string;
+    tags: FurnitureTag[];
+}
+
+export interface FurnitureListPage {
+    items: FurnitureListItem[];
+    total: number;
+    pageSize: number;
+    /** Of those the words and kind find, how many carry each tag. */
+    tagCounts: Partial<Record<FurnitureTag, number>>;
+    /** How many the words and kind find, whichever tag is asked for. */
+    searched: number;
+}
+
+export const useFurnitureList = (text: string, type: 'floor' | 'wall' | '', tag: FurnitureTag | '', page: number) => useQuery({
+    queryKey: [ 'gamedata', 'furniture', 'list', text, type, tag, page ],
+    queryFn: () => api<FurnitureListPage>(`/gamedata/furniture/list?${new URLSearchParams({ q: text, type, tag, page: String(page) })}`),
+    placeholderData: keepPreviousData,
+});
 
 export const useGamedataStatus = () => useQuery({
     queryKey: [ 'gamedata' ],

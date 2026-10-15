@@ -1,5 +1,5 @@
 import { FileUp, Link2, Plus, Save, Search, Trash2, Unlink, Upload, X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
 import { type GamedataStatus, useDeleteVariable, useLinkVariable, useSaveVariable, useVariableImport, useVariableImportPreview, useVariableSearch, type VariableEntry } from '#/api/gamedata';
@@ -10,6 +10,7 @@ import { SearchInput } from '#/components/SearchInput';
 import { Badge, Button, Checkbox, EmptyState, ErrorNotice, Input, Labeled, Loading, Panel, Select, SuccessNotice, Textarea } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
+import { useConfigHandoff } from './configHandoff';
 import { OpenRow, ReviewItem } from './parts';
 
 /** Why a value isn't JSON, as the server would refuse it; null when it is. */
@@ -168,10 +169,20 @@ const VariableEditor = ({ variable, linking, canManage, onDone }: { variable: Va
  * hotel lacks are added and those that differ changed; the hotel's other variables stay, or are
  * removed when asked. Variables that follow a setting or a file always stay.
  */
-const ImportPanel = ({ onDone }: { onDone: () => void }) => {
-    const [ json, setJson ] = useState('');
+const ImportPanel = ({ initial, onDone }: { initial: string | null; onDone: () => void }) => {
+    const [ json, setJson ] = useState(initial ?? '');
     const [ removeMissing, setRemoveMissing ] = useState(false);
     const preview = useVariableImportPreview();
+    const looked = useRef(false);
+
+    // A config handed over from the upload is looked at straight away.
+    useEffect(() => {
+        if (initial && !looked.current) {
+            looked.current = true;
+            preview.mutate({ json: initial, removeMissing: false });
+        }
+    }, [ initial, preview ]);
+
     const take = useVariableImport();
     const seen = preview.data;
     const removing = seen?.removedCount ?? 0;
@@ -292,14 +303,16 @@ export const VariablesTab = ({ status }: { status: GamedataStatus }) => {
     const [ text, setText ] = useState(() => params.get('q') ?? '');
     const [ page, setPage ] = useState(0);
     const [ open, setOpen ] = useState<string | null>(() => params.get('open'));
-    const [ importing, setImporting ] = useState(false);
+    // A config dropped on the upload opens the import with it.
+    const [ handed ] = useState(() => useConfigHandoff.getState().take());
+    const [ importing, setImporting ] = useState(handed !== null);
     const { data: found, isFetching, error } = useVariableSearch(text, page);
     const size = found?.pageSize ?? 1;
     const linking: Linking = { files: found?.linkableFiles ?? [], writesAddresses: found?.writesAddresses ?? false };
 
     return (
         <>
-            {importing && <ImportPanel onDone={() => setImporting(false)} />}
+            {importing && <ImportPanel initial={handed} onDone={() => setImporting(false)} />}
             <Panel className="overflow-clip">
                 <ListToolbar
                     watch={[ text, page ]}

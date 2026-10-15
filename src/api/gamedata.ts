@@ -234,6 +234,13 @@ export const useFurnitureList = (text: string, type: 'floor' | 'wall' | '', tag:
     placeholderData: keepPreviousData,
 });
 
+/**
+ * How long a review of Habbo's changes is taken as it is. Working one out reads the whole release
+ * on the server, so it is not asked for again on every visit or window focus; anything that
+ * changes the gamedata (an edit, an import, a Habbo check) asks for it again at once.
+ */
+const PREVIEW_FRESHNESS = { staleTime: 5 * 60_000, refetchOnWindowFocus: false } as const;
+
 export const useGamedataStatus = () => useQuery({
     queryKey: [ 'gamedata' ],
     queryFn: () => api<GamedataStatus>('/gamedata'),
@@ -259,6 +266,7 @@ export const useImportPreview = (enabled: boolean) => useQuery({
     queryKey: [ 'gamedata', 'import' ],
     queryFn: () => api<FurnitureImportPreview>('/gamedata/habbo/import'),
     enabled,
+    ...PREVIEW_FRESHNESS,
 });
 
 /** Starts taking a release in, in the background. */
@@ -417,6 +425,7 @@ export const useTextImportPreview = (enabled: boolean) => useQuery({
     queryKey: [ 'gamedata', 'texts', 'import' ],
     queryFn: () => api<TextImportPreview>('/gamedata/texts/import'),
     enabled,
+    ...PREVIEW_FRESHNESS,
 });
 
 /** Starts taking a version of Habbo's texts in, in the background. */
@@ -592,6 +601,7 @@ export const useProductImportPreview = (enabled: boolean) => useQuery({
     queryKey: [ 'gamedata', 'products', 'import' ],
     queryFn: () => api<ProductImportPreview>('/gamedata/products/import'),
     enabled,
+    ...PREVIEW_FRESHNESS,
 });
 
 /** Starts taking a version of Habbo's product data in, in the background. */
@@ -692,6 +702,7 @@ export const useFigureImportPreview = (enabled: boolean) => useQuery({
     queryKey: [ 'gamedata', 'figures', 'import' ],
     queryFn: () => api<FigureImportPreview>('/gamedata/figures/import'),
     enabled,
+    ...PREVIEW_FRESHNESS,
 });
 
 /** Starts taking a version of Habbo's figure data in, in the background. */

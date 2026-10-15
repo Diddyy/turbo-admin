@@ -48,7 +48,7 @@ export const HabboValuesPanel = ({ onClose }: { onClose: () => void }) => {
             )}
         >
             <div className="grid gap-x-6 px-4 py-2 sm:grid-cols-2 lg:grid-cols-3">
-                {FIELDS.map(field => (
+                {FIELDS.filter(field => !field.server).map(field => (
                     <Switch
                         key={field.key}
                         label={field.label}

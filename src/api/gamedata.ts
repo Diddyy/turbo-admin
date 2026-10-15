@@ -186,6 +186,8 @@ export interface FurnitureDefinition {
     /** The bundle it is drawn from: its classname without the *N colour. */
     assetName: string;
     tags: FurnitureTag[];
+    /** The server's own columns (classname, id, logic, usagepolicy, cangroup, cansell, extradata), as a JSON object. */
+    serverFields: string;
 }
 
 /** Something to know about a furniture definition at a glance, as the server's FurnitureTag names it. */
@@ -330,6 +332,13 @@ export const useFurnitureDefinition = (id: number | null) => useQuery({
     queryKey: [ 'gamedata', 'furniture', id ],
     queryFn: () => api<FurnitureDefinition>(`/gamedata/furniture/${id}`),
     enabled: id !== null,
+});
+
+/** Every room object logic the server has registered, plugins' included: what a definition's logic may name. */
+export const useLogicTypes = () => useQuery({
+    queryKey: [ 'gamedata', 'furniture', 'logics' ],
+    queryFn: () => api<string[]>('/gamedata/furniture/logics'),
+    staleTime: Infinity,
 });
 
 export const useUpdateDefinition = (id: number) => {

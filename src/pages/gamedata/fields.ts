@@ -6,9 +6,11 @@ export interface FieldInfo {
     kind: FieldKind;
     /** Only a floor item has it. */
     floor?: boolean;
+    /** The server's own column: not furnidata's, so Habbo has no value of it and an import never changes it. */
+    server?: boolean;
 }
 
-/** The furnidata fields a definition holds, as the server's FurnitureFields lists them. */
+/** The fields a definition holds, as the server's FurnitureFields lists them: furnidata's, then the server's own. */
 export const FIELDS: FieldInfo[] = [
     { key: 'name', label: 'Name', kind: 'text' },
     { key: 'description', label: 'Description', kind: 'text' },
@@ -33,6 +35,13 @@ export const FIELDS: FieldInfo[] = [
     { key: 'states', label: 'States (from its file)', kind: 'int' },
     { key: 'rare', label: 'Rare', kind: 'bool' },
     { key: 'excludeddynamic', label: 'Excluded dynamic', kind: 'bool' },
+    { key: 'logic', label: 'Logic', kind: 'text', server: true },
+    { key: 'usagepolicy', label: 'Who may use it', kind: 'int', server: true },
+    { key: 'cangroup', label: 'Stacks in the inventory', kind: 'bool', server: true },
+    { key: 'cansell', label: 'Sellable on the marketplace', kind: 'bool', server: true },
+    { key: 'classname', label: 'Classname', kind: 'text', server: true },
+    { key: 'id', label: 'Sprite id', kind: 'int', server: true },
+    { key: 'extradata', label: 'Extra data (JSON)', kind: 'text', server: true },
 ];
 
 /** What furnidata's specialtype says a furniture is, as the server's FurnitureCategory names them. */
@@ -60,4 +69,11 @@ export const SPECIAL_TYPES: { value: number; label: string }[] = [
     { value: 21, label: 'Monsterplant rebreed' },
     { value: 22, label: 'Monsterplant fertilize' },
     { value: 23, label: 'Purchasable clothing' },
+];
+
+/** Who may use a furniture (usagepolicy), as the server's FurnitureUsageType numbers them. */
+export const USAGE_POLICIES: { value: number; label: string }[] = [
+    { value: 0, label: 'Nobody' },
+    { value: 1, label: 'Those with rights' },
+    { value: 2, label: 'Everybody' },
 ];

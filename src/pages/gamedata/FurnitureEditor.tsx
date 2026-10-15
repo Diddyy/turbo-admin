@@ -5,7 +5,7 @@ import { Link } from 'react-router';
 import { furniIconUrl, useClientAssets } from '#/api/assets';
 import { downloadBundle, useBundle } from '#/api/bundles';
 import { ApiError } from '#/api/client';
-import { FURNITURE_KINDS, type FurnitureDefinition, furnitureTag, useFurnitureDefinition, useUpdateDefinition } from '#/api/gamedata';
+import { FURNITURE_KINDS, type FurnitureDefinition, furnitureTag, useFurnitureDefinition, useLogicTypes, useUpdateDefinition } from '#/api/gamedata';
 import { Modal } from '#/components/Modal';
 import { toastError } from '#/components/toast';
 import { Badge, Button, ErrorNotice, Input, Labeled, Loading, Select, SuccessNotice, Switch, Textarea, WarningNotice } from '#/components/ui';
@@ -13,7 +13,7 @@ import { cx } from '#/lib/cx';
 import { fromNow } from '#/lib/time';
 import { formatBytes } from '#/pages/assets/format';
 
-import { type FieldInfo, FIELDS, SPECIAL_TYPES } from './fields';
+import { type FieldInfo, FIELDS, SPECIAL_TYPES, USAGE_POLICIES } from './fields';
 import { showValue } from './labels';
 import { FieldGroup, HabboDiffers } from './parts';
 import { UploadDialog } from './UploadDialog';
@@ -21,13 +21,18 @@ import { UploadDialog } from './UploadDialog';
 type Item = Record<string, unknown>;
 type Draft = Record<string, string | boolean>;
 
-/** The fields as the editor groups them: what players read, what it is, where it stands, trading, and the rest. */
-const GROUPS: { title: string; keys: string[]; floorOnly?: boolean }[] = [
+/** The fields as the editor groups them: what players read, what it is, where it stands, trading, the client's and the server's. */
+const GROUPS: { title: string; keys: string[]; floorOnly?: boolean; note?: string }[] = [
     { title: 'What players read', keys: [ 'name', 'description' ] },
     { title: 'What it is', keys: [ 'specialtype', 'category', 'furniline', 'environment', 'rare', 'excludeddynamic' ] },
     { title: 'Size and placement', keys: [ 'xdim', 'ydim', 'height', 'defaultdir', 'canstandon', 'cansiton', 'canlayon', 'canputstuffon' ], floorOnly: true },
     { title: 'Trading', keys: [ 'tradeable', 'recyclable' ] },
     { title: 'Client', keys: [ 'revision', 'states', 'partcolors', 'customparams', 'adurl' ] },
+    {
+        title: 'Server',
+        keys: [ 'logic', 'usagepolicy', 'classname', 'id', 'cangroup', 'cansell', 'extradata' ],
+        note: 'Only the server has these: Habbo\'s updates never change them. A new logic reaches furniture already in a room when the room loads again; a new classname or sprite id changes what the client draws it as.',
+    },
 ];
 
 /** A field's value as its control holds it: text for text and numbers, a flag for a flag. */
@@ -187,8 +192,10 @@ const Sidebar = ({ definition, item, canManage }: { definition: FurnitureDefinit
 
 /** The definition's furnidata fields, grouped, each with Habbo's beside it where the hotel's differs. */
 const EditorBody = ({ definition, canManage }: { definition: FurnitureDefinition; canManage: boolean }) => {
-    // The item as the file writes it, and its states, which the file does not carry.
-    const item: Item = { ...(JSON.parse(definition.item) as Item), states: definition.states };
+    // The item as the file writes it, its states, which the file does not carry, and the
+    // server's own columns, which no file carries.
+    const item: Item = { ...(JSON.parse(definition.item) as Item), states: definition.states, ...(JSON.parse(definition.serverFields) as Item) };
+    const { data: logics } = useLogicTypes();
     const habbo = definition.habbo ? JSON.parse(definition.habbo) as Item : null;
     const isWall = definition.productType === 1;
     const fields = FIELDS.filter(field => !(isWall && field.floor));
@@ -198,7 +205,7 @@ const EditorBody = ({ definition, canManage }: { definition: FurnitureDefinition
     const changed = fields.filter(field => draft[field.key] !== original[field.key]);
     const set = (key: string, value: string | boolean) => setDraft(current => ({ ...current, [key]: value }));
 
-    const habboOf = (field: FieldInfo) => (habbo && field.key in habbo ? toInput(field, habbo[field.key]) : null);
+    const habboOf = (field: FieldInfo) => (habbo && !field.server && field.key in habbo ? toInput(field, habbo[field.key]) : null);
     const differs = (field: FieldInfo) => {
         const value = habboOf(field);
 
@@ -227,6 +234,26 @@ const EditorBody = ({ definition, canManage }: { definition: FurnitureDefinition
                 </Select>
             );
 
+        if (field.key === 'logic')
+            return (
+                <>
+                    <Input value={value} onChange={event => set(field.key, event.target.value)} list="furni-logics" disabled={!canManage} className="w-full font-mono" />
+                    <datalist id="furni-logics">{logics?.map(logic => <option key={logic} value={logic} />)}</datalist>
+                    {logics && value && !logics.includes(value) && <span className="text-xs text-warn">No logic of that name is registered: it behaves as plain furniture.</span>}
+                </>
+            );
+
+        if (field.key === 'usagepolicy')
+            return (
+                <Select value={value} onChange={event => set(field.key, event.target.value)} disabled={!canManage} className="w-full">
+                    {!USAGE_POLICIES.some(x => String(x.value) === value) && <option value={value}>{value || '-'}</option>}
+                    {USAGE_POLICIES.map(x => <option key={x.value} value={String(x.value)}>{x.label}</option>)}
+                </Select>
+            );
+
+        if (field.key === 'extradata')
+            return <Textarea value={value} onChange={event => set(field.key, event.target.value)} rows={4} placeholder="{}" disabled={!canManage} className="w-full font-mono text-xs" />;
+
         if (field.key === 'defaultdir')
             return (
                 <Select value={value} onChange={event => set(field.key, event.target.value)} disabled={!canManage} className={cx('w-full font-mono', warn)}>
@@ -246,7 +273,7 @@ const EditorBody = ({ definition, canManage }: { definition: FurnitureDefinition
     };
 
     const input = (field: FieldInfo) => (
-        <div key={field.key} className={cx('flex flex-col gap-1', (field.key === 'description' || field.key === 'name') && 'sm:col-span-2')}>
+        <div key={field.key} className={cx('flex flex-col gap-1', (field.key === 'description' || field.key === 'name') && 'sm:col-span-2', field.key === 'extradata' && 'sm:col-span-2 xl:col-span-3')}>
             <Labeled label={field.label}>{control(field)}</Labeled>
             {field.kind === 'colors' && colorsOf(String(draft[field.key] ?? '')).length > 0 && (
                 <span className="flex flex-wrap gap-1">
@@ -297,6 +324,7 @@ const EditorBody = ({ definition, canManage }: { definition: FurnitureDefinition
 
                         return (
                             <FieldGroup key={group.title} title={group.title}>
+                                {group.note && <p className="-mt-1 text-xs text-muted">{group.note}</p>}
                                 {values.length > 0 && <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{values.map(input)}</div>}
                                 {flags.length > 0 && <div className="grid gap-x-6 sm:grid-cols-2">{flags.map(flag)}</div>}
                             </FieldGroup>

@@ -74,6 +74,6 @@ export const SPECIAL_TYPES: { value: number; label: string }[] = [
 /** Who may use a furniture (usagepolicy), as the server's FurnitureUsageType numbers them. */
 export const USAGE_POLICIES: { value: number; label: string }[] = [
     { value: 0, label: 'Nobody' },
-    { value: 1, label: 'Those with rights' },
+    { value: 1, label: 'With rights' },
     { value: 2, label: 'Everybody' },
 ];

@@ -397,13 +397,18 @@ const EditorBody = ({ definition, canManage }: { definition: FurnitureDefinition
 
     return (
         <div className="flex min-h-full flex-col">
-            <div className="grid flex-1 grid-cols-[minmax(0,1fr)] md:grid-cols-[12.5rem_minmax(0,1fr)]">
+            {/* On a phone the bar and the section are two rows: the bar keeps its own height, the section takes the rest. */}
+            <div className="grid flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] md:grid-cols-[12.5rem_minmax(0,1fr)] md:grid-rows-[minmax(0,1fr)]">
                 <nav aria-label="Sections" className="sticky top-0 z-10 flex gap-1 overflow-x-auto border-b border-line bg-surface p-2 md:static md:flex-col md:overflow-visible md:border-r md:border-b-0 md:bg-canvas/50 md:p-3">
                     {sections.map(target => (
                         <button
                             key={target.id}
                             type="button"
-                            onClick={() => setSection(target.id)}
+                            onClick={(event) => {
+                                setSection(target.id);
+                                // On a phone the bar scrolls sideways: the tab picked stays in sight.
+                                event.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+                            }}
                             aria-current={target.id === shown.id}
                             className={cx(
                                 'flex min-h-9 shrink-0 items-center gap-2.5 rounded-lg px-3 text-left text-sm whitespace-nowrap transition-colors [&>svg]:size-4 [&>svg]:shrink-0',

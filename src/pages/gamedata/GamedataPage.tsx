@@ -114,7 +114,7 @@ export const AssetsRedirect = () => {
     } else if (tab === 'bundles') {
         to.set('tab', kind === 'figure' ? 'clothing' : kind === 'effect' ? 'effects' : kind === 'pet' ? 'pets' : 'furniture');
 
-        if (kind === 'figure' || kind === 'furniture' || !kind)
+        if (kind === 'figure')
             to.set('view', 'bundles');
 
         if (status)

@@ -3,13 +3,16 @@ import { useDeferredValue, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
 import { furniIconUrl, useClientAssets } from '#/api/assets';
+import { type BundleKind, useBundles } from '#/api/bundles';
 import { FILES, FURNITURE_KINDS, FURNITURE_TAGS, type FurnitureListItem, type FurnitureTag, type GamedataStatus, useFurnitureList, useImport, useImportPreview } from '#/api/gamedata';
 import { ListToolbar } from '#/components/ListToolbar';
 import { SearchInput } from '#/components/SearchInput';
-import { Badge, Button, EmptyState, ErrorNotice, Loading, Panel, Segmented, Select } from '#/components/ui';
+import { Badge, Button, EmptyState, ErrorNotice, Loading, Panel, Select } from '#/components/ui';
 import { cx } from '#/lib/cx';
-import { BundleList } from '#/pages/assets/BundleList';
+import { BundleDetail } from '#/pages/assets/BundleDetail';
+import { BundleIcon } from '#/pages/assets/BundleIcon';
 import { BundleUpdate } from '#/pages/assets/BundleUpdate';
+import { formatBytes } from '#/pages/assets/format';
 
 import { FurnitureEditor } from './FurnitureEditor';
 import { HabboValuesPanel } from './HabboValuesPanel';
@@ -46,11 +49,6 @@ export const HabboFurniture = ({ status, defaultOpen }: { status: GamedataStatus
     );
 };
 
-const VIEWS = [
-    { value: 'definitions', label: 'Definitions' },
-    { value: 'bundles', label: 'Bundles' },
-];
-
 const FurniIcon = ({ className }: { className: string }) => {
     const assets = useClientAssets();
     const url = furniIconUrl(assets, className);
@@ -73,6 +71,20 @@ const Tags = ({ tags }: { tags: FurnitureTag[] }) => (
     </span>
 );
 
+/** The bundle a definition is drawn from, in a few words: where it came from, its revision and size, or that there is none. */
+const BundleCell = ({ item }: { item: FurnitureListItem }) => (
+    <span className="hidden w-36 shrink-0 flex-col items-end gap-0.5 text-right font-mono text-[11px] md:flex">
+        {item.bundleSize === null
+            ? <span className={item.tags.includes('bundle-failed') ? 'text-bad' : 'text-bad/80'}>{item.tags.includes('bundle-failed') ? 'failed' : 'no bundle'}</span>
+            : (
+                    <>
+                        <span className="text-ink">{item.bundleSource === 'upload' ? 'upload' : `rev ${item.bundleRevision ?? '-'}`}</span>
+                        <span className="text-muted">{formatBytes(item.bundleSize)}</span>
+                    </>
+                )}
+    </span>
+);
+
 const DefinitionRow = ({ item, onOpen }: { item: FurnitureListItem; onOpen: () => void }) => (
     <li>
         <button
@@ -89,6 +101,7 @@ const DefinitionRow = ({ item, onOpen }: { item: FurnitureListItem; onOpen: () =
                 <Tags tags={item.tags} />
             </span>
             <span className="hidden w-28 shrink-0 truncate text-xs text-muted lg:block" title={item.furniLine ?? undefined}>{item.furniLine || '-'}</span>
+            <BundleCell item={item} />
             <span className="hidden w-16 shrink-0 text-right font-mono text-xs text-muted tabular-nums md:block">{item.spriteId}</span>
             <span className="hidden w-12 shrink-0 md:block"><Badge>{FURNITURE_KINDS[item.productType] ?? '?'}</Badge></span>
             <ChevronRight className="size-4 shrink-0 text-muted" aria-hidden />
@@ -114,6 +127,25 @@ const TagChip = ({ label, count, tone, active, title, onClick }: { label: string
     </button>
 );
 
+/** The filter that lists the furniture bundles no definition is drawn from, instead of definitions. */
+const UNUSED = 'unused-bundles';
+
+/**
+ * The filter a link opens the list with: a tag (`?tag=no-bundle`), or what the bundles' own list
+ * was opened with before it was merged in (`?status=unused`, `?status=failed`).
+ */
+const startFilter = (params: URLSearchParams): FurnitureTag | '' | typeof UNUSED => {
+    const tag = params.get('tag');
+
+    if (FURNITURE_TAGS.some(x => x.value === tag))
+        return tag as FurnitureTag;
+
+    if (params.get('status') === 'unused')
+        return UNUSED;
+
+    return params.get('status') === 'failed' ? 'bundle-failed' : '';
+};
+
 const TONE_DOTS: Record<string, string> = { red: 'bg-bad', amber: 'bg-warn', accent: 'bg-accent', green: 'bg-good', neutral: 'bg-muted' };
 
 /** Every definition, found by words, kind and tag; one opens in the editor. */
@@ -122,15 +154,18 @@ const Definitions = ({ status }: { status: GamedataStatus }) => {
     // Opened from the search: what it found, and the piece picked there.
     const [ text, setText ] = useState(() => params.get('q') ?? '');
     const [ type, setType ] = useState<'' | 'floor' | 'wall'>('');
-    const [ tag, setTag ] = useState<FurnitureTag | ''>(() => (FURNITURE_TAGS.some(x => x.value === params.get('tag')) ? params.get('tag') as FurnitureTag : ''));
+    const [ tag, setTag ] = useState<FurnitureTag | '' | typeof UNUSED>(() => startFilter(params));
     const [ page, setPage ] = useState(0);
     const [ open, setOpen ] = useState<number | null>(() => Number(params.get('id')) || null);
     const [ bulk, setBulk ] = useState(false);
     const q = useDeferredValue(text.trim());
-    const { data, error, isFetching } = useFurnitureList(q, type, tag, page);
-    const pageSize = data?.pageSize ?? 60;
+    const unused = tag === UNUSED;
+    const { data, error, isFetching } = useFurnitureList(q, type, unused ? '' : tag, unused ? 0 : page);
+    const { data: unusedBundles } = useBundles('furniture', unused ? q : '', 'unused', unused ? page : 0);
+    const pageSize = (unused ? unusedBundles?.pageSize : data?.pageSize) ?? 60;
+    const [ bundle, setBundle ] = useState<{ kind: BundleKind; name: string } | null>(null);
 
-    const pick = (next: FurnitureTag | '') => {
+    const pick = (next: FurnitureTag | '' | typeof UNUSED) => {
         setTag(next);
         setPage(0);
     };
@@ -140,7 +175,7 @@ const Definitions = ({ status }: { status: GamedataStatus }) => {
             <section className="overflow-clip rounded-xl border border-line bg-surface">
                 <ListToolbar
                     watch={[ q, type, tag, page ]}
-                    page={{ offset: page * pageSize, limit: pageSize, total: data?.total, onChange: offset => setPage(Math.round(offset / pageSize)) }}
+                    page={{ offset: page * pageSize, limit: pageSize, total: unused ? unusedBundles?.total : data?.total, onChange: offset => setPage(Math.round(offset / pageSize)) }}
                 >
                     <SearchInput
                         value={text}
@@ -148,7 +183,7 @@ const Definitions = ({ status }: { status: GamedataStatus }) => {
                             setText(value);
                             setPage(0);
                         }}
-                        placeholder="Classname, name or id"
+                        placeholder={unused ? 'Bundle name' : 'Classname, name or id'}
                         aria-label="Find furniture"
                         className="w-full sm:w-64"
                     />
@@ -159,7 +194,8 @@ const Definitions = ({ status }: { status: GamedataStatus }) => {
                             setType(event.target.value as '' | 'floor' | 'wall');
                             setPage(0);
                         }}
-                        className="w-full sm:w-32"
+                        disabled={unused}
+                        className="w-full sm:w-40"
                     >
                         <option value="">Floor and wall</option>
                         <option value="floor">Floor</option>
@@ -179,19 +215,63 @@ const Definitions = ({ status }: { status: GamedataStatus }) => {
                             onClick={() => pick(tag === x.value ? '' : x.value)}
                         />
                     ))}
+                    <TagChip
+                        label="unused bundles"
+                        title="Furniture bundles no definition is drawn from. They do no harm; they are only kept and published."
+                        tone="bg-warn"
+                        count={unusedBundles?.total}
+                        active={unused}
+                        onClick={() => pick(unused ? '' : UNUSED)}
+                    />
                 </div>
 
-                {error && <div className="p-4"><ErrorNotice error={error} /></div>}
-                {!data && !error && <Loading />}
-                {data && data.items.length === 0 && (
+                {unused && (
+                    <>
+                        {!unusedBundles && <Loading />}
+                        {unusedBundles?.items.length === 0 && <EmptyState>{q ? 'No unused bundle has that name.' : 'Every furniture bundle is drawn from by a definition.'}</EmptyState>}
+                        {unusedBundles && unusedBundles.items.length > 0 && (
+                            <ul className="divide-y divide-line">
+                                {unusedBundles.items.map(item => (
+                                    <li key={item.name}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setBundle({ kind: 'furniture', name: item.name })}
+                                            className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-subtle/60 focus-visible:bg-subtle focus-visible:outline-none sm:px-4"
+                                        >
+                                            <BundleIcon kind="furniture" name={item.name} />
+                                            <span className="flex min-w-0 flex-1 flex-col gap-1">
+                                                <span className="truncate font-mono text-[13px] font-medium text-muted">{item.name}</span>
+                                                <span className="flex flex-wrap gap-1">
+                                                    <Badge tone="amber">no definition</Badge>
+                                                    {item.source === 'upload' && <Badge tone="accent">upload</Badge>}
+                                                    {item.error && <Badge tone="red">failed</Badge>}
+                                                </span>
+                                            </span>
+                                            <span className="hidden w-36 shrink-0 flex-col items-end gap-0.5 text-right font-mono text-[11px] md:flex">
+                                                <span>{item.source === 'upload' ? 'upload' : `rev ${item.revision ?? '-'}`}</span>
+                                                <span className="text-muted">{item.error ? '-' : formatBytes(item.size)}</span>
+                                            </span>
+                                            <ChevronRight className="size-4 shrink-0 text-muted" aria-hidden />
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </>
+                )}
+
+                {!unused && error && <div className="p-4"><ErrorNotice error={error} /></div>}
+                {!unused && !data && !error && <Loading />}
+                {!unused && data && data.items.length === 0 && (
                     <EmptyState>{q || type || tag ? 'No furniture is like that.' : 'No furniture yet: take Habbo\'s in on the Updates tab.'}</EmptyState>
                 )}
-                {data && data.items.length > 0 && (
+                {!unused && data && data.items.length > 0 && (
                     <>
                         <div className="hidden items-center gap-3 border-b border-line px-4 py-2 font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase md:flex">
                             <span className="w-10 shrink-0" />
                             <span className="flex-1">Furniture</span>
                             <span className="hidden w-28 shrink-0 lg:block">Line</span>
+                            <span className="w-36 shrink-0 text-right">Bundle</span>
                             <span className="w-16 shrink-0 text-right">Sprite</span>
                             <span className="w-12 shrink-0" />
                             <span className="w-4 shrink-0" />
@@ -220,27 +300,21 @@ const Definitions = ({ status }: { status: GamedataStatus }) => {
             )}
 
             <FurnitureEditor id={open} canManage={status.canManage} onClose={() => setOpen(null)} />
+            <BundleDetail bundle={bundle} canManage={status.canManage} onClose={() => setBundle(null)} />
         </>
     );
 };
 
 /**
- * The hotel's furniture: Habbo's newest release and bundles to take in, at the top as every
- * kind's tab has them; then every definition with what it lacks (a bundle, an offer) and what
- * waits for it, to open and change; or the furniture bundles themselves.
+ * The hotel's furniture, definitions and bundles in one: Habbo's newest release and bundles to
+ * take in, at the top as every kind's tab has them; then every definition with its bundle and
+ * what it lacks (a bundle, an offer) or what waits for it, to open and change - and the bundles
+ * no definition is drawn from, as one more filter of the same list.
  */
-export const FurnitureTab = ({ status }: { status: GamedataStatus }) => {
-    const [ params ] = useSearchParams();
-    const [ view, setView ] = useState(params.get('view') === 'bundles' ? 'bundles' : 'definitions');
-
-    return (
-        <>
-            <HabboFurniture status={status} />
-            <BundleUpdate kind="furniture" canManage={status.canManage} />
-            <div className="w-full sm:w-72">
-                <Segmented label="Show" value={view} onChange={setView} options={VIEWS} />
-            </div>
-            {view === 'bundles' ? <BundleList kind="furniture" canManage={status.canManage} /> : <Definitions status={status} />}
-        </>
-    );
-};
+export const FurnitureTab = ({ status }: { status: GamedataStatus }) => (
+    <>
+        <HabboFurniture status={status} />
+        <BundleUpdate kind="furniture" canManage={status.canManage} />
+        <Definitions status={status} />
+    </>
+);

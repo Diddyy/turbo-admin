@@ -218,6 +218,11 @@ export interface FurnitureListItem {
     /** The bundle it is drawn from: its classname without the *N colour. */
     assetName: string;
     tags: FurnitureTag[];
+    /** Its bundle's revision; null without a bundle file, or for an upload. */
+    bundleRevision: string | null;
+    /** Its bundle's size in bytes; null without a bundle file. */
+    bundleSize: number | null;
+    bundleSource: 'habbo' | 'upload' | null;
 }
 
 export interface FurnitureListPage {

@@ -77,7 +77,8 @@ export const GamedataPage = () => {
                 {(!status || !assets) && !error && !assetsError && <Loading />}
                 {status && assets && (
                     <>
-                        {running && tab !== 'updates' && <JobPanel job={job} canManage={assets.canManage} compact />}
+                        {/* A running job anywhere; on Publish, the last publish however it ended, so one that failed says why. */}
+                        {job && tab !== 'updates' && (running || (tab === 'publish' && job.kind === 'publish')) && <JobPanel job={job} canManage={assets.canManage} compact={running} />}
                         {tab === 'updates' && <UpdatesTab status={status} assets={assets} />}
                         {tab === 'furniture' && <FurnitureTab key={found} status={status} />}
                         {tab === 'clothing' && <FiguresTab key={found} status={status} />}

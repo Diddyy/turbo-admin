@@ -1,0 +1,29 @@
+{
+    // Code copied in as it is from elsewhere (src/vendor/*/SOURCE.md says where), checked as its
+    // own project under that code's own settings so it stays a plain copy: the panel's stricter
+    // noUncheckedIndexedAccess is not what it was written to.
+    "compilerOptions": {
+        "composite": true,
+        "emitDeclarationOnly": true,
+        "declaration": true,
+        "outDir": "node_modules/.tsc/vendor",
+        "tsBuildInfoFile": "node_modules/.tsc/vendor.tsbuildinfo",
+        "target": "ES2022",
+        "lib": [
+            "ES2024",
+            "DOM",
+            "DOM.Iterable"
+        ],
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "strict": true,
+        "skipLibCheck": true,
+        "isolatedModules": true,
+        "types": [
+            "vite/client"
+        ]
+    },
+    "include": [
+        "src/vendor"
+    ]
+}

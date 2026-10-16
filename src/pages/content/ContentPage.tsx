@@ -6,6 +6,7 @@ import { PageBody, PageHeader } from '#/components/ui';
 import { AchievementsTab } from './AchievementsTab';
 import { BadgesTab } from './BadgesTab';
 import { BotsTab } from './BotsTab';
+import { ChatStylesTab } from './ChatStylesTab';
 import { CurrenciesTab } from './CurrenciesTab';
 import { GroupsTab } from './GroupsTab';
 import { NavigatorTab } from './NavigatorTab';
@@ -19,6 +20,7 @@ const TABS = [
     { value: 'pets', label: 'Pets' },
     { value: 'bots', label: 'Bots' },
     { value: 'currencies', label: 'Currencies' },
+    { value: 'chat-styles', label: 'Chat styles' },
 ];
 
 /**
@@ -46,6 +48,7 @@ export const ContentPage = () => {
                 {tab === 'pets' && <PetsTab canManage={canManage} />}
                 {tab === 'bots' && <BotsTab canManage={canManage} />}
                 {tab === 'currencies' && <CurrenciesTab canManage={canManage} />}
+                {tab === 'chat-styles' && <ChatStylesTab canManage={canManage} />}
             </PageBody>
         </>
     );

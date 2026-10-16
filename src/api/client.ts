@@ -73,6 +73,29 @@ export const api = async <T>(path: string, init: RequestInit = {}): Promise<T> =
     return (await response.json()) as T;
 };
 
+/**
+ * A file from the admin API as the signed-in player, as a blob: for an image the page draws, which
+ * an `<img>` cannot fetch with the session's token.
+ */
+export const apiBlob = async (path: string): Promise<Blob> => {
+    const token = useSession.getState().session?.token;
+    let response: Response;
+
+    try {
+        response = await fetch(`${API_URL}/api${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    } catch {
+        throw new ApiError(0, 'Cannot reach the admin API. Is the server running with Turbo:Admin:Enabled?');
+    }
+
+    if (response.status === 401 && token)
+        useSession.getState().signOut();
+
+    if (!response.ok)
+        throw new ApiError(response.status, (await messageOf(response)) ?? MESSAGES[response.status] ?? `The server answered ${response.status}.`);
+
+    return response.blob();
+};
+
 export const post = <T>(path: string, body?: unknown) =>
     api<T>(path, { method: 'POST', body: body === undefined ? undefined : JSON.stringify(body) });
 

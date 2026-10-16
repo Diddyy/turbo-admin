@@ -24,7 +24,7 @@ const stylisticConfig = stylistic.configs.customize({
 });
 
 export default tseslint.config(
-    { ignores: [ 'dist/**', 'node_modules/**', '**/*.d.ts', 'eslint.config.js', 'vite.config.ts' ] },
+    { ignores: [ 'dist/**', 'node_modules/**', '**/*.d.ts', 'eslint.config.js', 'vite.config.ts', 'src/vendor/**' ] },
     js.configs.recommended,
     ...tseslint.configs.recommended,
     stylisticConfig,

@@ -9,7 +9,7 @@ import { api, API_URL, ApiError, post, put, remove } from './client';
  * from Habbo by a sync, checked against the hotel, and published to where the client loads them
  * (`docs/asset-bundles.md`).
  */
-export type BundleKind = 'furniture' | 'figure' | 'effect' | 'pet';
+export type BundleKind = 'furniture' | 'figure' | 'effect' | 'pet' | 'template';
 
 export type BundleStatus = 'all' | 'ok' | 'failed' | 'unused';
 
@@ -20,6 +20,7 @@ export const BUNDLE_KINDS: { value: BundleKind; label: string; one: string }[] =
     { value: 'figure', label: 'Clothing', one: 'clothing' },
     { value: 'effect', label: 'Effects', one: 'effect' },
     { value: 'pet', label: 'Pets', one: 'pet' },
+    { value: 'template', label: 'Templates', one: 'template' },
 ];
 
 export const PROTOCOLS: { value: TargetProtocol; label: string }[] = [
@@ -72,7 +73,8 @@ export interface AssetBundle {
     kind: BundleKind;
     name: string;
     revision: string | null;
-    source: 'habbo' | 'upload';
+    /** Downloaded from Habbo, uploaded, or built by the server from the hotel's own (the chat styles' template). */
+    source: 'habbo' | 'upload' | 'built';
     hash: string | null;
     size: number;
     /** The ids that load it: the effects sharing an effect's library, a pet's type. */
@@ -293,7 +295,7 @@ const send = async (path: string, init: RequestInit) => {
 };
 
 /** Sends a form with files as the signed-in player; the browser sets its boundary. */
-const postForm = async <T>(path: string, form: FormData) => (await (await send(path, { method: 'POST', body: form })).json()) as T;
+export const postForm = async <T>(path: string, form: FormData) => (await (await send(path, { method: 'POST', body: form })).json()) as T;
 
 /** A gamedata file an upload was found to be, by what it holds. */
 export type GamedataFileKind = 'furnidata' | 'productdata' | 'figuredata' | 'figuremap' | 'effectmap' | 'texts' | 'variables';

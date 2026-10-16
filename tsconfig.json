@@ -28,5 +28,13 @@
     },
     "include": [
         "src"
+    ],
+    "exclude": [
+        "src/vendor"
+    ],
+    "references": [
+        {
+            "path": "./tsconfig.vendor.json"
+        }
     ]
 }

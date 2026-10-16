@@ -12,7 +12,7 @@ const listOf = (check: AssetCheck) => {
     if (check.id === 'furniture-missing')
         return '?tab=furniture&tag=no-bundle';
 
-    return check.kind && check.status ? `?tab=${KIND_TABS[check.kind]}&status=${check.status}` : null;
+    return check.kind && check.status && KIND_TABS[check.kind] ? `?tab=${KIND_TABS[check.kind]}&status=${check.status}` : null;
 };
 
 /** One check: how many it found, what that means, and some of them; a link to the list it is about. */

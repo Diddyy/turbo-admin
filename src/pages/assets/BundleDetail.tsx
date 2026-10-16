@@ -47,7 +47,7 @@ export const BundleDetail = ({ bundle, canManage, onClose }: { bundle: { kind: B
                 <div className="flex flex-col gap-4 p-4 sm:p-5">
                     <div className="flex flex-wrap items-center gap-1.5">
                         <Badge>{data.kind}</Badge>
-                        <Badge tone={data.source === 'upload' ? 'accent' : 'neutral'}>{data.source === 'upload' ? 'upload' : 'habbo'}</Badge>
+                        <Badge tone={data.source === 'habbo' ? 'neutral' : 'accent'}>{data.source}</Badge>
                         {data.error ? <Badge tone="red">failed</Badge> : <Badge tone="green">ok</Badge>}
                         {!data.used && <Badge tone="amber">unused</Badge>}
                     </div>
@@ -90,7 +90,7 @@ export const BundleDetail = ({ bundle, canManage, onClose }: { bundle: { kind: B
                                         icon={<Trash2 />}
                                         disabled={remove.isPending}
                                         onClick={() => ask(
-                                            `Delete the bundle ${bundle.name}? ${data.source === 'habbo' ? 'The next sync downloads it again from Habbo.' : 'It was uploaded, so it is gone until it is uploaded again.'}`,
+                                            `Delete the bundle ${bundle.name}? ${data.source === 'habbo' ? 'The next sync downloads it again from Habbo.' : data.source === 'built' ? 'It is built again on the next change to what it is built from.' : 'It was uploaded, so it is gone until it is uploaded again.'}`,
                                             () => remove.mutate(bundle, {
                                                 onSuccess: () => {
                                                     toast(`Deleted ${bundle.name}.`);

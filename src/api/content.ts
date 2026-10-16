@@ -1,5 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import type { ChatStyleRegPoints } from '#/preview/chatBubble';
+
+import { type AssetBundle, postForm } from './bundles';
 import { api, post, put } from './client';
 
 /** AchievementState, as the catalog numbers it. */
@@ -443,6 +446,129 @@ export const useDeleteCurrency = () => {
 
     return useMutation({
         mutationFn: (id: number) => api<void>(`/content/currencies/${id}`, { method: 'DELETE' }),
+        onSuccess: refresh,
+    });
+};
+
+/** Every bitmap a chat style can have: the three each has, then the ones only some do. */
+export const CHAT_STYLE_FILES = [ 'chat_bubble_base', 'chat_bubble_pointer', 'selector_preview', 'chat_bubble_color', 'icon', 'chat_bubble_emblem', 'chat_bubble_emblem_multiline' ] as const;
+
+export type ChatStyleFile = typeof CHAT_STYLE_FILES[number];
+
+/**
+ * A chat bubble style whole: the id the client draws it by and its asset id, who may speak with it
+ * (the server checks each line), how it behaves, how it is drawn (its reg points and bitmaps, as
+ * `chat-style-definitions.json` has them), and how many own it and have it as their bubble.
+ * `drawable` says the bundle carries it: it needs reg points and its three bitmaps.
+ */
+export interface ChatStyle {
+    id: number;
+    clientStyleId: number;
+    assetId: string;
+    clubOnly: boolean;
+    ambassadorOnly: boolean;
+    staffOnly: boolean;
+    purchasable: boolean;
+    /** The server's own bubbles (bots, notices, wired): never a player's. */
+    system: boolean;
+    staffOverrideable: boolean;
+    allowHtml: boolean;
+    notification: boolean;
+    regPoints: ChatStyleRegPoints | null;
+    bitmaps: ChatStyleFile[];
+    sortOrder: number;
+    owners: number;
+    preferring: number;
+    drawable: boolean;
+}
+
+export interface ChatStyleList {
+    items: ChatStyle[];
+    /** The client id a new style takes. */
+    nextId: number;
+    /** `habbo-free-flow-chat-com`, built from these; null until the first is drawable. */
+    bundle: AssetBundle | null;
+    /** The library's own bitmaps, not a style's, kept for the build. */
+    libraryBitmaps: number;
+}
+
+/**
+ * A chat style to add or change: anything left out stays as it was (off, for a new one). `files`
+ * sets bitmaps as base64 PNG, or takes an optional one away with null; a new style starts with the
+ * bitmaps of `copyFrom` (a style's id) it does not set.
+ */
+export interface ChatStyleInput {
+    clientStyleId?: number;
+    assetId?: string;
+    clubOnly?: boolean;
+    ambassadorOnly?: boolean;
+    staffOnly?: boolean;
+    purchasable?: boolean;
+    system?: boolean;
+    staffOverrideable?: boolean;
+    allowHtml?: boolean;
+    notification?: boolean;
+    regPoints?: ChatStyleRegPoints;
+    files?: Partial<Record<ChatStyleFile, string | null>>;
+    copyFrom?: number;
+}
+
+export interface ChatStyleImportResult {
+    added: number;
+    updated: number;
+    libraryBitmaps: number;
+}
+
+const CHAT_STYLES = [ 'content', 'chat-styles' ];
+
+export const useChatStyles = () => useQuery({
+    queryKey: CHAT_STYLES,
+    queryFn: () => api<ChatStyleList>('/content/chat-styles'),
+});
+
+/** A style's bitmap as the server keeps it. */
+export const chatStyleBitmapPath = (id: number, file: ChatStyleFile) => `/content/chat-styles/${id}/bitmaps/${file}`;
+
+/** Adds (no id) or changes a chat style; the bundle is built again, and the next line said follows it. */
+export const useSaveChatStyle = () => {
+    const refresh = useRefreshContent();
+
+    return useMutation({
+        mutationFn: ({ id, input }: { id: number | null; input: ChatStyleInput }) => (id === null
+            ? post<{ id: number }>('/content/chat-styles', input)
+            : put<{ id: number }>(`/content/chat-styles/${id}`, input)),
+        onSuccess: refresh,
+    });
+};
+
+/** Takes a chat style away, from the server and the bundle. */
+export const useDeleteChatStyle = () => {
+    const refresh = useRefreshContent();
+
+    return useMutation({
+        mutationFn: (id: number) => api<void>(`/content/chat-styles/${id}`, { method: 'DELETE' }),
+        onSuccess: refresh,
+    });
+};
+
+/**
+ * Takes in a `habbo-free-flow-chat-com` bundle, a file or the address it is published at: each
+ * style's look, and the hotel's say on who may use the ones it has.
+ */
+export const useImportChatStyles = () => {
+    const refresh = useRefreshContent();
+
+    return useMutation({
+        mutationFn: (from: File | string) => {
+            if (typeof from === 'string')
+                return post<ChatStyleImportResult>('/content/chat-styles/import-url', { url: from });
+
+            const form = new FormData();
+
+            form.append('file', from);
+
+            return postForm<ChatStyleImportResult>('/content/chat-styles/import', form);
+        },
         onSuccess: refresh,
     });
 };

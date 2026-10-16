@@ -18,6 +18,10 @@ export interface ClientAssets {
     badge: string;
     /** `image.library.url`: a featured item's promo image is its path under this. */
     imageLibrary: string;
+    /** `asset.bundles.templates`: `%libname%` is the library, as `habbo-free-flow-chat-com`. */
+    templates: string;
+    /** The nitro-imager the panel draws avatars with (`Turbo:Admin:ImagerUrl`), without a trailing slash. */
+    imager: string;
 }
 
 /** The addresses change only when the client is redeployed, so they are asked for once a session. */
@@ -58,6 +62,10 @@ export const furniIconUrl = (assets: ClientAssets | undefined, className: string
 /** A badge's image, by its code. */
 export const badgeUrl = (assets: ClientAssets | undefined, code: string | null) =>
     code?.trim() ? fill(assets?.badge, { badgename: code.trim() }) : null;
+
+/** A template bundle as the client loads it, by its library's name. */
+export const templateBundleUrl = (assets: ClientAssets | undefined, library: string) =>
+    fill(assets?.templates, { libname: library });
 
 /** A catalog featured item's promo image: its path under the client's image library. */
 export const promoImageUrl = (assets: ClientAssets | undefined, path: string) =>

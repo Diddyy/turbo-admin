@@ -1,7 +1,7 @@
 import { type BundleKind, useAssetChecks } from '#/api/bundles';
 
-/** The tab each kind's bundles are listed on. */
-export const KIND_TABS: Record<BundleKind, string> = { furniture: 'furniture', figure: 'clothing&view=bundles', effect: 'effects', pet: 'pets' };
+/** The tab each kind's bundles are listed on; templates are built by the content pages, with no list of their own. */
+export const KIND_TABS: Record<BundleKind, string | null> = { furniture: 'furniture', figure: 'clothing&view=bundles', effect: 'effects', pet: 'pets', template: null };
 
 /** The checks that found something, errors first; with `ids`, only those. */
 export const useFoundChecks = (ids?: string[]) => {

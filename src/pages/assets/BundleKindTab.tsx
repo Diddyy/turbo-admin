@@ -11,6 +11,7 @@ const KIND_CHECKS: Record<BundleKind, string[]> = {
     figure: [],
     effect: [ 'effects-missing' ],
     pet: [ 'pets-missing' ],
+    template: [],
 };
 
 /**

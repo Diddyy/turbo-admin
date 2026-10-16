@@ -82,7 +82,7 @@ const SECTIONS: NavSection[] = [
         label: 'World',
         entries: [
             { label: 'Hotel view', icon: <Landmark />, pages: [ 'hotelView' ], hint: 'The reception players land in' },
-            { label: 'Content', icon: <Puzzle />, pages: [ 'content' ], hint: 'Achievements, badges, groups, pets' },
+            { label: 'Content', icon: <Puzzle />, pages: [ 'content' ], hint: 'Achievements, badges, groups, pets, chat styles' },
             { label: 'Gamedata & assets', icon: <Database />, pages: [ 'gamedata' ], hint: 'Updates from Habbo, furni, clothing, bundles, texts' },
         ],
     },

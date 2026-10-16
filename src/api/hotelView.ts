@@ -32,6 +32,43 @@ export const useHotelViewTexts = (keys: string[]) => useQuery({
     placeholderData: keepPreviousData,
 });
 
+/** One of Habbo's reception values beside the hotel's: a variable's JSON, or a text. */
+export interface HotelViewHabboEntry {
+    key: string;
+    /** Habbo's value. */
+    value: string;
+    /** The hotel's value; null when it has none. */
+    current: string | null;
+}
+
+/** Habbo's reception as its external variables have it now, against the hotel's. */
+export interface HotelViewHabboPreview {
+    domain: string;
+    /** Habbo's reception variables, each written as JSON the way the hotel's is. */
+    variables: HotelViewHabboEntry[];
+    /** The hotel's reception variables Habbo has none of. */
+    missing: string[];
+}
+
+/** Habbo's reception now, read from Habbo when asked (and not again on its own). */
+export const useHabboHotelView = (enabled: boolean) => useQuery({
+    queryKey: [ 'gamedata', 'hotel-view', 'habbo' ],
+    queryFn: () => api<HotelViewHabboPreview>('/gamedata/hotel-view/habbo'),
+    enabled,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    retry: false,
+});
+
+/** Habbo's values of these texts, from the newest of its texts the hotel has found. */
+export const useHabboHotelViewTexts = (keys: string[], enabled: boolean) => useQuery({
+    queryKey: [ 'gamedata', 'hotel-view', 'habbo-texts', keys ],
+    queryFn: () => post<{ texts: HotelViewHabboEntry[]; checkedAt: string | null }>('/gamedata/hotel-view/habbo-texts', { keys }),
+    enabled: enabled && keys.length > 0,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+});
+
 /** Saves the hotel view's variables and texts as one change set, which rolls back as one. */
 export const useSaveHotelView = () => {
     const queryClient = useQueryClient();

@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { Clock, Eye, RotateCcw, Save, Zap } from 'lucide-react';
+import { Clock, CloudDownload, Eye, RotateCcw, Save, Zap } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
@@ -15,6 +15,7 @@ import { BonusRareTab } from './BonusRareTab';
 import { useHotelViewDraft } from './draft';
 import { ExpiringPagesTab } from './ExpiringPagesTab';
 import { GoalsTab } from './GoalsTab';
+import { HabboPull } from './HabboPull';
 import { slotShows } from './hooks';
 import { LookTab } from './LookTab';
 import { backgroundCodes, BG_TIMING, BOTTOM_SLOT, currentCode, fromLocalInput, nowAt, parseSchedule, parseTime, promoCodes, slotKey, SLOTS, toLocalInput, widgetLabel } from './model';
@@ -177,6 +178,7 @@ const HotelViewEditor = ({ variables, canManage }: { variables: VariableEntry[];
     const disabled = !canManage;
     // The view each group was last left on, so going back to a group returns to it.
     const lastViews = useRef<Record<string, string>>({});
+    const [ pulling, setPulling ] = useState(false);
 
     useEffect(() => {
         lastViews.current[group.value] = view.value;
@@ -214,7 +216,9 @@ const HotelViewEditor = ({ variables, canManage }: { variables: VariableEntry[];
                 }}
             >
                 <Badge tone={canManage ? 'accent' : 'neutral'}>{canManage ? 'Can edit' : 'Read only'}</Badge>
+                {canManage && <Button variant="secondary" icon={<CloudDownload />} onClick={() => setPulling(true)}>Pull from Habbo</Button>}
             </PageHeader>
+            <HabboPull open={pulling} onClose={() => setPulling(false)} draft={draft} />
             <PageBody className="flex flex-col gap-4 lg:gap-5">
                 <div className="flex flex-col gap-3">
                     <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4">

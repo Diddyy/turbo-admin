@@ -1,4 +1,4 @@
-import { Activity, Armchair, CloudDownload, Disc3, Gauge, House, KeyRound, Landmark, Languages, MessagesSquare, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
+import { Activity, Armchair, CloudDownload, Disc3, Gauge, House, KeyRound, Landmark, Languages, MessagesSquare, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router';
 
@@ -6,7 +6,7 @@ import { useMe } from '#/api/queries';
 import type { MeResponse } from '#/api/types';
 import type { TabItem } from '#/components/Tabs';
 
-type Need = keyof Pick<MeResponse, 'canViewRooms' | 'canViewPlayers' | 'canViewPermissions' | 'canViewCommandLog' | 'canViewChatlog' | 'canViewCatalog' | 'canViewGamedata' | 'canViewSettings' | 'canViewContent' | 'canResetPasskeys'>;
+type Need = keyof Pick<MeResponse, 'canViewRooms' | 'canViewPlayers' | 'canViewPermissions' | 'canViewCommandLog' | 'canViewChatlog' | 'canViewCatalog' | 'canViewGamedata' | 'canViewSettings' | 'canViewContent' | 'canViewPlugins' | 'canResetPasskeys'>;
 
 /** One page of the panel: where `g` and its letter go, and what the search offers by name. */
 export interface NavItem {
@@ -41,6 +41,7 @@ const PAGES = {
     commandLog: { to: '/command-log', label: 'Command log', icon: <ScrollText />, end: false, key: 'l', needs: 'canViewCommandLog' },
     chatlog: { to: '/chatlog', label: 'Chat log', icon: <MessagesSquare />, end: false, key: 'h', needs: 'canViewChatlog' },
     settings: { to: '/settings', label: 'Settings', icon: <SlidersHorizontal />, end: false, key: 'e', needs: 'canViewSettings' },
+    plugins: { to: '/plugins', label: 'Plugins', icon: <Plug />, end: false, key: 'i', needs: 'canViewPlugins' },
     console: { to: '/console', label: 'Console', icon: <SquareTerminal />, end: false, key: 'o' },
     account: { to: '/account', label: 'Account', icon: <UserRound />, end: false, key: 'a' },
 } satisfies Record<string, NavItem>;
@@ -106,6 +107,7 @@ const SECTIONS: NavSection[] = [
         label: 'Server',
         entries: [
             { label: 'Settings', icon: <SlidersHorizontal />, pages: [ 'settings' ], hint: 'How the server is set up' },
+            { label: 'Plugins', icon: <Plug />, pages: [ 'plugins' ], hint: 'What the server loaded, and turning it off or on' },
             { label: 'Console', icon: <SquareTerminal />, pages: [ 'console' ], hint: 'Run the hotel\'s commands' },
         ],
     },

@@ -36,6 +36,8 @@ export interface MeResponse {
     canViewSettings: boolean;
     /** Holds `admin.content.view`: may see the game's content; changing it needs `content.manage`. */
     canViewContent: boolean;
+    /** Holds `admin.plugins.view`: may see the server's plugins; changing them needs `admin.plugins.manage`. */
+    canViewPlugins: boolean;
 }
 
 export interface DashboardRoom {

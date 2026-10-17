@@ -2,6 +2,7 @@ import { ChevronDown, Square } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 
 import { type AssetJob, useCancelJob } from '#/api/bundles';
+import { type PluginJob, useCancelPluginJob } from '#/api/plugins';
 import { ask } from '#/components/confirm';
 import { toastError } from '#/components/toast';
 import { Badge, type BadgeTone, Button, ErrorNotice, Panel } from '#/components/ui';
@@ -47,16 +48,24 @@ const JobLog = ({ log, running }: { log: string[]; running: boolean }) => {
 };
 
 /**
- * A sync or a publish: how far it has got, what it is doing now, and its log; once it has ended,
- * how. Staff who manage the assets can stop one that runs. `compact` keeps the log folded, for the
- * tabs that show the job above their own content.
+ * A sync, a publish, or a plugin check or update: how far it has got, what it is doing now, and
+ * its log; once it has ended, how. Staff who manage the assets (or the plugins) can stop one that
+ * runs. `compact` keeps the log folded, for the tabs that show the job above their own content.
  */
-const KIND_NAMES: Record<AssetJob['kind'], string> = { sync: 'Sync from Habbo', publish: 'Publish', 'client-build': 'Build from the client' };
+const KIND_NAMES: Record<AssetJob['kind'] | PluginJob['kind'], string> = {
+    sync: 'Sync from Habbo',
+    publish: 'Publish',
+    'client-build': 'Build from the client',
+    'plugin-check': 'Plugin check',
+    'plugin-update': 'Plugin update',
+};
 
-export const JobPanel = ({ job, canManage, compact = false, actions }: { job: AssetJob; canManage: boolean; compact?: boolean; actions?: ReactNode }) => {
+export const JobPanel = ({ job, canManage, compact = false, actions }: { job: AssetJob | PluginJob; canManage: boolean; compact?: boolean; actions?: ReactNode }) => {
     const running = job.status === 'running';
     const [ logOpen, setLogOpen ] = useState(!compact && running);
-    const cancel = useCancelJob();
+    const assetCancel = useCancelJob();
+    const pluginCancel = useCancelPluginJob();
+    const cancel = job.kind.startsWith('plugin-') ? pluginCancel : assetCancel;
     const share = job.total > 0 ? Math.min(1, job.done / job.total) : running ? 0 : 1;
     const when = running ? `started ${fromNow(job.startedAt)}` : job.finishedAt ? `ended ${fromNow(job.finishedAt)}` : `started ${fromNow(job.startedAt)}`;
 

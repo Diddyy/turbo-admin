@@ -1,13 +1,16 @@
-import { Power, PowerOff, RefreshCw, ScanSearch, Upload } from 'lucide-react';
+import { Download, ExternalLink, History, Link2, Pencil, Power, PowerOff, RefreshCw, ScanSearch, Unlink, Upload } from 'lucide-react';
 import { useState } from 'react';
 
-import { type Plugin, type PluginActionResponse, type PluginState, useInstallPlugin, usePlugins, useReloadPlugin, useRescanPlugins, useSetPluginEnabled } from '#/api/plugins';
+import { type Plugin, type PluginActionResponse, type PluginSource, type PluginSourceActionResponse, type PluginState, useCheckPluginSource, useInstallPlugin, usePlugins, useReloadPlugin, useRemovePluginSource, useRescanPlugins, useRollbackPlugin, useSetPluginEnabled, useUpdatePluginSource } from '#/api/plugins';
 import { ask } from '#/components/confirm';
 import { toast, toastError } from '#/components/toast';
 import { Badge, type BadgeTone, Button, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Panel, WarningNotice } from '#/components/ui';
 import { cx } from '#/lib/cx';
 import { fromNow } from '#/lib/time';
+import { JobPanel } from '#/pages/assets/JobPanel';
 import { OpenRow } from '#/pages/gamedata/parts';
+
+import { PluginSourceForm } from './PluginSourceForm';
 
 const STATES: Record<PluginState, { label: string; tone: BadgeTone }> = {
     loaded: { label: 'loaded', tone: 'green' },
@@ -22,6 +25,12 @@ const said = {
     onError: toastError,
 };
 
+/** What a link action came to, as a toast: a refusal is thrown with why. */
+const sourceSaid = {
+    onSuccess: (result: PluginSourceActionResponse) => toast(result.message),
+    onError: toastError,
+};
+
 /** A list of names or numbers, or a dash for none. */
 const Items = ({ items }: { items: (string | number)[] }) =>
     items.length === 0
@@ -29,10 +38,11 @@ const Items = ({ items }: { items: (string | number)[] }) =>
         : <span className="flex flex-wrap gap-1.5">{items.map(item => <code key={item} className="rounded bg-subtle px-1.5 py-0.5 text-xs">{item}</code>)}</span>;
 
 /** A plugin open: its manifest, what it added, why it failed, and what may be done with it. */
-const PluginDetail = ({ plugin, canManage }: { plugin: Plugin; canManage: boolean }) => {
+const PluginDetail = ({ plugin, source, canManage, canInstall }: { plugin: Plugin; source: PluginSource | undefined; canManage: boolean; canInstall: boolean }) => {
     const reload = useReloadPlugin();
     const setEnabled = useSetPluginEnabled();
-    const busy = reload.isPending || setEnabled.isPending;
+    const rollback = useRollbackPlugin();
+    const busy = reload.isPending || setEnabled.isPending || rollback.isPending;
     const known = plugin.name !== null;
 
     return (
@@ -67,6 +77,44 @@ const PluginDetail = ({ plugin, canManage }: { plugin: Plugin; canManage: boolea
                     <>
                         <dt className="text-muted">Loaded</dt>
                         <dd title={plugin.loadedAtUtc}>{fromNow(plugin.loadedAtUtc)}</dd>
+                    </>
+                )}
+                {source && (
+                    <>
+                        <dt className="text-muted">From</dt>
+                        <dd className="font-mono break-all">{source.repository}{source.installedTag && ` ${source.installedTag}`}</dd>
+                    </>
+                )}
+                {known && (
+                    <>
+                        <dt className="text-muted">Earlier versions</dt>
+                        <dd>
+                            {plugin.versions.length === 0
+                                ? <span className="text-muted">none kept</span>
+                                : (
+                                        <span className="flex flex-wrap items-center gap-1.5">
+                                            {plugin.versions.map(version => (
+                                                <span key={version} className="inline-flex items-center gap-1">
+                                                    <code className="rounded bg-subtle px-1.5 py-0.5 text-xs">{version}</code>
+                                                    {canInstall && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            icon={<History />}
+                                                            disabled={busy}
+                                                            aria-label={`Roll back to ${version}`}
+                                                            onClick={() => ask(
+                                                                { title: `Roll ${plugin.name} back to ${version}?`, body: `${plugin.version} is replaced and kept, to go forward again.${source?.autoUpdate ? ' Updating on its own leaves this release alone; a newer one is taken.' : ''}`, confirm: 'Roll back' },
+                                                                () => rollback.mutate({ key: plugin.key, version }, said),
+                                                            )}
+                                                        >
+                                                            Roll back
+                                                        </Button>
+                                                    )}
+                                                </span>
+                                            ))}
+                                        </span>
+                                    )}
+                        </dd>
                     </>
                 )}
             </dl>
@@ -134,6 +182,77 @@ const InstallButton = ({ maxBytes }: { maxBytes: number }) => {
     );
 };
 
+/** One linked repository: what it follows, what is installed from it and what GitHub offers. */
+const SourceRow = ({ source, canManage, canInstall, onEdit }: { source: PluginSource; canManage: boolean; canInstall: boolean; onEdit: () => void }) => {
+    const check = useCheckPluginSource();
+    const update = useUpdatePluginSource();
+    const unlink = useRemovePluginSource();
+    const busy = check.isPending || update.isPending || unlink.isPending;
+
+    return (
+        <li className="flex flex-col gap-2 px-4 py-3">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="font-mono text-sm font-medium break-all">{source.repository}</span>
+                <span className="text-xs text-muted">{source.follow === 'tag' ? `tag ${source.tag}` : 'newest release'}</span>
+                {source.hasToken && <Badge>token set</Badge>}
+                {source.autoUpdate && <Badge>updates on its own</Badge>}
+                {source.updateAvailable && !source.error && <Badge tone="accent">update available: {source.latestTag}</Badge>}
+                {source.error && <Badge tone="red">failed</Badge>}
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+                <span>Installed: <span className="font-mono">{source.installedTag ?? (source.installedVersion ? `version ${source.installedVersion}` : 'nothing yet')}</span>{source.key && <span className="font-mono"> ({source.key})</span>}</span>
+                {source.latestTag && (
+                    <span>
+                        Newest:
+                        {' '}
+                        {source.latestUrl
+                            ? <a href={source.latestUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-mono text-accent hover:underline">{source.latestTag}<ExternalLink className="size-3" /></a>
+                            : <span className="font-mono">{source.latestTag}</span>}
+                        {source.latestPublishedAtUtc && <span title={source.latestPublishedAtUtc}>{`, published ${fromNow(source.latestPublishedAtUtc)}`}</span>}
+                    </span>
+                )}
+                {source.checkedAtUtc && <span title={source.checkedAtUtc}>Checked {fromNow(source.checkedAtUtc)}</span>}
+            </div>
+            {source.error && <ErrorNotice error={new Error(source.error)} />}
+            {canManage && (
+                <div className="flex flex-wrap items-center gap-2">
+                    {canInstall && source.updateAvailable && (
+                        <Button
+                            icon={<Download />}
+                            disabled={busy}
+                            onClick={() => ask(
+                                { title: `Install ${source.latestTag} from ${source.repository}?`, body: 'A plugin is server code: it runs with the hotel\'s own access. The version installed now is kept to roll back to, and put back if the new one does not load.', confirm: 'Update' },
+                                () => update.mutate(source.id, sourceSaid),
+                            )}
+                        >
+                            Update
+                        </Button>
+                    )}
+                    <Button variant="secondary" icon={<RefreshCw />} disabled={busy} onClick={() => check.mutate(source.id, sourceSaid)}>
+                        Check now
+                    </Button>
+                    {canInstall && (
+                        <Button variant="ghost" icon={<Pencil />} disabled={busy} onClick={onEdit}>
+                            Edit
+                        </Button>
+                    )}
+                    <Button
+                        variant="ghost"
+                        icon={<Unlink />}
+                        disabled={busy}
+                        onClick={() => ask(
+                            { title: `Unlink ${source.repository}?`, body: 'It is no longer checked for updates. Its plugin stays installed.', confirm: 'Unlink' },
+                            () => unlink.mutate(source.id, sourceSaid),
+                        )}
+                    >
+                        Unlink
+                    </Button>
+                </div>
+            )}
+        </li>
+    );
+};
+
 /**
  * The server's plugins: each one's manifest, whether it loaded and why not, and the capabilities,
  * packet headers and migrations it added. Staff who manage them reload one, scan the folders
@@ -143,8 +262,12 @@ const InstallButton = ({ maxBytes }: { maxBytes: number }) => {
 export const PluginsPage = () => {
     const { data, error } = usePlugins();
     const rescan = useRescanPlugins();
+    const checkAll = useCheckPluginSource();
     const [ open, setOpen ] = useState<string | null>(null);
+    const [ editing, setEditing ] = useState<PluginSource | 'new' | null>(null);
     const loaded = data?.plugins.filter(plugin => plugin.state === 'loaded').length ?? 0;
+    const canLink = !!data?.canInstall && data.uploadEnabled;
+    const sourceOf = (key: string) => data?.sources.find(source => source.key?.toLowerCase() === key.toLowerCase());
 
     return (
         <>
@@ -154,6 +277,11 @@ export const PluginsPage = () => {
                         Rescan
                     </Button>
                 )}
+                {canLink && (
+                    <Button variant="secondary" icon={<Link2 />} onClick={() => setEditing('new')}>
+                        Link from GitHub
+                    </Button>
+                )}
                 {data?.canInstall && data.uploadEnabled && <InstallButton maxBytes={data.maxUploadBytes} />}
             </PageHeader>
             <PageBody className="flex flex-col gap-4 lg:gap-5">
@@ -161,6 +289,29 @@ export const PluginsPage = () => {
                 {!data && !error && <Loading />}
                 {data?.canInstall && !data.uploadEnabled && (
                     <WarningNotice>Installing plugins from the panel is off. The server allows it with Turbo:Plugin:UploadEnabled.</WarningNotice>
+                )}
+                {data?.job && <JobPanel job={data.job} canManage={data.canManage} compact={data.job.status !== 'running'} />}
+                {data && (data.sources.length > 0 || canLink) && (
+                    <Panel
+                        title="Linked from GitHub"
+                        description={data.checkMinutes > 0 ? `Checked for a new release every ${data.checkMinutes === 1 ? 'minute' : `${data.checkMinutes.toLocaleString()} minutes`}.` : 'Checked only when asked (Turbo:Plugin:UpdateCheckMinutes is 0).'}
+                        actions={data.canManage && data.sources.length > 0 && (
+                            <Button variant="secondary" icon={<RefreshCw />} disabled={checkAll.isPending} onClick={() => checkAll.mutate(null, sourceSaid)}>
+                                Check all
+                            </Button>
+                        )}
+                        className="overflow-clip"
+                    >
+                        {data.sources.length === 0 && <EmptyState>No repository is linked. Link one to install its plugin from its releases and keep it up to date.</EmptyState>}
+                        <ul className="divide-y divide-line">
+                            {data.sources.map(source => (
+                                <SourceRow key={source.id} source={source} canManage={data.canManage} canInstall={canLink} onEdit={() => setEditing(source)} />
+                            ))}
+                        </ul>
+                    </Panel>
+                )}
+                {editing && data && (
+                    <PluginSourceForm source={editing === 'new' ? null : editing} allowed={data.allowedSources} onClose={() => setEditing(null)} />
                 )}
                 {data && (
                     <Panel title="Plugins" description={`${data.plugins.length.toLocaleString()} found, ${loaded.toLocaleString()} loaded.`} className="overflow-clip">
@@ -179,13 +330,14 @@ export const PluginsPage = () => {
                                             </span>
                                             <span className="truncate font-mono text-xs text-muted">{plugin.key}</span>
                                             <span className="flex flex-wrap gap-1.5 sm:justify-end">
+                                                {sourceOf(plugin.key)?.updateAvailable && <Badge tone="accent">update available</Badge>}
                                                 {plugin.dev && <Badge>dev</Badge>}
                                                 <Badge tone={STATES[plugin.state].tone}>{STATES[plugin.state].label}</Badge>
                                             </span>
                                         </div>
                                     )}
                                 >
-                                    <PluginDetail plugin={plugin} canManage={data.canManage} />
+                                    <PluginDetail plugin={plugin} source={sourceOf(plugin.key)} canManage={data.canManage} canInstall={canLink} />
                                 </OpenRow>
                             ))}
                         </ul>

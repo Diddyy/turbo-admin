@@ -1,4 +1,4 @@
-import { Activity, Database, Disc3, Gauge, House, KeyRound, Landmark, MessagesSquare, Puzzle, ScrollText, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
+import { Activity, Database, Disc3, Gauge, House, KeyRound, Landmark, MessagesSquare, Puzzle, ScrollText, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router';
 
@@ -25,6 +25,8 @@ const PAGES = {
     performance: { to: '/performance', label: 'Performance', icon: <Activity />, end: false, key: 'm' },
     players: { to: '/players', label: 'Players', icon: <Users />, end: false, key: 'p', needs: 'canViewPlayers' },
     rooms: { to: '/rooms', label: 'Rooms', icon: <House />, end: false, key: 'r', needs: 'canViewRooms' },
+    groups: { to: '/groups', label: 'Groups', icon: <Shield />, end: false, key: 'b', needs: 'canViewContent' },
+    badgeParts: { to: '/groups/badge-parts', label: 'Badge parts', icon: <Puzzle />, end: false, needs: 'canViewContent' },
     catalog: { to: '/catalog', label: 'Catalog', icon: <Store />, end: false, key: 'c', needs: 'canViewCatalog' },
     vouchers: { to: '/vouchers', label: 'Vouchers', icon: <Ticket />, end: false, key: 'u', needs: 'canViewCatalog' },
     songs: { to: '/catalog/songs', label: 'Songs', icon: <Disc3 />, end: false, needs: 'canViewCatalog' },
@@ -63,6 +65,7 @@ export interface NavSection {
 
 const OVERVIEW: NavEntry = { label: 'Overview', icon: <Gauge />, pages: [ 'dashboard', 'performance' ], hint: 'The hotel now, and how the server runs' };
 const LOGS: NavEntry = { label: 'Logs', icon: <ScrollText />, pages: [ 'commandLog', 'chatlog' ], hint: 'Commands run and chat in rooms' };
+const GROUPS: NavEntry = { label: 'Groups', icon: <Shield />, pages: [ 'groups', 'badgeParts' ], hint: 'Groups, their members, and badge parts' };
 const ACCESS: NavEntry = { label: 'Access', icon: <KeyRound />, pages: [ 'permissions', 'staff' ], hint: 'Groups, nodes and staff passkeys' };
 
 const SECTIONS: NavSection[] = [
@@ -72,6 +75,7 @@ const SECTIONS: NavSection[] = [
         entries: [
             { label: 'Players', icon: <Users />, pages: [ 'players' ], hint: 'Find a player, act on them' },
             { label: 'Rooms', icon: <House />, pages: [ 'rooms' ], hint: 'Rooms, who is in them, their settings' },
+            GROUPS,
         ],
     },
     {
@@ -82,7 +86,7 @@ const SECTIONS: NavSection[] = [
         label: 'World',
         entries: [
             { label: 'Hotel view', icon: <Landmark />, pages: [ 'hotelView' ], hint: 'The reception players land in' },
-            { label: 'Content', icon: <Puzzle />, pages: [ 'content' ], hint: 'Achievements, badges, groups, pets, chat styles' },
+            { label: 'Content', icon: <Puzzle />, pages: [ 'content' ], hint: 'Achievements, badges, pets, chat styles' },
             { label: 'Gamedata & assets', icon: <Database />, pages: [ 'gamedata' ], hint: 'Updates from Habbo, furni, clothing, bundles, texts' },
         ],
     },
@@ -159,10 +163,10 @@ export const useIsActive = () => {
  * The tabs of an entry that holds several pages, for its pages' headers: each a link to its page,
  * the one open now chosen. Only the pages the viewer may open; none at all when that is one.
  */
-export const useHubTabs = (hub: 'overview' | 'logs'): { items: TabItem[]; value: string } | undefined => {
+export const useHubTabs = (hub: 'overview' | 'logs' | 'groups'): { items: TabItem[]; value: string } | undefined => {
     const { data: me } = useMe();
     const { pathname } = useLocation();
-    const entry = { overview: OVERVIEW, logs: LOGS }[hub];
+    const entry = { overview: OVERVIEW, logs: LOGS, groups: GROUPS }[hub];
     const pages = entry.pages.map(name => PAGES[name] as NavItem).filter(page => allowed(me, page));
 
     if (pages.length < 2)

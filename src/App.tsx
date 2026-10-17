@@ -16,6 +16,9 @@ import { ConsolePage } from '#/pages/ConsolePage';
 import { ContentPage } from '#/pages/content/ContentPage';
 import { DashboardPage } from '#/pages/DashboardPage';
 import { AssetsRedirect, GamedataPage } from '#/pages/gamedata/GamedataPage';
+import { BadgePartsPage } from '#/pages/groups/BadgePartsPage';
+import { GroupPage as GuildPage } from '#/pages/groups/GroupPage';
+import { GroupsPage as GuildsPage } from '#/pages/groups/GroupsPage';
 import { HotelViewPage } from '#/pages/hotel-view/HotelViewPage';
 import { GroupPage } from '#/pages/permissions/GroupPage';
 import { GroupsPage } from '#/pages/permissions/GroupsPage';
@@ -45,6 +48,9 @@ export const App = () => (
             <Route path="rooms/:id/settings" element={<RoomSettingsPage />} />
             <Route path="players" element={<PlayerListPage />} />
             <Route path="players/:id" element={<PlayerProfilePage />} />
+            <Route path="groups" element={<GuildsPage />} />
+            <Route path="groups/badge-parts" element={<BadgePartsPage />} />
+            <Route path="groups/:id" element={<GuildPage />} />
             <Route path="catalog" element={<CatalogPage />} />
             <Route path="catalog/songs" element={<SongsPage />} />
             <Route path="vouchers" element={<VouchersPage />} />

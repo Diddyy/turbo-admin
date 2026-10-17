@@ -85,6 +85,9 @@ export const useAchievements = () => useQuery({
     queryFn: () => api<{ achievements: AchievementItem[]; canManage: boolean }>('/content/achievements'),
 });
 
+/** Whether the staff member may change the content (`content.manage`): the achievements' answer says. */
+export const useCanManageContent = () => useAchievements().data?.canManage ?? false;
+
 export const useAchievementDefinition = (id: number | null) => useQuery({
     queryKey: [ 'content', 'achievements', id ],
     queryFn: () => api<{ definitionJson: string }>(`/content/achievements/${id}`),
@@ -235,6 +238,8 @@ export interface GroupItem {
     ownerId: number;
     ownerName: string;
     roomId: number;
+    roomName: string;
+    type: number;
     members: number;
     createdAt: string;
 }

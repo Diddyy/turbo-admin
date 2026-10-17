@@ -1,12 +1,14 @@
 import { CheckCircle2, XCircle } from 'lucide-react';
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
+import { type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes, useState } from 'react';
 import { Link } from 'react-router';
 
+import { useClientAssets } from '#/api/assets';
 import { SearchButton } from '#/layout/CommandPalette';
 import { HotelStatusPill } from '#/layout/HotelStatus';
 import { useActiveNavItem } from '#/layout/nav';
 import { NotificationsBell } from '#/layout/NotificationsBell';
 import { cx } from '#/lib/cx';
+import { avatarUrl } from '#/preview/avatar';
 
 import { BackArrow } from './BackArrow';
 import { HeaderActions } from './HeaderActions';
@@ -352,10 +354,11 @@ export const IconButton = ({ label, icon, tone, className, ...button }: ButtonHT
 );
 
 /** A label and its value, as one line of a settings summary. */
-export const Kv = ({ label, children }: { label: string; children: ReactNode }) => (
+/** A fact and its value on one line; `mono` for a value that is code (a hash, a path, an id). */
+export const Kv = ({ label, mono, children }: { label: string; mono?: boolean; children: ReactNode }) => (
     <div className="flex items-baseline justify-between gap-4 border-t border-line px-4 py-2.5 text-[13px] first:border-t-0">
-        <dt className="text-muted">{label}</dt>
-        <dd className="text-right font-mono">{children}</dd>
+        <dt className="shrink-0 text-muted">{label}</dt>
+        <dd className={cx('min-w-0 text-right', mono && 'font-mono')}>{children}</dd>
     </div>
 );
 
@@ -370,14 +373,24 @@ export const Td = ({ children, className }: { children?: ReactNode; className?: 
 export const EmptyState = ({ children }: { children: ReactNode }) => <p className="px-4 py-6 text-sm text-muted">{children}</p>;
 
 /** A player's initials in a coloured tile, the colour picked from their id so it stays theirs. */
-export const Avatar = ({ id, name, className }: { id: number; name: string; className?: string }) => (
-    <span
-        aria-hidden
-        className={cx('grid size-9 shrink-0 place-items-center rounded-lg font-mono text-xs font-semibold text-[#0a0e13] sm:size-8', className)}
-        style={{ background: AVATAR_COLOURS[Math.abs(id) % AVATAR_COLOURS.length] }}
-    >
-        {name.slice(0, 2).toUpperCase()}
-    </span>
-);
+export const Avatar = ({ id, name, figure, large, className }: { id: number; name: string; figure?: string; large?: boolean; className?: string }) => {
+    const imager = useClientAssets()?.imager;
+    const url = figure ? avatarUrl(imager, figure, { size: large ? 'l' : 'n', headOnly: true, direction: 2, headDirection: 2 }) : null;
+    const [ failed, setFailed ] = useState<string | null>(null);
+    const drawn = url !== null && failed !== url;
+
+    return (
+        <span
+            aria-hidden
+            className={cx('grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg font-mono text-xs font-semibold text-[#0a0e13] sm:size-8', className)}
+            style={{ background: drawn ? `color-mix(in srgb, ${AVATAR_COLOURS[Math.abs(id) % AVATAR_COLOURS.length]} 35%, var(--color-subtle))` : AVATAR_COLOURS[Math.abs(id) % AVATAR_COLOURS.length] }}
+        >
+            {/* Their head as the client draws it, from the hotel's imager; their initials without one. */}
+            {drawn
+                ? <img key={url} src={url} alt="" loading="lazy" className="max-w-none [image-rendering:pixelated]" onError={() => setFailed(url)} />
+                : name.slice(0, 2).toUpperCase()}
+        </span>
+    );
+};
 
 const AVATAR_COLOURS = [ '#7FE3DA', '#B79CFF', '#F2B55A', '#9CC3FF', '#FFB4A2', '#A6E3A1' ];

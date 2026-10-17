@@ -39,7 +39,8 @@ const SOURCES: { value: string; label: string }[] = [
 
 const SOURCE_LABELS: Record<string, string> = { player: 'in game', panel: 'panel', console: 'console' };
 
-const Outcome = ({ outcome }: { outcome: string }) => {
+/** How a command went, as a coloured tag: the log's, and the overview's recent commands. */
+export const Outcome = ({ outcome }: { outcome: string }) => {
     const known = OUTCOMES[outcome];
 
     return <Badge tone={known?.tone ?? 'neutral'}>{known?.label ?? outcome}</Badge>;

@@ -26,7 +26,7 @@ export const RowList = ({ columns, headers, children }: { columns: string; heade
 export const Row = ({ children, className }: { children: ReactNode; className?: string }) => (
     <li
         className={cx(
-            'flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-3 hover:bg-subtle/60 [&>:first-child]:basis-full',
+            'group flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-3 hover:bg-subtle/60 [&>:first-child]:basis-full',
             'sm:col-span-full sm:grid sm:grid-cols-subgrid sm:py-2.5 sm:[&>*]:min-w-0 sm:[&>:first-child]:basis-auto',
             className,
         )}

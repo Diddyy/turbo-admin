@@ -9,6 +9,7 @@ export type PlayerSearchMode = 'name' | 'id' | 'discord';
 export interface PlayerListItem {
     id: number;
     name: string;
+    figure: string;
     motto: string | null;
     isOnline: boolean;
     /** Null for a player who has never logged in. */

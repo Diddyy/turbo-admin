@@ -1,3 +1,4 @@
+import { KeyRound } from 'lucide-react';
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router';
 
@@ -48,7 +49,7 @@ export const LoginPage = () => {
                 <p className="text-sm text-muted">
                     Sign in with your passkey: Face ID, Touch ID, Windows Hello, your phone or a security key.
                 </p>
-                <Button className="w-full" onClick={handleSignIn} disabled={busy || !passkeysSupported()}>
+                <Button className="w-full" icon={<KeyRound />} onClick={handleSignIn} disabled={busy || !passkeysSupported()}>
                     {busy ? 'Waiting for your passkey...' : 'Sign in with passkey'}
                 </Button>
             </div>

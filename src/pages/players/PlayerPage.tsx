@@ -163,7 +163,7 @@ export const PlayerPage = () => {
                                 )}
                                 <Panel title="Profile" className="max-lg:order-first max-lg:w-full">
                                     <div className="flex items-center gap-3 border-b border-line px-4 py-3">
-                                        <Avatar id={player.id} name={player.name} className="size-12 text-sm sm:size-12" />
+                                        <Avatar id={player.id} name={player.name} figure={player.figure} large className="size-12 text-sm sm:size-12" />
                                         <div className="min-w-0">
                                             <div className="truncate font-medium">{player.name}</div>
                                             <div className="truncate text-sm text-muted">{player.motto ?? 'No motto'}</div>
@@ -178,7 +178,7 @@ export const PlayerPage = () => {
                                                     : player.currentRoom.name}
                                             </Kv>
                                         )}
-                                        <Kv label="Last login">{player.lastLoginUtc ? formatDateTime(player.lastLoginUtc) : 'never'}</Kv>
+                                        <Kv label="Last login">{player.lastLoginUtc ? <span title={formatDateTime(player.lastLoginUtc)}>{fromNow(player.lastLoginUtc)}</span> : 'never'}</Kv>
                                         <Kv label="Joined">{formatDateTime(player.joinedUtc)}</Kv>
                                         <Kv label="Gender">{player.gender.toLowerCase()}</Kv>
                                     </dl>

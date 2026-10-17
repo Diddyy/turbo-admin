@@ -140,11 +140,14 @@ export interface RoomListResponse {
 export interface RoomPlayerRef {
     id: number;
     name: string;
+    /** Their figure, to draw them by; empty when it isn't known. */
+    figure: string;
 }
 
 export interface RoomBanItem {
     playerId: number;
     name: string;
+    figure: string;
     expiresAtUtc: string;
 }
 

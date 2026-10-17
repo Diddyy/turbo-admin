@@ -75,8 +75,8 @@ const InsideRow = ({ room, player, run, busy, onMore, linked }: { room: RoomDeta
     const actionable = room.can.moderate && role !== 'owner';
 
     return (
-        <li className="flex min-h-14 items-center gap-3 border-t border-line px-4 py-2 first:border-t-0">
-            <Avatar id={player.id} name={player.name} />
+        <li className="group flex min-h-14 items-center gap-3 border-t border-line px-4 py-2 first:border-t-0">
+            <Avatar id={player.id} name={player.name} figure={player.figure} />
             <div className="min-w-0 flex-1">
                 {linked
                     ? <Link to={`/players/${player.id}`} className="block truncate text-sm font-medium hover:text-accent">{player.name}</Link>
@@ -86,8 +86,8 @@ const InsideRow = ({ room, player, run, busy, onMore, linked }: { room: RoomDeta
             <Badge tone={role === 'owner' ? 'accent' : 'neutral'}>{role}</Badge>
             {actionable && (
                 <>
-                    {/* Kick asks, then acts; muting and banning need a length, so they open the sheet with every action. */}
-                    <div className="hidden gap-1 sm:flex">
+                    {/* Kick asks, then acts; muting and banning need a length, so they open the sheet with every action. With a mouse, they show on the row it is over. */}
+                    <div className="row-actions hidden gap-1 sm:flex">
                         <Button
                             variant="ghost"
                             icon={<UserX />}
@@ -176,13 +176,13 @@ const Rights = ({ room, run, busy }: { room: RoomDetailResponse; run: Run; busy:
         <>
             <ul>
                 {room.rightsHolders.map(player => (
-                    <li key={player.id} className="flex min-h-14 items-center gap-3 border-t border-line px-4 py-2 first:border-t-0">
-                        <Avatar id={player.id} name={player.name} />
+                    <li key={player.id} className="group flex min-h-14 items-center gap-3 border-t border-line px-4 py-2 first:border-t-0">
+                        <Avatar id={player.id} name={player.name} figure={player.figure} />
                         <div className="min-w-0 flex-1 truncate text-sm">
                             {player.name}
                             <span className="ml-2 font-mono text-[11px] text-muted">#{player.id}</span>
                         </div>
-                        {room.can.manageRights && <Button variant="secondary" icon={<Trash2 />} disabled={busy} onClick={() => run(() => calls.removeRights(player.id))}>Remove</Button>}
+                        {room.can.manageRights && <Button variant="ghost" icon={<Trash2 />} className="row-actions" disabled={busy} onClick={() => run(() => calls.removeRights(player.id))}>Remove</Button>}
                     </li>
                 ))}
             </ul>
@@ -218,7 +218,7 @@ const Visitors = ({ roomId, linked }: { roomId: number; linked: boolean }) => {
                             ? <Link to={`/players/${visit.playerId}`} className="font-medium hover:underline">{visit.playerName || `#${visit.playerId}`}</Link>
                             : <span className="font-medium">{visit.playerName || `#${visit.playerId}`}</span>}
                     </div>
-                    <span className="font-mono text-[11px] text-muted" title={formatDateTime(visit.enteredUtc)}>{fromNow(visit.enteredUtc)}</span>
+                    <span className="text-xs text-muted" title={formatDateTime(visit.enteredUtc)}>{fromNow(visit.enteredUtc)}</span>
                 </li>
             ))}
         </ul>
@@ -242,13 +242,13 @@ const Bans = ({ room, run, busy }: { room: RoomDetailResponse; run: Run; busy: b
                 : (
                         <ul>
                             {room.bans.map(ban => (
-                                <li key={ban.playerId} className="flex min-h-14 items-center gap-3 border-t border-line px-4 py-2 first:border-t-0">
-                                    <Avatar id={ban.playerId} name={ban.name} />
+                                <li key={ban.playerId} className="group flex min-h-14 items-center gap-3 border-t border-line px-4 py-2 first:border-t-0">
+                                    <Avatar id={ban.playerId} name={ban.name} figure={ban.figure} />
                                     <div className="min-w-0 flex-1">
                                         <div className="truncate text-sm">{ban.name}</div>
                                         <div className="font-mono text-[11px] text-warn">until {formatDateTime(ban.expiresAtUtc)}</div>
                                     </div>
-                                    {room.can.moderate && <Button variant="secondary" disabled={busy} onClick={() => run(() => calls.unban(ban.playerId))}>Lift</Button>}
+                                    {room.can.moderate && <Button variant="ghost" className="row-actions" disabled={busy} onClick={() => run(() => calls.unban(ban.playerId))}>Lift</Button>}
                                 </li>
                             ))}
                         </ul>
@@ -351,7 +351,7 @@ export const RoomPage = () => {
                                         <Kv label="Door">{doorModeLabel(room.doorMode).toLowerCase()}{room.hasPassword ? ' · password set' : ''}</Kv>
                                         <Kv label="Trading">{tradeModeLabel(room.tradeMode).toLowerCase()}</Kv>
                                         <Kv label="Mute · kick · ban">{[ room.whoCanMute, room.whoCanKick, room.whoCanBan ].map(x => whoLabel(x).toLowerCase()).join(' · ')}</Kv>
-                                        <Kv label="Last active">{formatDateTime(room.lastActiveUtc)}</Kv>
+                                        <Kv label="Last active"><span title={formatDateTime(room.lastActiveUtc)}>{fromNow(room.lastActiveUtc)}</span></Kv>
                                     </dl>
                                 </Panel>
                             </div>

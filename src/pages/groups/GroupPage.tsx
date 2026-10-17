@@ -134,7 +134,7 @@ export const GroupPage = () => {
                                         <Kv label="Owner"><Link to={`/players/${group.ownerId}`} className="text-accent hover:underline">{group.ownerName}</Link></Kv>
                                         <Kv label="Home room"><Link to={`/rooms/${group.roomId}`} className="text-accent hover:underline">{group.roomName}</Link></Kv>
                                         <Kv label="Kind">{GROUP_TYPES[group.type] ?? group.type}</Kv>
-                                        <Kv label="Badge"><span className="select-all">{group.badgeCode}</span></Kv>
+                                        <Kv label="Badge" mono><span className="select-all">{group.badgeCode}</span></Kv>
                                         <Kv label="Created">{formatDateTime(group.createdAt)}</Kv>
                                     </dl>
                                 </Panel>

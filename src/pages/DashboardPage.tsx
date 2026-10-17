@@ -2,6 +2,7 @@ import { ChevronRight, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 
+import { useCommandLog } from '#/api/commandLog';
 import { useLive } from '#/api/live';
 import { useDashboard, useHotelAbilities, useMe } from '#/api/queries';
 import type { AvailabilityPhase } from '#/api/types';
@@ -9,7 +10,9 @@ import { Badge, Button, EmptyState, ErrorNotice, Label, LiveBadge, Loading, Page
 import { phaseOf } from '#/layout/availability';
 import { useHotelSheet } from '#/layout/hotelSheet';
 import { useHubTabs } from '#/layout/nav';
+import { fromNow } from '#/lib/time';
 
+import { Outcome } from './CommandLogPage';
 import { HotelControls } from './HotelControls';
 
 const TONES = { good: 'green', warn: 'amber', bad: 'red' } as const;
@@ -83,6 +86,44 @@ const HotelCard = ({ phase, atUtc }: { phase: AvailabilityPhase; atUtc: string |
     );
 };
 
+const NO_FILTER = { player: '', command: '', outcome: '', source: '' };
+
+/** The last few commands staff and the console ran, newest first: what has been done lately, a click from the whole log. */
+const RecentCommands = () => {
+    const { data, error } = useCommandLog(NO_FILTER, 1);
+    const entries = data?.entries.slice(0, 6);
+
+    return (
+        <Panel
+            title="Recent commands"
+            className="mt-4 overflow-clip lg:mt-5"
+            actions={<Link to="/command-log" className="inline-flex items-center gap-0.5 text-xs font-medium text-accent hover:underline">The whole log <ChevronRight className="size-3.5" /></Link>}
+        >
+            {error && <div className="p-4"><ErrorNotice error={error} /></div>}
+            {!data && !error && <Loading />}
+            {entries?.length === 0 && <EmptyState>No commands yet.</EmptyState>}
+            {entries && entries.length > 0 && (
+                <ul>
+                    {entries.map(entry => (
+                        <li key={entry.id} className="flex min-h-12 items-center gap-3 border-t border-line px-4 py-2 first:border-t-0">
+                            <span className="w-24 shrink-0 truncate text-sm font-medium">
+                                {entry.playerId === 0 ? <span className="font-normal text-muted">console</span> : entry.playerName ?? `#${entry.playerId}`}
+                            </span>
+                            <span className="min-w-0 flex-1 truncate font-mono text-[13px]">
+                                :{entry.command}
+                                {entry.arguments && <span className="text-muted"> {entry.arguments}</span>}
+                            </span>
+                            {/* Most go through: only those that didn't are marked. */}
+                            {entry.outcome !== 'completed' && <span className="shrink-0 max-sm:hidden"><Outcome outcome={entry.outcome} /></span>}
+                            <span className="shrink-0 text-xs text-muted" title={new Date(entry.atUtc).toLocaleString()}>{fromNow(entry.atUtc)}</span>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </Panel>
+    );
+};
+
 /**
  * The hotel at a glance, where the panel opens: who is on, how many rooms are running, how long the
  * server has been up and what it holds, the busiest rooms, and the hotel's controls for those who
@@ -92,6 +133,7 @@ export const DashboardPage = () => {
     const tabs = useHubTabs('overview');
     const { data, error, isPending, dataUpdatedAt } = useDashboard();
     const canViewRooms = useMe().data?.canViewRooms ?? false;
+    const canViewCommandLog = useMe().data?.canViewCommandLog ?? false;
     const canControl = useCanControlHotel();
     const live = useLive(state => state.connected);
     const now = useMinuteClock();
@@ -145,6 +187,7 @@ export const DashboardPage = () => {
                                                 </ul>
                                             )}
                                 </Panel>
+                                {canViewCommandLog && <RecentCommands />}
                             </div>
                             {canControl && (
                                 <div className="min-w-0 flex-[1_1_380px] max-lg:hidden">

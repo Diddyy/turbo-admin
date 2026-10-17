@@ -61,7 +61,7 @@ const Lines = ({ data, highlight, onContext }: { data: ChatlogResponse; highligh
                             icon={<TextSearch />}
                             onClick={() => onContext(entry)}
                             aria-label={`Show in context: ${entry.message}`}
-                            className="h-9 px-2 text-xs max-sm:ml-auto sm:h-8"
+                            className="row-actions h-9 px-2 text-xs max-sm:ml-auto sm:h-8"
                         >
                             In context
                         </Button>

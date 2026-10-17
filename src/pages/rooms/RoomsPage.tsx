@@ -5,10 +5,19 @@ import { useRoomSearch } from '#/api/queries';
 import type { RoomSearchMode } from '#/api/types';
 import { ListToolbar } from '#/components/ListToolbar';
 import { SearchInput } from '#/components/SearchInput';
-import { Button, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Panel, Select, Td, Th } from '#/components/ui';
+import { Badge, type BadgeTone, Button, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Panel, Select, Td, Th } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import { fromNow } from '#/lib/time';
 
 import { doorModeLabel, formatDateTime } from './labels';
+
+const DOOR_TONES: Record<string, BadgeTone> = { Locked: 'amber', Password: 'amber', Invisible: 'neutral' };
+
+/** How a room lets players in: quiet for an open door, a tag for one that isn't. */
+const DoorMode = ({ mode }: { mode: string }) =>
+    mode === 'Open'
+        ? <span className="text-muted">Open</span>
+        : <Badge tone={DOOR_TONES[mode] ?? 'neutral'}>{doorModeLabel(mode)}</Badge>;
 
 const MODES: { value: RoomSearchMode; label: string; placeholder: string }[] = [
     { value: 'name', label: 'Room name', placeholder: 'Part of the room\'s name' },
@@ -119,13 +128,13 @@ export const RoomsPage = () => {
                                                                     {room.categoryName && <div className="text-xs text-muted">{room.categoryName}</div>}
                                                                 </Td>
                                                                 <Td className="text-muted">{room.ownerName}</Td>
-                                                                <Td>{doorModeLabel(room.doorMode)}</Td>
+                                                                <Td><DoorMode mode={room.doorMode} /></Td>
                                                                 <Td className="tabular-nums">
                                                                     {room.isLoaded
                                                                         ? <>{room.population}<span className="text-muted"> / {room.playersMax}</span></>
                                                                         : <span className="text-muted">not loaded</span>}
                                                                 </Td>
-                                                                <Td className="text-muted">{formatDateTime(room.lastActiveUtc)}</Td>
+                                                                <Td className="text-muted"><span title={formatDateTime(room.lastActiveUtc)}>{fromNow(room.lastActiveUtc)}</span></Td>
                                                             </tr>
                                                         ))}
                                                     </tbody>

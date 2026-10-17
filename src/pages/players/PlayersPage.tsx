@@ -24,7 +24,7 @@ const modeOf = (value: string | null): PlayerSearchMode =>
 const Seen = ({ player }: { player: PlayerListItem }) =>
     player.isOnline
         ? <LiveBadge live>ONLINE</LiveBadge>
-        : <span className="font-mono text-[11px] text-muted">{player.lastLoginUtc ? fromNow(player.lastLoginUtc) : 'never'}</span>;
+        : <span className="text-xs text-muted">{player.lastLoginUtc ? fromNow(player.lastLoginUtc) : 'never'}</span>;
 
 /**
  * Every player, by part of their name or by id, most recently logged in first, the online ones
@@ -104,7 +104,7 @@ export const PlayersPage = () => {
                                             {search.data.players.map(player => (
                                                 <li key={player.id} className="border-t border-line first:border-t-0">
                                                     <Link to={`/players/${player.id}`} className="flex min-h-16 items-center gap-3 px-4 py-2.5 active:bg-subtle">
-                                                        <Avatar id={player.id} name={player.name} />
+                                                        <Avatar id={player.id} name={player.name} figure={player.figure} />
                                                         <div className="min-w-0 flex-1">
                                                             <div className="truncate font-medium">{player.name}</div>
                                                             <div className="truncate font-mono text-[11px] text-muted">#{player.id}{player.discordUsername ? ` · @${player.discordUsername}` : player.motto ? ` · ${player.motto}` : ''}</div>
@@ -129,7 +129,7 @@ export const PlayersPage = () => {
                                                         <tr key={player.id} className="hover:bg-subtle/60">
                                                             <Td>
                                                                 <Link to={`/players/${player.id}`} className="flex items-center gap-3">
-                                                                    <Avatar id={player.id} name={player.name} />
+                                                                    <Avatar id={player.id} name={player.name} figure={player.figure} />
                                                                     <span className="min-w-0">
                                                                         <span className="block font-medium hover:text-accent">
                                                                             {player.name}
@@ -142,7 +142,7 @@ export const PlayersPage = () => {
                                                             </Td>
                                                             <Td><Seen player={player} /></Td>
                                                             <Td className="text-right font-mono tabular-nums">{player.roomsOwned}</Td>
-                                                            <Td className="font-mono text-xs text-muted">{fromNow(player.joinedUtc)}</Td>
+                                                            <Td className="text-xs text-muted">{fromNow(player.joinedUtc)}</Td>
                                                         </tr>
                                                     ))}
                                                 </tbody>

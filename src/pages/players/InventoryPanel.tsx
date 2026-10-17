@@ -32,7 +32,7 @@ const Visits = ({ playerId }: { playerId: number }) => {
                 const content = (
                     <>
                         <span className="min-w-0 flex-1 truncate text-sm font-medium">{visit.roomName || `Room #${visit.roomId}`}</span>
-                        <span className="font-mono text-[11px] text-muted" title={formatDateTime(visit.enteredUtc)}>{fromNow(visit.enteredUtc)}</span>
+                        <span className="text-xs text-muted" title={formatDateTime(visit.enteredUtc)}>{fromNow(visit.enteredUtc)}</span>
                     </>
                 );
 

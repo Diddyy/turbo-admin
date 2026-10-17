@@ -55,12 +55,12 @@ export const BundleDetail = ({ bundle, canManage, onClose }: { bundle: { kind: B
                     {data.error && <ErrorNotice error={new Error(data.error)} />}
 
                     <dl className="rounded-xl border border-line">
-                        <Kv label="Revision">{data.revision ?? '-'}</Kv>
-                        <Kv label="Size">{formatBytes(data.size)}</Kv>
-                        <Kv label={data.kind === 'pet' ? 'Pet type' : 'Ids'}>{data.ids.length > 0 ? data.ids.join(', ') : '-'}</Kv>
+                        <Kv label="Revision" mono>{data.revision ?? '-'}</Kv>
+                        <Kv label="Size" mono>{formatBytes(data.size)}</Kv>
+                        <Kv label={data.kind === 'pet' ? 'Pet type' : 'Ids'} mono>{data.ids.length > 0 ? data.ids.join(', ') : '-'}</Kv>
                         <Kv label="Updated"><span title={formatTime(data.updatedAt)}>{fromNow(data.updatedAt)}</span></Kv>
-                        <Kv label="Path"><span className="break-all">{data.path}</span></Kv>
-                        <Kv label="Hash"><span className="text-xs break-all">{data.hash ?? '-'}</span></Kv>
+                        <Kv label="Path" mono><span className="break-all">{data.path}</span></Kv>
+                        <Kv label="Hash" mono><span className="text-xs break-all">{data.hash ?? '-'}</span></Kv>
                     </dl>
 
                     <div>

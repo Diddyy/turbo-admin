@@ -164,6 +164,21 @@ select option {
     display: none;
 }
 
+/*
+ * A row's actions: with a mouse, they show on the row it is over or that holds the focus, so a
+ * long list reads as its content; a touch screen, with no hovering, always shows them.
+ */
+@utility row-actions {
+    @media (hover: hover) {
+        opacity: 0;
+        transition: opacity 150ms;
+
+        :where(.group:hover, .group:focus-within) & {
+            opacity: 1;
+        }
+    }
+}
+
 dialog::backdrop {
     background: rgb(5 8 12 / 0.6);
 }

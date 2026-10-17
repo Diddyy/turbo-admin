@@ -15,7 +15,10 @@ import { CommandLogPage } from '#/pages/CommandLogPage';
 import { ConsolePage } from '#/pages/ConsolePage';
 import { ContentPage } from '#/pages/content/ContentPage';
 import { DashboardPage } from '#/pages/DashboardPage';
-import { AssetsRedirect, GamedataPage } from '#/pages/gamedata/GamedataPage';
+import { LibraryPage } from '#/pages/gamedata/LibraryPage';
+import { PublishPage } from '#/pages/gamedata/PublishPage';
+import { TextsPage } from '#/pages/gamedata/TextsPage';
+import { AssetsRedirect, GamedataRoute } from '#/pages/gamedata/UpdatesPage';
 import { BadgePartsPage } from '#/pages/groups/BadgePartsPage';
 import { GroupPage as GuildPage } from '#/pages/groups/GroupPage';
 import { GroupsPage as GuildsPage } from '#/pages/groups/GroupsPage';
@@ -54,7 +57,10 @@ export const App = () => (
             <Route path="catalog" element={<CatalogPage />} />
             <Route path="catalog/songs" element={<SongsPage />} />
             <Route path="vouchers" element={<VouchersPage />} />
-            <Route path="gamedata" element={<GamedataPage />} />
+            <Route path="gamedata" element={<GamedataRoute />} />
+            <Route path="gamedata/library" element={<LibraryPage />} />
+            <Route path="gamedata/texts" element={<TextsPage />} />
+            <Route path="gamedata/publish" element={<PublishPage />} />
             <Route path="assets" element={<AssetsRedirect />} />
             <Route path="hotel-view" element={<HotelViewPage />} />
             <Route path="content" element={<ContentPage />} />

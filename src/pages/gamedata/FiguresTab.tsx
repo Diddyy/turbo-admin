@@ -5,16 +5,16 @@ import { useSearchParams } from 'react-router';
 import { FILES, type GamedataStatus, useFigureImport, useFigureImportPreview, useGrantClothing, useOwnedClothing } from '#/api/gamedata';
 import { Badge, Button, ErrorNotice, Input, Labeled, Panel, Segmented, SuccessNotice } from '#/components/ui';
 import { BundleList } from '#/pages/assets/BundleList';
-import { BundleUpdate } from '#/pages/assets/BundleUpdate';
 
 import { ClothingEditor } from './ClothingEditor';
+import { WaitingFromHabbo } from './frame';
 import { PaletteEditor } from './PaletteEditor';
 import { FieldChanges, HabboUpdate, ReviewItem } from './parts';
 
 const KIND_NAMES: Record<number, string> = { 0: 'colour', 1: 'kind', 2: 'piece' };
 
 const VIEWS = [
-    { value: 'clothing', label: 'Clothing' },
+    { value: 'clothing', label: 'Pieces' },
     { value: 'colours', label: 'Colours' },
     { value: 'bundles', label: 'Bundles' },
 ];
@@ -85,9 +85,10 @@ const PlayerClothing = () => {
 };
 
 /**
- * The hotel's figure data: the clothing and colours avatars are drawn from, and who may wear
- * each - everyone, club members, or (for a piece sold) its owners. Every figure a player puts
- * on is fitted to these rules; what they may not wear comes off.
+ * The hotel's clothing: the pieces avatars are drawn from and who may wear each - everyone, club
+ * members, or (for a piece sold) its owners - the palettes their colours are picked from, or the
+ * bundles they are drawn from. Every figure a player puts on is fitted to these rules; what they
+ * may not wear comes off.
  */
 export const FiguresTab = ({ status }: { status: GamedataStatus }) => {
     const [ params ] = useSearchParams();
@@ -95,13 +96,12 @@ export const FiguresTab = ({ status }: { status: GamedataStatus }) => {
 
     return (
         <>
-            <HabboFigures status={status} />
-            <BundleUpdate kind="figure" canManage={status.canManage} />
+            <WaitingFromHabbo status={status} data="figures" bundles="figure" />
             <div className="w-full sm:w-80">
                 <Segmented label="Show" value={view} onChange={setView} options={VIEWS} />
             </div>
-            {view === 'colours' && <PaletteEditor canManage={status.canManage} />}
             {view === 'clothing' && <ClothingEditor canManage={status.canManage} />}
+            {view === 'colours' && <PaletteEditor canManage={status.canManage} />}
             {view === 'bundles' && <BundleList kind="figure" canManage={status.canManage} />}
             {status.canManage && view === 'clothing' && <PlayerClothing />}
         </>

@@ -21,13 +21,13 @@ interface Entry {
 
 /** Why a gamedata file is not taken from an upload, and where its content comes from instead. */
 const NOT_TAKEN: Record<GamedataFileKind, string> = {
-    furnidata: 'The hotel builds its furniture data from its definitions: Habbo\'s comes in on the Updates tab, and a definition is changed on the Furniture tab.',
-    productdata: 'The hotel builds its product data from the database: Habbo\'s comes in on the Updates tab, and a product is changed on the Products tab.',
-    figuredata: 'The hotel builds its figure data from the database: Habbo\'s comes in on the Updates tab, and clothing is changed on the Clothing tab.',
-    texts: 'The hotel builds its texts from the database: Habbo\'s come in on the Updates tab, and a text is changed on the Texts tab.',
+    furnidata: 'The hotel builds its furniture data from its definitions: Habbo\'s comes in from Habbo updates, and a definition is changed in the library.',
+    productdata: 'The hotel builds its product data from the database: Habbo\'s comes in from Habbo updates, and a product is changed under Texts & variables.',
+    figuredata: 'The hotel builds its figure data from the database: Habbo\'s comes in from Habbo updates, and clothing is changed in the library.',
+    texts: 'The hotel builds its texts from the database: Habbo\'s come in from Habbo updates, and a text is changed under Texts & variables.',
     figuremap: 'The hotel reads Habbo\'s figure map when it syncs the clothing bundles; upload the clothing libraries themselves.',
     effectmap: 'The hotel reads Habbo\'s effect map when it syncs the effect bundles; upload the effect libraries themselves.',
-    variables: 'A client config is looked at before anything changes: review it in the Variables tab\'s import.',
+    variables: 'A client config is looked at before anything changes: review it in the variables\' import.',
 };
 
 const kindName = (kind: BundleKind) => BUNDLE_KINDS.find(x => x.value === kind)!.one;
@@ -128,7 +128,7 @@ export const UploadDialog = ({ open, onClose, name }: { open: boolean; onClose: 
             giveConfig(configJson(text));
             setEntries([]);
             onClose();
-            void navigate('/gamedata?tab=variables');
+            void navigate('/gamedata/texts?tab=variables');
         });
     };
 

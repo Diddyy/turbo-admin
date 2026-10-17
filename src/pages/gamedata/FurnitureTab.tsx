@@ -1,4 +1,4 @@
-import { Box, ChevronRight } from 'lucide-react';
+import { Box, ChevronRight, RotateCcw } from 'lucide-react';
 import { useDeferredValue, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
@@ -7,13 +7,13 @@ import { type BundleKind, useBundles } from '#/api/bundles';
 import { FILES, FURNITURE_KINDS, FURNITURE_TAGS, type FurnitureListItem, type FurnitureTag, type GamedataStatus, useFurnitureList, useImport, useImportPreview } from '#/api/gamedata';
 import { ListToolbar } from '#/components/ListToolbar';
 import { SearchInput } from '#/components/SearchInput';
-import { Badge, Button, EmptyState, ErrorNotice, Loading, Panel, Select } from '#/components/ui';
+import { Badge, Button, EmptyState, ErrorNotice, Loading, Select } from '#/components/ui';
 import { cx } from '#/lib/cx';
 import { BundleDetail } from '#/pages/assets/BundleDetail';
 import { BundleIcon } from '#/pages/assets/BundleIcon';
-import { BundleUpdate } from '#/pages/assets/BundleUpdate';
 import { formatBytes } from '#/pages/assets/format';
 
+import { WaitingFromHabbo } from './frame';
 import { FurnitureEditor } from './FurnitureEditor';
 import { HabboValuesPanel } from './HabboValuesPanel';
 import { FieldChanges, HabboUpdate, ReviewItem } from './parts';
@@ -172,6 +172,7 @@ const Definitions = ({ status }: { status: GamedataStatus }) => {
 
     return (
         <>
+            {bulk && <HabboValuesPanel onClose={() => setBulk(false)} />}
             <section className="overflow-clip rounded-xl border border-line bg-surface">
                 <ListToolbar
                     watch={[ q, type, tag, page ]}
@@ -201,6 +202,11 @@ const Definitions = ({ status }: { status: GamedataStatus }) => {
                         <option value="floor">Floor</option>
                         <option value="wall">Wall</option>
                     </Select>
+                    {status.canManage && !bulk && (
+                        <Button variant="ghost" icon={<RotateCcw />} title="Put Habbo's values back in chosen fields, for every furniture Habbo has" onClick={() => setBulk(true)}>
+                            Use Habbo's values
+                        </Button>
+                    )}
                 </ListToolbar>
                 <div className="flex flex-wrap gap-1.5 border-b border-line px-3 py-2.5 sm:px-4">
                     <TagChip label="All" count={data?.searched} active={tag === ''} onClick={() => pick('')} />
@@ -263,7 +269,7 @@ const Definitions = ({ status }: { status: GamedataStatus }) => {
                 {!unused && error && <div className="p-4"><ErrorNotice error={error} /></div>}
                 {!unused && !data && !error && <Loading />}
                 {!unused && data && data.items.length === 0 && (
-                    <EmptyState>{q || type || tag ? 'No furniture is like that.' : 'No furniture yet: take Habbo\'s in on the Updates tab.'}</EmptyState>
+                    <EmptyState>{q || type || tag ? 'No furniture is like that.' : 'No furniture yet: take Habbo\'s in from Habbo updates.'}</EmptyState>
                 )}
                 {!unused && data && data.items.length > 0 && (
                     <>
@@ -283,22 +289,6 @@ const Definitions = ({ status }: { status: GamedataStatus }) => {
                 )}
             </section>
 
-            {status.canManage && (
-                bulk
-                    ? <HabboValuesPanel onClose={() => setBulk(false)} />
-                    : (
-                            <Panel>
-                                <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-                                    <div className="min-w-0">
-                                        <h2 className="text-[13px] font-semibold tracking-wide">Use Habbo's values</h2>
-                                        <p className="mt-0.5 text-xs text-muted">Put Habbo's values back in chosen fields, for every furniture Habbo has.</p>
-                                    </div>
-                                    <Button variant="secondary" onClick={() => setBulk(true)}>Choose fields</Button>
-                                </div>
-                            </Panel>
-                        )
-            )}
-
             <FurnitureEditor id={open} canManage={status.canManage} onClose={() => setOpen(null)} />
             <BundleDetail bundle={bundle} canManage={status.canManage} onClose={() => setBundle(null)} />
         </>
@@ -306,15 +296,13 @@ const Definitions = ({ status }: { status: GamedataStatus }) => {
 };
 
 /**
- * The hotel's furniture, definitions and bundles in one: Habbo's newest release and bundles to
- * take in, at the top as every kind's tab has them; then every definition with its bundle and
- * what it lacks (a bundle, an offer) or what waits for it, to open and change - and the bundles
- * no definition is drawn from, as one more filter of the same list.
+ * The hotel's furniture, definitions and bundles in one: what Habbo has waiting, in a line; then
+ * every definition with its bundle and what it lacks (a bundle, an offer), to open and change -
+ * and the bundles no definition is drawn from, as one more filter of the same list.
  */
 export const FurnitureTab = ({ status }: { status: GamedataStatus }) => (
     <>
-        <HabboFurniture status={status} />
-        <BundleUpdate kind="furniture" canManage={status.canManage} />
+        <WaitingFromHabbo status={status} data="furniture" bundles="furniture" />
         <Definitions status={status} />
     </>
 );

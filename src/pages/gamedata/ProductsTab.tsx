@@ -9,6 +9,7 @@ import { SearchInput } from '#/components/SearchInput';
 import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, Panel, Textarea } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
+import { WaitingFromHabbo } from './frame';
 import { FieldChanges, HabboDiffers, HabboUpdate, OpenRow, ReviewItem } from './parts';
 
 /** Habbo's newest product data: what taking it in would change. */
@@ -129,7 +130,7 @@ export const ProductsTab = ({ status }: { status: GamedataStatus }) => {
 
     return (
         <>
-            <HabboProducts status={status} />
+            <WaitingFromHabbo status={status} data="products" />
             <Panel className="overflow-clip">
                 <ListToolbar
                     watch={[ text, page ]}

@@ -1,4 +1,4 @@
-import { Activity, Database, Disc3, Gauge, House, KeyRound, Landmark, MessagesSquare, Puzzle, ScrollText, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
+import { Activity, Armchair, CloudDownload, Disc3, Gauge, House, KeyRound, Landmark, Languages, MessagesSquare, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router';
 
@@ -32,7 +32,10 @@ const PAGES = {
     songs: { to: '/catalog/songs', label: 'Songs', icon: <Disc3 />, end: false, needs: 'canViewCatalog' },
     hotelView: { to: '/hotel-view', label: 'Hotel view', icon: <Landmark />, end: false, key: 'v', needs: 'canViewGamedata' },
     content: { to: '/content', label: 'Content', icon: <Puzzle />, end: false, key: 't', needs: 'canViewContent' },
-    gamedata: { to: '/gamedata', label: 'Gamedata & assets', icon: <Database />, end: false, key: 'g', needs: 'canViewGamedata' },
+    updates: { to: '/gamedata', label: 'Habbo updates', icon: <CloudDownload />, end: true, key: 'g', needs: 'canViewGamedata' },
+    library: { to: '/gamedata/library', label: 'Library', icon: <Armchair />, end: false, key: 'f', needs: 'canViewGamedata' },
+    texts: { to: '/gamedata/texts', label: 'Texts & variables', icon: <Languages />, end: false, key: 'x', needs: 'canViewGamedata' },
+    publish: { to: '/gamedata/publish', label: 'Publish', icon: <Send />, end: false, key: 'n', needs: 'canViewGamedata' },
     permissions: { to: '/permissions', label: 'Permissions', icon: <KeyRound />, end: false, key: 'k', needs: 'canViewPermissions' },
     staff: { to: '/staff', label: 'Staff passkeys', icon: <ShieldCheck />, end: false, key: 's', needs: 'canResetPasskeys' },
     commandLog: { to: '/command-log', label: 'Command log', icon: <ScrollText />, end: false, key: 'l', needs: 'canViewCommandLog' },
@@ -87,7 +90,15 @@ const SECTIONS: NavSection[] = [
         entries: [
             { label: 'Hotel view', icon: <Landmark />, pages: [ 'hotelView' ], hint: 'The reception players land in' },
             { label: 'Content', icon: <Puzzle />, pages: [ 'content' ], hint: 'Achievements, badges, pets, chat styles' },
-            { label: 'Gamedata & assets', icon: <Database />, pages: [ 'gamedata' ], hint: 'Updates from Habbo, furni, clothing, bundles, texts' },
+        ],
+    },
+    {
+        label: 'Gamedata',
+        entries: [
+            { label: 'Habbo updates', icon: <CloudDownload />, pages: [ 'updates' ], hint: 'What Habbo has that the hotel hasn\'t taken in' },
+            { label: 'Library', icon: <Armchair />, pages: [ 'library' ], hint: 'Furniture, clothing, effects and pets' },
+            { label: 'Texts & variables', icon: <Languages />, pages: [ 'texts' ], hint: 'Product data, external texts and variables' },
+            { label: 'Publish', icon: <Send />, pages: [ 'publish' ], hint: 'Publish targets, client files and checks' },
         ],
     },
     { label: 'Staff', entries: [ ACCESS, LOGS ] },

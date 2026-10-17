@@ -105,7 +105,7 @@ export const HabboPull = ({ open, onClose, draft }: { open: boolean; onClose: ()
                             <p className="text-xs text-muted">
                                 {texts?.checkedAt
                                     ? `Texts from Habbo's texts as last found, ${fromNow(texts.checkedAt)}.`
-                                    : texts ? 'Habbo\'s texts haven\'t been found yet: check Habbo on the gamedata Updates tab to bring the promos\' words too.' : 'Reading Habbo\'s texts…'}
+                                    : texts ? 'Habbo\'s texts haven\'t been found yet: check Habbo on the Habbo updates page to bring the promos\' words too.' : 'Reading Habbo\'s texts…'}
                             </p>
                         )}
                         {missing.length > 0 && (

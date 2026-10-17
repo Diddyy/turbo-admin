@@ -57,7 +57,7 @@ const BuiltLibraries = ({ canManage }: { canManage: boolean }) => {
                         <li key={x.library} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2">
                             <span className="min-w-0 font-mono text-sm">{x.library}</span>
                             <Badge>{KINDS[x.kind]}</Badge>
-                            {x.uploaded && <span title="An upload on the Assets tab stands in its place: a build leaves it alone. Delete the upload to have it built."><Badge tone="red">your upload, not built</Badge></span>}
+                            {x.uploaded && <span title="An upload in the library stands in its place: a build leaves it alone. Delete the upload to have it built."><Badge tone="red">your upload, not built</Badge></span>}
                             <span className="ml-auto text-xs text-muted">{[ size(x.size), x.updatedAt ? fromNow(x.updatedAt) : null ].filter(Boolean).join(' · ')}</span>
                         </li>
                     ))}

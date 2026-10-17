@@ -42,7 +42,7 @@ const BundleRow = ({ bundle, pending, onOpen }: { bundle: AssetBundle; pending: 
                 onClick={onOpen}
                 className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-subtle/60 focus-visible:bg-subtle focus-visible:outline-none sm:px-4"
             >
-                <BundleIcon kind={bundle.kind} name={bundle.name} />
+                <BundleIcon kind={bundle.kind} name={bundle.name} ids={bundle.ids} />
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="flex min-w-0 flex-wrap items-center gap-1.5">
                         <span className={cx('truncate font-mono text-[13px] font-medium', !bundle.used && 'text-muted')}>{bundle.name}</span>

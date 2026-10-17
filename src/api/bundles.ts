@@ -279,6 +279,21 @@ export const useBundles = (kind: BundleKind, q: string, status: BundleStatus, pa
     placeholderData: keepPreviousData,
 });
 
+/**
+ * Each effect's icon by its id, as a PNG data url: the `fx_icon_<id>` bitmaps of the hotel's
+ * `habbo-inventory-com` template, as the client's effects view draws them.
+ */
+export const useEffectIcons = (enabled = true) => useQuery({
+    queryKey: [ 'assets', 'effect-icons' ],
+    queryFn: async () => {
+        const { icons } = await api<{ icons: Record<string, string> }>('/assets/effect-icons');
+
+        return new Map(Object.entries(icons).map(([ id, png ]) => [ Number(id), `data:image/png;base64,${png}` ]));
+    },
+    enabled,
+    staleTime: Infinity,
+});
+
 const bundlePath = (kind: BundleKind, name: string) => `/assets/bundles/${kind}/${encodeURIComponent(name)}`;
 
 export const useBundle = (bundle: { kind: BundleKind; name: string } | null) => useQuery({

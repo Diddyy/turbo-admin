@@ -36,7 +36,7 @@ export const BundleDetail = ({ bundle, canManage, onClose }: { bundle: { kind: B
             className="sm:h-fit! sm:max-w-2xl"
             title={bundle && (
                 <span className="flex items-center gap-2.5">
-                    <BundleIcon kind={bundle.kind} name={bundle.name} className="size-8" />
+                    <BundleIcon kind={bundle.kind} name={bundle.name} ids={data?.ids} className="size-8" />
                     <span className="truncate font-mono">{bundle.name}</span>
                 </span>
             )}

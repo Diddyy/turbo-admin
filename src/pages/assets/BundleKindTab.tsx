@@ -12,6 +12,12 @@ const KIND_CHECKS: Record<BundleKind, string[]> = {
     effect: [ 'effects-missing' ],
     pet: [ 'pets-missing' ],
     template: [],
+    room: [],
+    'furni-icon': [],
+    'catalog-icon': [],
+    badge: [],
+    'catalog-image': [],
+    sound: [],
 };
 
 /**

@@ -9,7 +9,12 @@ import { api, API_URL, ApiError, post, put, remove } from './client';
  * from Habbo by a sync, checked against the hotel, and published to where the client loads them
  * (`docs/asset-bundles.md`).
  */
-export type BundleKind = 'furniture' | 'figure' | 'effect' | 'pet' | 'template';
+/**
+ * What an asset file is, which is also the folder it is kept and published in, as Nitro Studio lays
+ * out a hotel's assets: the `.nitro` bundles, then the furniture's icons, the badges, the catalog's
+ * pictures and the trax samples.
+ */
+export type BundleKind = 'furniture' | 'figure' | 'effect' | 'pet' | 'template' | 'room' | 'furni-icon' | 'catalog-icon' | 'badge' | 'catalog-image' | 'sound';
 
 export type BundleStatus = 'all' | 'ok' | 'failed' | 'unused';
 
@@ -21,6 +26,12 @@ export const BUNDLE_KINDS: { value: BundleKind; label: string; one: string }[] =
     { value: 'effect', label: 'Effects', one: 'effect' },
     { value: 'pet', label: 'Pets', one: 'pet' },
     { value: 'template', label: 'Templates', one: 'template' },
+    { value: 'room', label: 'Room', one: 'room library' },
+    { value: 'furni-icon', label: 'Furniture icons', one: 'furniture icon' },
+    { value: 'catalog-icon', label: 'Catalog icons', one: 'catalog icon' },
+    { value: 'badge', label: 'Badges', one: 'badge' },
+    { value: 'catalog-image', label: 'Catalog pictures', one: 'catalog picture' },
+    { value: 'sound', label: 'Trax samples', one: 'trax sample' },
 ];
 
 export const PROTOCOLS: { value: TargetProtocol; label: string }[] = [

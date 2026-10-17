@@ -1,11 +1,11 @@
-import { Box, MessageCircle, PawPrint, Shirt, Sparkles } from 'lucide-react';
+import { Award, Box, FolderTree, Image, LayoutGrid, MessageCircle, Music, PawPrint, Shirt, Sofa, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 
 import { furniIconUrl, useClientAssets } from '#/api/assets';
 import type { BundleKind } from '#/api/bundles';
 import { cx } from '#/lib/cx';
 
-const GLYPHS = { furniture: Box, figure: Shirt, effect: Sparkles, pet: PawPrint, template: MessageCircle } satisfies Record<BundleKind, typeof Box>;
+const GLYPHS = { furniture: Box, figure: Shirt, effect: Sparkles, pet: PawPrint, template: MessageCircle, room: LayoutGrid, 'furni-icon': Sofa, 'catalog-icon': FolderTree, badge: Award, 'catalog-image': Image, sound: Music } satisfies Record<BundleKind, typeof Box>;
 
 /**
  * What a bundle is at a glance: a furniture's icon from the client's host, by the bundle's name;

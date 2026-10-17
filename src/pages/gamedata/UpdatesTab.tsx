@@ -95,6 +95,11 @@ const useCategories = (status: GamedataStatus, canManage: boolean): Category[] =
         bundleCategory('figure', 'figure-bundles', 'Clothing bundles'),
         bundleCategory('effect', 'effect-bundles', 'Effect bundles'),
         bundleCategory('pet', 'pet-bundles', 'Pet bundles'),
+        bundleCategory('room', 'room-bundles', 'Room libraries'),
+        bundleCategory('badge', 'badges', 'Badges'),
+        bundleCategory('catalog-icon', 'catalog-icons', 'Catalog icons'),
+        bundleCategory('catalog-image', 'catalog-pictures', 'Catalog pictures'),
+        bundleCategory('sound', 'trax-samples', 'Trax samples'),
         {
             id: 'products',
             label: 'Product data',

@@ -5,6 +5,7 @@ import { Link, useSearchParams } from 'react-router';
 import { type ServerSetting, SOURCE, useResetSetting, useSaveSetting, useSettingHistory, useSettings } from '#/api/settings';
 import { ask } from '#/components/confirm';
 import { ListToolbar } from '#/components/ListToolbar';
+import { RestartServer } from '#/components/RestartServer';
 import { SearchInput } from '#/components/SearchInput';
 import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, PageBody, PageHeader, Panel, Segmented, Select, Switch, Textarea, WarningNotice } from '#/components/ui';
 import { cx } from '#/lib/cx';
@@ -173,12 +174,12 @@ const SettingEditor = ({ setting, canManage }: { setting: ServerSetting; canMana
                                 variant="ghost"
                                 icon={<RotateCcw />}
                                 disabled={reset.isPending}
-                                onClick={() => ask({ title: `Put ${setting.path} back to what appsettings.json says?`, body: 'It applies after a restart.', confirm: 'Put back' }, () => reset.mutate(setting.path))}
+                                onClick={() => ask({ title: `Put ${setting.path} back to what appsettings.json says?`, body: setting.live ? 'It applies at once.' : 'It applies after a restart.', confirm: 'Put back' }, () => reset.mutate(setting.path))}
                             >
                                 Put back
                             </Button>
                         )}
-                        <span className="text-xs text-muted">Applies after a restart.</span>
+                        <span className="text-xs text-muted">{setting.live ? 'Applies at once.' : 'Applies after a restart.'}</span>
                     </div>
                 </>
             )}
@@ -221,7 +222,10 @@ const SettingsTab = () => {
         <>
             {waiting > 0 && (
                 <WarningNotice>
-                    {waiting === 1 ? 'One setting is' : `${waiting} settings are`} configured differently from what the server is running with. They apply when it restarts.
+                    <div className="flex flex-col gap-3">
+                        <span>{waiting === 1 ? 'One setting is' : `${waiting} settings are`} configured differently from what the server is running with. They apply when it restarts.</span>
+                        <RestartServer compact />
+                    </div>
                 </WarningNotice>
             )}
             <Panel className="overflow-clip">
@@ -248,6 +252,7 @@ const SettingsTab = () => {
                                         <ValueText setting={setting} />
                                         <span className={cx('flex flex-wrap gap-1.5 sm:justify-end')}>
                                             {setting.pendingRestart && <Badge tone="amber">after restart</Badge>}
+                                            {setting.live && <Badge tone="green">applies now</Badge>}
                                             <SourceBadge setting={setting} />
                                         </span>
                                     </div>

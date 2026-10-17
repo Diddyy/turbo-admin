@@ -32,6 +32,8 @@ export interface ServerSetting {
     sourceName: string | null;
     /** Configured differs from running: applies after a restart. */
     pendingRestart: boolean;
+    /** Read as it is used, so a change applies at once (`[LiveSetting]`). */
+    live: boolean;
 }
 
 export interface SettingsResponse {

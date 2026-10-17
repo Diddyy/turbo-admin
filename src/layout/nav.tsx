@@ -154,12 +154,19 @@ const pageAt = (pathname: string) =>
         .filter(page => isAt(pathname, page))
         .sort((a, b) => b.to.length - a.to.length)[0];
 
-/** The navigation's entry for the page open now: a room's pages are under Rooms. None for a page it has none for. */
+/**
+ * The navigation's entry for the page open now: a room's pages are under Rooms. A page with no
+ * entry of its own (the account) stands as its own; none for a path no page holds.
+ */
 export const useActiveNavItem = (): NavEntry | undefined => {
     const { pathname } = useLocation();
     const page = pageAt(pathname);
 
-    return page && SECTIONS.flatMap(section => section.entries).find(entry => entry.pages.some(name => PAGES[name] === page));
+    if (!page)
+        return undefined;
+
+    return SECTIONS.flatMap(section => section.entries).find(entry => entry.pages.some(name => PAGES[name] === page))
+        ?? { label: page.label, icon: page.icon, pages: [], hint: '' };
 };
 
 /** Whether an entry holds the page open now. */
@@ -185,6 +192,7 @@ export const useHubTabs = (hub: 'overview' | 'logs' | 'groups'): { items: TabIte
 
     return {
         items: pages.map(page => ({ value: page.to, label: page.label, icon: page.icon, to: page.to })),
-        value: pages.find(page => isAt(pathname, page))?.to ?? pages[0]!.to,
+        // The deepest that holds the path: Badge parts, not the Groups above it.
+        value: pages.find(page => page === pageAt(pathname))?.to ?? pages[0]!.to,
     };
 };

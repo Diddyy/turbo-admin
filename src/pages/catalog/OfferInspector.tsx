@@ -4,7 +4,7 @@ import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 're
 import { catalogCalls, type CatalogFeaturedItem, type CatalogOffer, type CatalogOfferInput, type CatalogProductInput, type CatalogTree, type EditableKind, FEATURED_MAX, useCatalogEdit } from '#/api/catalog';
 import { ask } from '#/components/confirm';
 import { toast } from '#/components/toast';
-import { Button, ErrorNotice, Input, Labeled, Select, Switch, WarningNotice } from '#/components/ui';
+import { Button, ErrorNotice, Input, Label, Labeled, Select, Switch, WarningNotice } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 import { lengthOf, membershipOfName } from './labels';
@@ -86,7 +86,7 @@ const inputOf = (draft: OfferDraft, original: OfferDraft | null): CatalogOfferIn
 
 const Group = ({ title, children }: { title: string; children: ReactNode }) => (
     <section className="flex flex-col gap-3 border-t border-line px-4 py-4">
-        <h3 className="font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase">{title}</h3>
+        <Label as="h3">{title}</Label>
         {children}
     </section>
 );

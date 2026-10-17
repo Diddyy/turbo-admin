@@ -164,11 +164,11 @@ export const ProductsTab = ({ status }: { status: GamedataStatus }) => {
                                 open={open === item.code}
                                 onToggle={() => setOpen(open === item.code ? null : item.code)}
                                 summary={(
-                                    <div className="grid items-center gap-x-4 gap-y-0.5 sm:grid-cols-[minmax(10rem,16rem)_minmax(8rem,1fr)_2fr_auto]">
+                                    <div className="grid items-center gap-x-4 gap-y-0.5 sm:grid-cols-[minmax(10rem,16rem)_minmax(8rem,1fr)_2fr_7rem]">
                                         <span className="truncate font-mono text-[13px]">{item.code}</span>
                                         <span className="truncate font-medium">{item.name || <span className="text-muted">no name</span>}</span>
                                         <span className="truncate text-muted max-sm:hidden">{item.description}</span>
-                                        <span className="max-sm:hidden"><Origin product={item} /></span>
+                                        <span className="max-sm:hidden sm:justify-self-end"><Origin product={item} /></span>
                                     </div>
                                 )}
                             >

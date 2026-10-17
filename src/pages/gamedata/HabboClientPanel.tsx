@@ -5,7 +5,7 @@ import { type HabboClientBuiltLibrary, useAssetJob, useHabboClientBuild, useStar
 import { type HabboClientRelease, useCheckHabboClient, useForgetHabboClientRelease, useHabboClient } from '#/api/gamedata';
 import { ask } from '#/components/confirm';
 import { toastError } from '#/components/toast';
-import { Badge, Button, ErrorNotice, IconButton, Loading, Panel } from '#/components/ui';
+import { Badge, Button, ErrorNotice, IconButton, Label, Loading, Panel } from '#/components/ui';
 import { fromNow } from '#/lib/time';
 
 const megabytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
@@ -34,7 +34,7 @@ const BuiltLibraries = ({ canManage }: { canManage: boolean }) => {
     return (
         <>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line px-4 pt-3 pb-1">
-                <span className="font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase">Built from the client</span>
+                <Label>Built from the client</Label>
                 <span className="text-xs text-muted">
                     {data.builtAt ? `${data.version}, ${fromNow(data.builtAt)}` : 'not built yet'}
                 </span>
@@ -155,7 +155,7 @@ export const HabboClientPanel = ({ canManage }: { canManage: boolean }) => {
             </ul>
             {data.releases.length > 0 && (
                 <>
-                    <div className="border-t border-line px-4 pt-3 pb-1 font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase">Releases kept</div>
+                    <Label as="div" className="border-t border-line px-4 pt-3 pb-1">Releases kept</Label>
                     <ul className="divide-y divide-line">
                         {data.releases.map(x => <ReleaseRow key={x.version} release={x} followed={x.version === data.followed} canManage={canManage} />)}
                     </ul>

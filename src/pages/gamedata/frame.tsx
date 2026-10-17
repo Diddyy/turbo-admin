@@ -5,6 +5,7 @@ import { Link } from 'react-router';
 import { type AssetsStatus, BUNDLE_KINDS, type BundleKind, useAssetJob, useSyncPreview } from '#/api/bundles';
 import { type GamedataStatus, useFigureImportPreview, useImportPreview, useProductImportPreview, useTextImportPreview } from '#/api/gamedata';
 import { ErrorNotice, Loading } from '#/components/ui';
+import { plural } from '#/lib/plural';
 import { JobPanel } from '#/pages/assets/JobPanel';
 
 import type { useGamedata } from './state';
@@ -30,8 +31,6 @@ export const RunningJob = ({ canManage }: { canManage: boolean }) => {
 type DataKind = 'furniture' | 'figures' | 'products' | 'texts';
 
 const DATA_WORDS: Record<DataKind, string> = { furniture: 'furniture', figures: 'clothing', products: 'product', texts: 'text' };
-
-const plural = (count: number, one: string, many: string) => `${count.toLocaleString()} ${count === 1 ? one : many}`;
 
 /**
  * What Habbo has of this tab's kind that the hotel hasn't taken in, in one line with a way to the

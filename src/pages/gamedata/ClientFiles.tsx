@@ -80,7 +80,7 @@ const FileKey = ({ file, keys, fallback, canManage }: { file: string; keys: stri
 export const ClientFiles = ({ status }: { status: GamedataStatus }) => {
     const rebuild = useRebuild();
     const files: FileRow[] = [
-        { what: 'FurnitureData', file: status.furnitureData, setting: 'furnituredata.url' },
+        { what: 'Furniture data', file: status.furnitureData, setting: 'furnituredata.url' },
         { what: 'Product data', file: status.productData, setting: 'productdata.url' },
         { what: 'External texts', file: status.externalTexts, setting: 'gamedata.urls.externalTexts' },
         { what: 'Figure data', file: status.figureData, setting: 'figuredata.url' },

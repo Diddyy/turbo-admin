@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router';
 
 import { useCommands, useMe } from '#/api/queries';
 import { MIN_SEARCH_LENGTH, type SearchHit, type SearchKind, useSearch } from '#/api/search';
+import { Label } from '#/components/ui';
 import { cx } from '#/lib/cx';
 import { useRecent } from '#/lib/recent';
 
@@ -199,7 +200,7 @@ const Palette = ({ onClose }: { onClose: () => void }) => {
                 )}
                 {groups.map(group => (
                     <div key={group.label} className="pb-1">
-                        <div className="px-4 pt-2 pb-1 font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase">{group.label}</div>
+                        <Label as="div" className="px-4 pt-2 pb-1">{group.label}</Label>
                         {group.hits.map((hit) => {
                             index++;
 

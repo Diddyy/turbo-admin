@@ -56,8 +56,9 @@ export const PageHeader = ({ title, description, back, tabs, children }: PageHea
             </div>
             {/* The tabs' row: its tabs' line sits on the header's own bottom rule. */}
             <div className={cx(PAGE_WIDTH, 'flex h-10 items-end px-2 sm:px-4 lg:px-6', !tabs && 'max-lg:hidden')}>
+                {/* Words only, on every page: the page's icon is the one beside its title. */}
                 {tabs
-                    ? <Tabs value={tabs.value} tabs={tabs.items} onChange={tabs.onChange} rule={false} className="-mb-px min-w-0" />
+                    ? <Tabs value={tabs.value} tabs={tabs.items.map(tab => ({ ...tab, icon: undefined }))} onChange={tabs.onChange} rule={false} className="-mb-px min-w-0" />
                     : <HeaderPage title={title} />}
             </div>
         </header>
@@ -75,16 +76,11 @@ const HeaderIcon = () => {
 };
 
 /** A page with no tabs, where its tabs would be: its name, marked as the chosen tab is. */
-const HeaderPage = ({ title }: { title: string }) => {
-    const entry = useActiveNavItem();
-
-    return (
-        <span className="-mb-px flex shrink-0 items-center gap-1.5 border-b-2 border-accent px-3 py-2 text-sm font-medium whitespace-nowrap text-accent [&>svg]:size-4">
-            {entry?.icon}
-            {title}
-        </span>
-    );
-};
+const HeaderPage = ({ title }: { title: string }) => (
+    <span className="-mb-px flex shrink-0 items-center border-b-2 border-accent px-3 py-2 text-sm font-medium whitespace-nowrap text-accent">
+        {title}
+    </span>
+);
 
 /**
  * A link in a page's header that looks like the header's buttons: from a room or a player to their
@@ -126,9 +122,12 @@ export const Panel = ({ title, description, actions, children, className }: Pane
     </section>
 );
 
-/** A small uppercase label in the mono face: what a number or a group is. */
-export const Label = ({ children, className }: { children: ReactNode; className?: string }) => (
-    <span className={cx('font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase', className)}>{children}</span>
+/**
+ * A small uppercase label in the mono face: what a number or a group is, or (`as="h3"`) the
+ * heading over a group of fields, rows or tiles.
+ */
+export const Label = ({ as: Tag = 'span', children, className }: { as?: 'span' | 'div' | 'h3'; children: ReactNode; className?: string }) => (
+    <Tag className={cx('font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase', className)}>{children}</Tag>
 );
 
 /**
@@ -272,7 +271,8 @@ export const Switch = ({ label, checked, onChange, disabled, hint, className }: 
  * fewer; more belong in a drop-down.
  */
 export const Segmented = ({ label, value, onChange, options, disabled }: { label: string; value: string; onChange: (value: string) => void; options: { value: string; label: string }[]; disabled?: boolean }) => (
-    <div role="radiogroup" aria-label={label} className="flex gap-1 rounded-lg bg-canvas p-1">
+    // Each option as wide as its words at least: the row grows past a narrow box rather than cutting them.
+    <div role="radiogroup" aria-label={label} className="flex min-w-max gap-1 rounded-lg bg-canvas p-1">
         {options.map(option => (
             <button
                 key={option.value}
@@ -282,7 +282,7 @@ export const Segmented = ({ label, value, onChange, options, disabled }: { label
                 disabled={disabled}
                 onClick={() => onChange(option.value)}
                 className={cx(
-                    'h-9 min-w-0 flex-1 truncate rounded-md px-2 text-[13px] font-medium transition-colors',
+                    'h-9 flex-auto rounded-md px-3 text-[13px] font-medium whitespace-nowrap transition-colors',
                     option.value === value ? 'bg-subtle text-ink shadow-[0_0_0_1px_var(--color-line)]' : 'text-muted hover:text-ink',
                 )}
             >

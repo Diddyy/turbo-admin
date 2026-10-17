@@ -73,8 +73,19 @@ export const Tabs = ({ value, tabs, onChange, ids, rule = true, label, className
 
         observer.observe(active);
 
-        // A row wider than a phone scrolls sideways: the chosen tab is brought into sight.
-        active.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        // A row wider than a phone scrolls sideways: the chosen tab is brought into sight. Only the
+        // row moves; scrollIntoView would scroll the window too, to a row below the fold.
+        const row = list.current;
+
+        if (row) {
+            const start = active.offsetLeft;
+            const end = start + active.offsetWidth;
+
+            if (start < row.scrollLeft)
+                row.scrollLeft = start;
+            else if (end > row.scrollLeft + row.clientWidth)
+                row.scrollLeft = end - row.clientWidth;
+        }
 
         return () => observer.disconnect();
     }, [ value, group ]);

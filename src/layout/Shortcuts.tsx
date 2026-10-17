@@ -2,6 +2,8 @@ import { Keyboard } from 'lucide-react';
 import { type ReactNode, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 
+import { Label } from '#/components/ui';
+
 import { usePages } from './nav';
 import { usePalette, useShortcutsSheet } from './palette';
 
@@ -52,7 +54,7 @@ const Sheet = ({ onClose }: { onClose: () => void }) => {
             </header>
             <div className="grid max-h-[70vh] grid-cols-1 gap-6 overflow-y-auto p-5 sm:grid-cols-2">
                 <section className="flex flex-col gap-0.5">
-                    <h3 className="mb-1 font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase">Go to</h3>
+                    <Label as="h3" className="mb-1">Go to</Label>
                     {pages.map(page => (
                         <div key={page.key} className="flex items-center justify-between gap-3 rounded-md px-2 py-1 text-sm hover:bg-subtle">
                             <span className="flex items-center gap-2 [&>svg]:size-4 [&>svg]:text-muted">
@@ -67,7 +69,7 @@ const Sheet = ({ onClose }: { onClose: () => void }) => {
                     ))}
                 </section>
                 <section className="flex flex-col gap-0.5">
-                    <h3 className="mb-1 font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase">Anywhere</h3>
+                    <Label as="h3" className="mb-1">Anywhere</Label>
                     {ELSEWHERE.map(entry => (
                         <div key={entry.label} className="flex items-center justify-between gap-3 rounded-md px-2 py-1 text-sm hover:bg-subtle">
                             <span>{entry.label}</span>

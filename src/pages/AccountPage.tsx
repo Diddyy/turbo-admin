@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { KeyRound, Trash2 } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 
 import { post, remove } from '#/api/client';
@@ -44,7 +45,7 @@ const PasskeyRow = ({ passkey, isLast, onRemoved }: { passkey: AccountPasskey; i
                 {isLast && <div className="mt-1 text-xs text-muted">Your only passkey, so it cannot be removed. Add another first.</div>}
                 {error !== null && <div className="mt-2"><ErrorNotice error={error} /></div>}
             </div>
-            <Button variant="danger" onClick={handleRemove} disabled={busy || isLast}>
+            <Button variant="ghost" icon={<Trash2 />} onClick={handleRemove} disabled={busy || isLast}>
                 Remove
             </Button>
         </li>
@@ -97,7 +98,7 @@ const AddPasskey = ({ onAdded }: { onAdded: () => void }) => {
             </p>
             {error !== null && <ErrorNotice error={error} />}
             <Field label="Name" name="passkey-name" value={name} onChange={event => setName(event.target.value)} maxLength={64} placeholder="Phone" />
-            <Button type="submit" disabled={step !== 'idle' || !passkeysSupported()}>{label}</Button>
+            <Button type="submit" icon={<KeyRound />} disabled={step !== 'idle' || !passkeysSupported()}>{label}</Button>
         </form>
     );
 };

@@ -208,14 +208,13 @@ const HotelViewEditor = ({ variables, canManage }: { variables: VariableEntry[];
         <>
             <PageHeader
                 title="Hotel view"
-                description="The reception players land in: its backgrounds, widget slots and promos, written to the client's external variables"
+                description="The reception players land in: its backgrounds, widget slots and promos"
                 tabs={{
                     items: GROUPS.map(x => ({ value: x.value, label: x.label })),
                     value: group.value,
                     onChange: value => goView(lastViews.current[value] ?? resolveView(value, null).view.value),
                 }}
             >
-                <Badge tone={canManage ? 'accent' : 'neutral'}>{canManage ? 'Can edit' : 'Read only'}</Badge>
                 {canManage && <Button variant="secondary" icon={<CloudDownload />} onClick={() => setPulling(true)}>Pull from Habbo</Button>}
             </PageHeader>
             <HabboPull open={pulling} onClose={() => setPulling(false)} draft={draft} />

@@ -34,7 +34,7 @@ const Figure = ({ figure }: { figure: string }) => (
         </summary>
         <ul className="mt-2 flex flex-wrap gap-1.5">
             {figure.split('.').filter(part => part !== '').map((part, index) => (
-                <li key={index}><Badge className="normal-case">{part}</Badge></li>
+                <li key={index}><Badge className="normal-case!">{part}</Badge></li>
             ))}
         </ul>
         <p className="mt-2 font-mono text-[11px] break-all text-muted select-all">{figure}</p>

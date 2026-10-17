@@ -3,7 +3,7 @@ import { type ReactNode, useState } from 'react';
 
 import { type FurnitureFieldChange, IMPORT_ACTIONS, useCheckHabbo, useImportJob } from '#/api/gamedata';
 import { ask, type Question } from '#/components/confirm';
-import { Badge, type BadgeTone, Button, ErrorNotice, Loading, Panel, WarningNotice } from '#/components/ui';
+import { Badge, type BadgeTone, Button, ErrorNotice, Label, Loading, Panel, WarningNotice } from '#/components/ui';
 import { cx } from '#/lib/cx';
 import { fromNow } from '#/lib/time';
 
@@ -187,7 +187,7 @@ export const HabboDiffers = ({ habbo, onUse, canManage }: { habbo: ReactNode; on
 /** A small heading over a group of fields in an editor. */
 export const FieldGroup = ({ title, children, className }: { title: string; children: ReactNode; className?: string }) => (
     <section className={cx('flex flex-col gap-3', className)}>
-        <h3 className="font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase">{title}</h3>
+        <Label as="h3">{title}</Label>
         {children}
     </section>
 );

@@ -5,7 +5,7 @@ import { type AuditFacet, type AuditFurni, catalogCalls, type CatalogTree, type 
 import { Pagination } from '#/components/Pagination';
 import { SearchInput } from '#/components/SearchInput';
 import { toast, toastError } from '#/components/toast';
-import { Button, ErrorNotice, Input, Loading, Segmented } from '#/components/ui';
+import { Button, ErrorNotice, Input, Label, Loading, Segmented } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 import { PageSelect, type Price, PriceFields } from './fields';
@@ -23,7 +23,7 @@ const FacetList = ({ title, facets, value, none, onChange }: { title: string; fa
     return (
         <section className="flex min-h-0 flex-col gap-1.5">
             <div className="flex items-center justify-between gap-2">
-                <h3 className="font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase">{title}</h3>
+                <Label as="h3">{title}</Label>
                 {value !== '' && <button type="button" onClick={() => onChange('')} className="text-xs text-accent hover:underline">all</button>}
             </div>
             {facets.length > 8 && <Input value={filter} onChange={event => setFilter(event.target.value)} placeholder={`Find a ${title.toLowerCase().replace(/s$/, '')}`} className="h-9 w-full text-xs sm:h-8" />}
@@ -158,7 +158,7 @@ export const MissingFurni = ({ tree, pageId, onOpenPage, onAdded }: MissingFurni
                         setCategory('');
                         setPage(0);
                     }}
-                    options={[ { value: 'missing', label: 'Not sold' }, { value: 'hidden', label: 'Only hidden' } ]}
+                    options={[ { value: 'missing', label: 'No offer' }, { value: 'hidden', label: 'Only hidden' } ]}
                 />
                 <p className="text-xs leading-relaxed text-muted">
                     {scope === 'missing'

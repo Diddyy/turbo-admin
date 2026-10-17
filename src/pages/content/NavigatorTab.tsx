@@ -5,6 +5,7 @@ import { Link } from 'react-router';
 import { type NavigatorFlatCategory, type NavigatorList, useDeleteNavigator, useNavigatorContent, useSaveNavigator } from '#/api/content';
 import { ask } from '#/components/confirm';
 import { Badge, Button, EmptyState, ErrorNotice, IconButton, Input, Labeled, Loading, Panel, Switch } from '#/components/ui';
+import { plural } from '#/lib/plural';
 
 /** A room category's fields as staff write them. */
 const CategoryEditor = ({ category, onDone, canManage }: { category: NavigatorFlatCategory | null; onDone: () => void; canManage: boolean }) => {
@@ -147,7 +148,7 @@ export const NavigatorTab = ({ canManage }: { canManage: boolean }) => {
                             <button type="button" onClick={() => setOpen(open === category.id ? null : category.id)} className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-subtle">
                                 <span className="w-8 text-right font-mono text-xs text-muted">{category.orderNum}</span>
                                 <span className="min-w-0 flex-1 truncate text-sm">{category.name}</span>
-                                <span className="text-xs text-muted">{category.rooms} rooms</span>
+                                <span className="text-xs text-muted">{plural(category.rooms, 'room')}</span>
                                 {!category.visible && <Badge>Hidden</Badge>}
                                 {category.staffOnly && <Badge tone="amber">Staff</Badge>}
                                 {category.minRank > 1 && <Badge>Rank {category.minRank}+</Badge>}
@@ -163,7 +164,7 @@ export const NavigatorTab = ({ canManage }: { canManage: boolean }) => {
                     list="event-categories"
                     title="Event categories"
                     description="What a room event is promoted under. One that events are in can be hidden, and removed once they are over."
-                    rows={data.eventCategories.map(x => ({ id: x.id, name: x.name, visible: x.visible, detail: `${x.events} events` }))}
+                    rows={data.eventCategories.map(x => ({ id: x.id, name: x.name, visible: x.visible, detail: plural(x.events, 'event') }))}
                     placeholder="${roomevent_type_1}"
                     canManage={canManage}
                 />

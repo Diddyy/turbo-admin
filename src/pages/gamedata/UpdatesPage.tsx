@@ -5,7 +5,7 @@ import { Navigate, useSearchParams } from 'react-router';
 import { type AssetsStatus, type BundleKind, useAssetJob, useRelist, useSyncPreview } from '#/api/bundles';
 import { type GamedataStatus, useCheckHabbo, useFigureImportPreview, useImportPreview, useProductImportPreview, useTextImportPreview } from '#/api/gamedata';
 import { toast, toastError } from '#/components/toast';
-import { Badge, type BadgeTone, Button, ErrorNotice, PageBody, PageHeader, Panel } from '#/components/ui';
+import { Badge, type BadgeTone, Button, ErrorNotice, Label, PageBody, PageHeader, Panel } from '#/components/ui';
 import { cx } from '#/lib/cx';
 import { fromNow } from '#/lib/time';
 import { BundleUpdate, SyncButton } from '#/pages/assets/BundleUpdate';
@@ -177,7 +177,7 @@ const WaitingTab = ({ categories, assets, canManage }: { categories: Category[];
                     <nav aria-label="What to update" className="flex flex-col gap-3 border-b border-line p-2 lg:border-r lg:border-b-0">
                         {([ 'Gamedata', 'Bundles' ] as const).map(group => listed.some(x => x.group === group) && (
                             <div key={group} className="flex flex-col gap-0.5">
-                                <span className="px-3 pt-1 pb-1 font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase">{group}</span>
+                                <Label className="px-3 pt-1 pb-1">{group}</Label>
                                 {listed.filter(x => x.group === group).map(category => (
                                     <NavButton key={category.id} category={category} active={category.id === selected.id} onClick={() => setPicked(category.id)} />
                                 ))}

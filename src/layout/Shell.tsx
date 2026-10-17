@@ -39,7 +39,7 @@ const useSignOut = () => {
 };
 
 /** The small square buttons at the sidebar's foot: the theme, signing out. */
-const footButton = 'grid size-9 shrink-0 place-items-center rounded-lg text-muted transition-colors hover:bg-subtle hover:text-ink [&>svg]:size-[18px]';
+const footButton = 'grid size-8 shrink-0 place-items-center rounded-lg text-muted transition-colors hover:bg-subtle hover:text-ink [&>svg]:size-[18px]';
 
 /** Dark, light or as the system is: the chosen one's icon at the sidebar's foot, the three above it when opened. */
 const RailTheme = () => {
@@ -151,11 +151,11 @@ const Rail = () => {
                     </div>
                 ))}
             </div>
-            <div className="flex items-center gap-1 border-t border-line px-3 py-3">
+            <div className="flex items-center gap-0.5 border-t border-line px-3 py-3">
                 <NavLink
                     to="/account"
                     title="Your account"
-                    className={({ isActive: open }) => cx('flex h-9 min-w-0 flex-1 items-center gap-2 rounded-lg px-2 text-[13px] transition-colors', open ? 'bg-subtle text-ink' : 'text-muted hover:bg-subtle hover:text-ink')}
+                    className={({ isActive: open }) => cx('flex h-9 min-w-0 flex-1 items-center gap-2 rounded-lg px-1.5 text-[13px] transition-colors', open ? 'bg-subtle text-ink' : 'text-muted hover:bg-subtle hover:text-ink')}
                 >
                     <span className="grid size-6 shrink-0 place-items-center rounded-md bg-warn font-mono text-[10px] font-semibold text-canvas">{player?.name.slice(0, 2).toUpperCase()}</span>
                     <span className="truncate">{player?.name}</span>

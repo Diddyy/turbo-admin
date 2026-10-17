@@ -8,6 +8,7 @@ import { PhoneLabel, Row, RowList } from '#/components/RowList';
 import type { TabItem } from '#/components/Tabs';
 import { Badge, EmptyState, Labeled, PageHeader, Select } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import { fromNow } from '#/lib/time';
 import { formatDateTime } from '#/pages/rooms/labels';
 
 import { DURATIONS, targetLink } from './links';
@@ -132,7 +133,7 @@ export const AuditTable = ({ entries, showTarget = true }: { entries: AuditEntry
                 >
                     {entries.map((entry, index) => (
                         <Row key={index}>
-                            <span className="text-xs whitespace-nowrap text-muted sm:text-sm">{formatDateTime(entry.atUtc)}</span>
+                            <span className="text-xs whitespace-nowrap text-muted sm:text-sm" title={formatDateTime(entry.atUtc)}>{fromNow(entry.atUtc)}</span>
                             {showTarget && (
                                 <span>
                                     <span className="mr-1.5 text-xs text-muted">{entry.targetType === 'Group' ? 'group' : 'player'}</span>

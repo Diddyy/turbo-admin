@@ -5,7 +5,7 @@ import { catalogImageUrl, useClientAssets } from '#/api/assets';
 import { catalogCalls, type CatalogPageDetail, type CatalogTree, type PageDisplay, useCatalogEdit } from '#/api/catalog';
 import { ask } from '#/components/confirm';
 import { toast } from '#/components/toast';
-import { Button, ErrorNotice, Field, Input, Labeled, Textarea } from '#/components/ui';
+import { Button, ErrorNotice, Field, Input, Label, Labeled, Textarea } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 import { IconPicker } from './IconPicker';
@@ -27,7 +27,7 @@ const DISPLAYS: { value: PageDisplay; icon: ReactNode; hint: string }[] = [
 const Section = ({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }) => (
     <section className="flex flex-col gap-3 border-t border-line px-4 py-4 first:border-t-0">
         <div className="flex items-center justify-between gap-2">
-            <h3 className="font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase">{title}</h3>
+            <Label as="h3">{title}</Label>
             {action}
         </div>
         {children}

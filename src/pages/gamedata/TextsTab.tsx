@@ -150,10 +150,10 @@ export const TextsTab = ({ status }: { status: GamedataStatus }) => {
                                 open={open === item.key}
                                 onToggle={() => setOpen(open === item.key ? null : item.key)}
                                 summary={(
-                                    <div className="grid items-center gap-x-4 gap-y-0.5 sm:grid-cols-[minmax(12rem,22rem)_1fr_auto]">
+                                    <div className="grid items-center gap-x-4 gap-y-0.5 sm:grid-cols-[minmax(12rem,22rem)_1fr_7rem]">
                                         <span className="truncate font-mono text-[13px]">{item.key}</span>
                                         <span className="truncate text-muted">{item.value || '""'}</span>
-                                        <span className="max-sm:hidden">
+                                        <span className="max-sm:hidden sm:justify-self-end">
                                             {item.habbo === null && <Badge tone="green">hotel's own</Badge>}
                                             {item.habbo !== null && item.habbo !== item.value && <Badge tone="amber">changed</Badge>}
                                         </span>

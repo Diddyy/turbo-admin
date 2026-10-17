@@ -54,13 +54,13 @@ const ValueText = ({ setting }: { setting: ServerSetting }) => {
 
 const SourceBadge = ({ setting }: { setting: ServerSetting }) => {
     if (setting.source === SOURCE.environment)
-        return <Badge tone="amber" className="max-w-56 truncate"><Lock className="size-3" /> {setting.sourceName}</Badge>;
+        return <Badge tone="amber" className="max-w-56 truncate normal-case!"><Lock className="size-3" /> {setting.sourceName}</Badge>;
 
     if (setting.source === SOURCE.panel)
         return <Badge tone="accent">set here</Badge>;
 
     if (setting.source === SOURCE.appSettings)
-        return <Badge>{setting.sourceName}</Badge>;
+        return <Badge className="normal-case!">{setting.sourceName}</Badge>;
 
     return null;
 };
@@ -240,7 +240,7 @@ const SettingsTab = () => {
                                 open={open === setting.path}
                                 onToggle={() => setOpen(open === setting.path ? null : setting.path)}
                                 summary={(
-                                    <div className="grid items-center gap-x-4 gap-y-1 sm:grid-cols-[minmax(12rem,20rem)_1fr_auto]">
+                                    <div className="grid items-center gap-x-4 gap-y-1 sm:grid-cols-[minmax(12rem,20rem)_1fr_minmax(0,16rem)]">
                                         <span className="flex min-w-0 items-center gap-1.5 font-mono text-[13px]">
                                             <span className="truncate">{nameOf(setting)}</span>
                                             {setting.startup && <Lock className="size-3.5 shrink-0 text-muted" aria-label="Changed in appsettings.json or the environment" />}

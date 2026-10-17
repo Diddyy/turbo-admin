@@ -2,8 +2,9 @@ import { ArrowRight, ChevronRight, Copy, EyeOff, PackageSearch, Star, Wand2 } fr
 import type { ReactNode } from 'react';
 
 import { type CatalogTree, FRONT_PAGE_LAYOUT, useDuplicates, useUnoffered } from '#/api/catalog';
-import { Button } from '#/components/ui';
+import { Button, Label } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import { plural } from '#/lib/plural';
 
 import { PageIcon } from './PageTree';
 
@@ -152,7 +153,7 @@ export const CatalogHome = ({ tree, busy, compact, onOpenPage, onView, onCreateF
 
             {tabs.length > 0 && (
                 <section className="rounded-xl border border-line bg-surface p-3">
-                    <h3 className="mb-2 px-1 font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase">Tabs</h3>
+                    <Label as="h3" className="mb-2 px-1">Tabs</Label>
                     <ul className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-2">
                         {tabs.map(tab => (
                             <li key={tab.id}>
@@ -160,7 +161,7 @@ export const CatalogHome = ({ tree, busy, compact, onOpenPage, onView, onCreateF
                                     <PageIcon icon={tab.icon} className="size-6" />
                                     <span className="min-w-0 flex-1">
                                         <span className={cx('block truncate text-sm font-medium', tab.display === 'invisible' && 'text-muted')}>{tab.localization}</span>
-                                        <span className="block text-[11px] text-muted">{tree.pages.filter(x => x.parentId === tab.id).length} pages</span>
+                                        <span className="block text-[11px] text-muted">{plural(tree.pages.filter(x => x.parentId === tab.id).length, 'page')}</span>
                                     </span>
                                     {tab.display === 'invisible' && <EyeOff className="size-3.5 text-muted" />}
                                 </button>

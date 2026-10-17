@@ -3,6 +3,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { type NotificationItem, useNotifications, useSeenNotifications } from '#/api/notifications';
+import { Label } from '#/components/ui';
 import { cx } from '#/lib/cx';
 import { fromNow } from '#/lib/time';
 
@@ -84,7 +85,7 @@ export const NotificationsBell = () => {
             {open && (
                 <div className="fixed inset-x-2 top-16 z-40 animate-rise rounded-xl border border-line bg-surface shadow-xl sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-[24rem]">
                     <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-2.5">
-                        <span className="font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase">Notifications</span>
+                        <Label>Notifications</Label>
                         {unread > 0 && (
                             <button
                                 type="button"

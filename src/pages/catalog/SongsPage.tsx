@@ -1,4 +1,4 @@
-import { ArrowLeft, Disc3, Music, Plus, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, Disc3, Plus, Save, Trash2 } from 'lucide-react';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
@@ -182,7 +182,7 @@ export const SongsPage = () => {
                     </div>
                 )}
                 {selected === null && songs.data && songs.data.songs.length > 0 && (
-                    <p className="flex items-center gap-2 px-1 py-6 text-sm text-muted max-lg:hidden"><Music className="size-4" />Pick a song, or <Link to="/catalog" className="text-accent hover:underline">go back to the catalog</Link>.</p>
+                    <Panel className="max-lg:hidden"><EmptyState>Pick a song, or <Link to="/catalog" className="text-accent hover:underline">go back to the catalog</Link>.</EmptyState></Panel>
                 )}
             </PageBody>
         </>

@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 import { Modal } from '#/components/Modal';
 import { SearchInput } from '#/components/SearchInput';
+import { Label } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 import { isKnownLayout, LAYOUT_GROUPS, LAYOUTS } from './layouts';
@@ -38,7 +39,7 @@ export const LayoutPicker = ({ value, open, extra, onPick, onClose }: { value: s
 
                     return items.length > 0 && (
                         <section key={group} className="flex flex-col gap-2">
-                            <h3 className="font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase">{group}</h3>
+                            <Label as="h3">{group}</Label>
                             <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                                 {items.map(layout => (
                                     <li key={layout.code}>
@@ -69,7 +70,7 @@ export const LayoutPicker = ({ value, open, extra, onPick, onClose }: { value: s
                 })}
                 {others.length > 0 && (
                     <section className="flex flex-col gap-2">
-                        <h3 className="font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase">Other</h3>
+                        <Label as="h3">Other</Label>
                         <p className="text-xs text-muted">Codes the hotel lists (Turbo:Admin:CatalogLayouts) or pages use, that this list doesn't describe.</p>
                         <div className="flex flex-wrap gap-1.5">
                             {others.map(code => (

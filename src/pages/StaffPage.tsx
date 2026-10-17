@@ -84,7 +84,7 @@ export const StaffPage = () => {
                     >
                         <form onSubmit={handleSubmit} className="space-y-3 p-4">
                             {error !== null && <ErrorNotice error={error} />}
-                            <Field label="Player name" name="player" value={name} onChange={event => setName(event.target.value)} required />
+                            <Field label="Player name" name="player" value={name} onChange={event => setName(event.target.value)} placeholder="Their name in the hotel" required />
                             <Button type="submit" icon={<KeyRound />} disabled={busy || name.trim() === ''}>Make link</Button>
                         </form>
                     </Panel>

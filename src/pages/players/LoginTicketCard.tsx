@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 import { type IssuedTicket, issueTicket, revokeTicket, useTicketStatus } from '#/api/players';
 import { ask } from '#/components/confirm';
-import { Button, ErrorNotice, Label, Panel, Segmented, Switch, WarningNotice } from '#/components/ui';
+import { Button, ErrorNotice, Label, Labeled, Panel, Select, Switch, WarningNotice } from '#/components/ui';
 import { formatDateTime } from '#/pages/rooms/labels';
 
 const LIFETIMES = [
@@ -97,10 +97,11 @@ export const LoginTicketCard = ({ playerId, playerName }: { playerId: number; pl
                         )
                     : (
                             <>
-                                <div className="flex flex-col gap-1.5">
-                                    <Label>Works for</Label>
-                                    <Segmented label="Works for" value={lifetime} onChange={setLifetime} options={LIFETIMES} />
-                                </div>
+                                <Labeled label="Works for">
+                                    <Select value={lifetime} onChange={event => setLifetime(event.target.value)}>
+                                        {LIFETIMES.map(x => <option key={x.value} value={x.value}>{x.label}</option>)}
+                                    </Select>
+                                </Labeled>
                                 <Switch label="Can be used more than once" checked={reusable} onChange={setReusable} />
                                 {standing && (
                                     <WarningNotice>

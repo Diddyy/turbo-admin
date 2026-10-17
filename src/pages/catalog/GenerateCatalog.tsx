@@ -5,7 +5,7 @@ import { type ReactNode, useState } from 'react';
 import { catalogCalls, type CatalogTree, type GeneratedPage, type GenerateMode, type GeneratePageEdit, type GeneratePlan, type GenerateRequest, type GenerateSection, useCatalogEdit } from '#/api/catalog';
 import { ask } from '#/components/confirm';
 import { celebrate, toast, toastError } from '#/components/toast';
-import { Button, ErrorNotice, Input, Labeled, Switch } from '#/components/ui';
+import { Button, ErrorNotice, Input, Label, Labeled, Switch } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 import { type Price, PriceFields } from './fields';
@@ -238,7 +238,7 @@ export const GenerateCatalog = ({ tree, onDone }: { tree: CatalogTree; onDone: (
 
                 <section className="flex flex-col gap-1">
                     <div className="flex items-center justify-between">
-                        <h3 className="font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase">Tabs</h3>
+                        <Label as="h3">Tabs</Label>
                         <button type="button" onClick={() => changed(setSections)(new Set(sections.size === SECTIONS.length ? [] : SECTIONS.map(x => x.key)))} className="text-xs text-accent hover:underline">
                             {sections.size === SECTIONS.length ? 'none' : 'all'}
                         </button>

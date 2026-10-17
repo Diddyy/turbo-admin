@@ -399,7 +399,7 @@ const EditorBody = ({ definition, canManage }: { definition: FurnitureDefinition
         <div className="flex flex-1 flex-col">
             {/* On a phone the bar and the section are two rows: the bar keeps its own height, the section takes the rest. */}
             <div className="grid flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] md:grid-cols-[12.5rem_minmax(0,1fr)] md:grid-rows-[minmax(0,1fr)]">
-                <nav aria-label="Sections" className="sticky top-0 z-10 flex gap-1 overflow-x-auto border-b border-line bg-surface p-2 md:static md:flex-col md:overflow-visible md:border-r md:border-b-0 md:bg-canvas/50 md:p-3">
+                <nav aria-label="Sections" className="sticky top-0 z-10 flex gap-1 overflow-x-auto border-b border-line bg-surface p-2 sm:static md:flex-col md:overflow-visible md:border-r md:border-b-0 md:bg-canvas/50 md:p-3">
                     {sections.map(target => (
                         <button
                             key={target.id}
@@ -465,7 +465,7 @@ const EditorBody = ({ definition, canManage }: { definition: FurnitureDefinition
                 </div>
             </div>
 
-            <footer className="sticky bottom-0 z-10 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur sm:px-6">
+            <footer className="sticky bottom-0 z-10 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur sm:static sm:px-6">
                 <div className="min-w-0 flex-1 text-[13px]">
                     {update.error
                         ? <span className="text-bad">{update.error instanceof Error ? update.error.message : 'It could not be saved.'}</span>

@@ -322,7 +322,7 @@ export const OfferInspector = ({ tree, pageId, offer, start, featured, onDone, o
             {(save.error ?? remove.error ?? duplicate.error ?? feature.error) && <div className="px-4 pb-3"><ErrorNotice error={save.error ?? remove.error ?? duplicate.error ?? feature.error} /></div>}
 
             {canManage && (
-                <div className="sticky bottom-0 z-10 flex flex-wrap items-center gap-2 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur">
+                <div className="sticky bottom-0 z-10 flex flex-wrap items-center gap-2 border-t border-line bg-surface/95 px-4 py-3 backdrop-blur sm:static">
                     {offer && (
                         <>
                             <Button

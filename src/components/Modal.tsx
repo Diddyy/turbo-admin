@@ -26,13 +26,12 @@ export const Modal = ({ title, open, onClose, children, className }: { title: Re
                         className,
                     )}
                 >
-                    <div className="flex items-center justify-between gap-3 border-b border-line bg-surface px-5 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 sm:sticky sm:top-0 sm:z-20">
+                    <div className="flex items-center justify-between gap-3 border-b border-line bg-surface px-5 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
                         <h2 className="min-w-0 truncate text-sm font-semibold">{title}</h2>
                         <button type="button" onClick={onClose} aria-label="Close" className="grid size-11 shrink-0 place-items-center rounded-lg text-muted hover:bg-subtle hover:text-ink sm:size-9">
                             <X className="size-4" />
                         </button>
                     </div>
-                    {/* On a bigger screen this does not scroll itself, so what sticks in it sticks to the window. */}
                     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-[env(safe-area-inset-bottom)] sm:overflow-visible">{children}</div>
                 </div>
             )}

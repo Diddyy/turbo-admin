@@ -14,13 +14,13 @@
  *
  * Every change builds habbo-free-flow-chat-com again, which the publish targets send with the rest
  * and the client loads as the library's template bundle (`asset.bundles.templates`). The styles'
- * looks come in from a bundle: the hotel's published one, or a file.
+ * looks come in from the chat library of Habbo's HTML client (the release the hotel builds from),
+ * or from a bundle file.
  */
 import { useQueries, useQueryClient } from '@tanstack/react-query';
-import { Cog, Copy, Crown, Dices, Download, Flag, MessageCircle, Palette, Pencil, Save, Shapes, ShieldCheck, ShoppingCart, Sparkles, Star, Trash2, Type, Upload } from 'lucide-react';
+import { Cog, Copy, Crown, Dices, Flag, MessageCircle, MonitorDown, Palette, Pencil, Save, Shapes, ShieldCheck, ShoppingCart, Sparkles, Star, Trash2, Type, Upload } from 'lucide-react';
 import { type ReactNode, useMemo, useState } from 'react';
 
-import { templateBundleUrl, useClientAssets } from '#/api/assets';
 import { CHAT_STYLE_FILES, type ChatStyle, chatStyleBitmapPath, type ChatStyleFile, type ChatStyleInput, useChatStyles, useDeleteChatStyle, useImportChatStyles, useSaveChatStyle } from '#/api/content';
 import { ask } from '#/components/confirm';
 import { SearchInput } from '#/components/SearchInput';
@@ -139,7 +139,6 @@ const StyleCard = ({ style, selected, onPick }: { style: ChatStyle; selected: bo
 export const ChatStylesTab = ({ canManage }: { canManage: boolean }) => {
     const queryClient = useQueryClient();
     const { data, error } = useChatStyles();
-    const assets = useClientAssets();
     const save = useSaveChatStyle();
     const remove = useDeleteChatStyle();
     const take = useImportChatStyles();
@@ -211,7 +210,6 @@ export const ChatStylesTab = ({ canManage }: { canManage: boolean }) => {
     const shown = items.filter(style => (!query || style.assetId.toLowerCase().includes(query) || String(style.clientStyleId) === query)
         && (filter === 'all' || (filter === 'nolook' ? !style.drawable : filter === 'system' ? style.system : !style.system)));
     const drawable = items.filter(x => x.drawable).length;
-    const publishedUrl = templateBundleUrl(assets, LIBRARY);
 
     const change = (next: Partial<Draft>) => setDraft(was => (was ? { ...was, ...next } : was));
     const setRegPoints = (next: Partial<ChatStyleRegPoints>) => setDraft(was => (was ? { ...was, regPoints: { ...was.regPoints, ...next } } : was));
@@ -285,7 +283,7 @@ export const ChatStylesTab = ({ canManage }: { canManage: boolean }) => {
         onError: toastError,
     });
 
-    const takeIn = (source: File | string, what: string) => ask(
+    const takeIn = (source: File | 'client', what: string) => ask(
         {
             title: `Take in ${what}?`,
             body: 'Each style in it gets the bundle\'s look, and one the hotel lacks is added. Who may speak with the hotel\'s own stays as it is set here.',
@@ -311,11 +309,9 @@ export const ChatStylesTab = ({ canManage }: { canManage: boolean }) => {
                     <ToolChoice label="Show" value={filter} options={FILTERS} onChange={setFilter} />
                     {canManage && (
                         <div className="flex flex-wrap gap-2">
-                            {publishedUrl && (
-                                <Button variant="secondary" icon={<Download />} disabled={take.isPending} onClick={() => takeIn(publishedUrl, 'the published bundle')} title={publishedUrl}>
-                                    Published bundle
-                                </Button>
-                            )}
+                            <Button variant="secondary" icon={<MonitorDown />} disabled={take.isPending} onClick={() => takeIn('client', 'the chat styles of Habbo\'s client')} title="The chat library of the release of Habbo's HTML client the hotel builds from">
+                                From Habbo's client
+                            </Button>
                             <label className={cx('inline-flex h-11 cursor-pointer items-center gap-2 rounded-lg border border-line px-3 text-sm font-medium text-ink hover:bg-subtle sm:h-9 [&>svg]:size-4', take.isPending && 'pointer-events-none opacity-60')}>
                                 <Upload />
                                 A bundle file
@@ -353,7 +349,7 @@ export const ChatStylesTab = ({ canManage }: { canManage: boolean }) => {
             </Panel>
             <div className="flex min-w-0 flex-col gap-4">
                 {items.length > 0 && drawable === 0 && (
-                    <WarningNotice>{`No style has a look yet, so nothing is built into ${LIBRARY}. Take in a bundle: the hotel's published one, or a file.`}</WarningNotice>
+                    <WarningNotice>{`No style has a look yet, so nothing is built into ${LIBRARY}. Take them in from Habbo's client, or from a bundle file.`}</WarningNotice>
                 )}
                 <div className="flex flex-col gap-3">
                     <Stage

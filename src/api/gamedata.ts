@@ -260,6 +260,67 @@ const useRefresh = () => {
     return () => void queryClient.invalidateQueries({ queryKey: [ 'gamedata' ] });
 };
 
+/** One of Habbo's environments serving its HTML client, and the release the hotel took from it. */
+export interface HabboClientEnvironment {
+    environment: 'production' | 'sandbox';
+    host: string;
+    checkedAt: string | null;
+    /** The release it serves now; null when it serves none. */
+    liveVersion: string | null;
+    error: string | null;
+    /** The release downloaded from it. */
+    version: string | null;
+    downloading: boolean;
+    downloadError: string | null;
+}
+
+export interface HabboClientRelease {
+    version: string;
+    releaseId: string;
+    url: string;
+    downloadedAt: string;
+    builtAt: string | null;
+    environments: string[];
+    fileCount: number;
+    /** Its `.hab` libraries, by path. */
+    libraries: string[];
+    size: number;
+}
+
+/** Habbo's HTML client: each environment, the releases kept (newest first), and the one built from. */
+export interface HabboClientStatus {
+    environments: HabboClientEnvironment[];
+    releases: HabboClientRelease[];
+    follow: string | null;
+    followed: string | null;
+}
+
+/** Asked again every few seconds while a release downloads. */
+export const useHabboClient = () => useQuery({
+    queryKey: [ 'gamedata', 'habbo-client' ],
+    queryFn: () => api<HabboClientStatus>('/gamedata/habbo/client'),
+    refetchInterval: query => (query.state.data?.environments.some(x => x.downloading) ? 3000 : false),
+});
+
+/** Asks Habbo's environments for their HTML client; a new release downloads in the background. */
+export const useCheckHabboClient = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: () => post<HabboClientStatus>('/gamedata/habbo/client/check'),
+        onSuccess: status => queryClient.setQueryData([ 'gamedata', 'habbo-client' ], status),
+    });
+};
+
+export const useForgetHabboClientRelease = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (version: string) => api<void>(`/gamedata/habbo/client/releases/${encodeURIComponent(version)}`, { method: 'DELETE' }),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: [ 'gamedata', 'habbo-client' ] }),
+    });
+};
+
 export const useCheckHabbo = () => {
     const refresh = useRefresh();
 

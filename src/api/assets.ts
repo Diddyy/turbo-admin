@@ -63,10 +63,6 @@ export const furniIconUrl = (assets: ClientAssets | undefined, className: string
 export const badgeUrl = (assets: ClientAssets | undefined, code: string | null) =>
     code?.trim() ? fill(assets?.badge, { badgename: code.trim() }) : null;
 
-/** A template bundle as the client loads it, by its library's name. */
-export const templateBundleUrl = (assets: ClientAssets | undefined, library: string) =>
-    fill(assets?.templates, { libname: library });
-
 /** A catalog featured item's promo image: its path under the client's image library. */
 export const promoImageUrl = (assets: ClientAssets | undefined, path: string) =>
     path.trim() && assets?.imageLibrary ? `${assets.imageLibrary}${path.trim().replace(/^\/+/, '')}` : null;

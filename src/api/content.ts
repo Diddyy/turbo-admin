@@ -559,9 +559,9 @@ export const useImportChatStyles = () => {
     const refresh = useRefreshContent();
 
     return useMutation({
-        mutationFn: (from: File | string) => {
-            if (typeof from === 'string')
-                return post<ChatStyleImportResult>('/content/chat-styles/import-url', { url: from });
+        mutationFn: (from: File | 'client') => {
+            if (from === 'client')
+                return post<ChatStyleImportResult>('/content/chat-styles/import-client');
 
             const form = new FormData();
 

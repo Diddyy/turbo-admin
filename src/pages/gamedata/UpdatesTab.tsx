@@ -12,6 +12,7 @@ import { JobPanel } from '#/pages/assets/JobPanel';
 
 import { HabboFigures } from './FiguresTab';
 import { HabboFurniture } from './FurnitureTab';
+import { HabboClientPanel } from './HabboClientPanel';
 import { HabboProducts } from './ProductsTab';
 import { HabboTexts } from './TextsTab';
 
@@ -227,6 +228,8 @@ export const UpdatesTab = ({ status, assets }: { status: GamedataStatus; assets:
                     </div>
                 )}
             </Panel>
+
+            <HabboClientPanel canManage={canManage} />
 
             {shownJob && <JobPanel job={shownJob} canManage={canManage} />}
 

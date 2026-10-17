@@ -85,6 +85,8 @@ export const ClientFiles = ({ status }: { status: GamedataStatus }) => {
         { what: 'External texts', file: status.externalTexts, setting: 'gamedata.urls.externalTexts' },
         { what: 'Figure data', file: status.figureData, setting: 'figuredata.url' },
         { what: 'External variables', file: status.externalVariables, setting: 'nitro.config.url' },
+        ...(status.figureMap ? [ { what: 'Figure map', file: status.figureMap, setting: 'figuremap.url' } ] : []),
+        ...(status.effectMap ? [ { what: 'Effect map', file: status.effectMap, setting: 'effectmap.url' } ] : []),
     ];
 
     return (

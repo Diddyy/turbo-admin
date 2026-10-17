@@ -80,13 +80,16 @@ export interface GamedataStatus {
     productData: GamedataFile;
     figureData: GamedataFile;
     externalVariables: GamedataFile;
+    /** The figure and effect maps, built from the clothing and effect bundles. Absent from a server older than the panel. */
+    figureMap?: GamedataFile;
+    effectMap?: GamedataFile;
     /** The variables that carry each file's address, by file (`furnidata_json`): those that follow it. Absent from a server older than the panel. */
     fileKeys?: Record<string, string[]>;
     canManage: boolean;
 }
 
 /** The files the hotel builds, by the name their addresses give them. */
-export const FILES = { furnitureData: 'furnidata_json', productData: 'productdata_json', externalTexts: 'external_flash_texts', figureData: 'figuredata_json', externalVariables: 'external_variables' } as const;
+export const FILES = { furnitureData: 'furnidata_json', productData: 'productdata_json', externalTexts: 'external_flash_texts', figureData: 'figuredata_json', externalVariables: 'external_variables', figureMap: 'figuremap_json', effectMap: 'effectmap_json' } as const;
 
 export interface FurnitureFieldChange {
     field: string;

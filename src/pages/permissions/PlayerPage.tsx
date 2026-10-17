@@ -213,7 +213,9 @@ const PlayerHistory = ({ playerId }: { playerId: number }) => {
 export const PlayerPage = () => {
     const id = Number(useParams().id);
     const { data: player, error, isPending } = usePlayerPermissions(id);
-    const canViewPlayers = useMe().data?.canViewPlayers ?? false;
+    const me = useMe().data;
+    const canViewPlayers = me?.canViewPlayers ?? false;
+    const isMe = player !== undefined && me?.id === player.id;
 
     return (
         <>
@@ -224,6 +226,7 @@ export const PlayerPage = () => {
                 description={player && `Client level ${player.client.securityLevel} (${player.client.securityLevelValue})${player.client.isAmbassador ? ', ambassador' : ''}${player.client.isModerator ? ', moderator' : ''}`}
             >
                 {player && !player.canEdit && <Badge>Read-only</Badge>}
+                {isMe && <Badge tone="amber">You</Badge>}
                 {player && canViewPlayers && (
                     <HeaderLink to={`/players/${player.id}`} icon={<UserRound />}>Profile</HeaderLink>
                 )}
@@ -231,6 +234,11 @@ export const PlayerPage = () => {
             <PageBody>
                 {isPending && <Loading />}
                 {error && <ErrorNotice error={error} />}
+                {isMe && player.canEdit && (
+                    <p className="mb-5 rounded-lg bg-warn-soft px-4 py-3 text-sm text-warn">
+                        These are your own permissions. As a superuser you may change them; every change is logged as a self-edit, and you can't take permissions.superuser from yourself.
+                    </p>
+                )}
                 {player && (
                     <div className="grid gap-5 xl:grid-cols-[22rem_1fr]">
                         <div className="grid content-start gap-5">

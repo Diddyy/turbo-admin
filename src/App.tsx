@@ -30,6 +30,7 @@ import { PlayerPage } from '#/pages/permissions/PlayerPage';
 import { PlayersPage } from '#/pages/permissions/PlayersPage';
 import { PlayerPage as PlayerProfilePage } from '#/pages/players/PlayerPage';
 import { PlayersPage as PlayerListPage } from '#/pages/players/PlayersPage';
+import { PluginsPage } from '#/pages/PluginsPage';
 import { RoomPage } from '#/pages/rooms/RoomPage';
 import { RoomSettingsPage } from '#/pages/rooms/RoomSettingsPage';
 import { RoomsPage } from '#/pages/rooms/RoomsPage';
@@ -65,6 +66,7 @@ export const App = () => (
             <Route path="hotel-view" element={<HotelViewPage />} />
             <Route path="content" element={<ContentPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="plugins" element={<PluginsPage />} />
             <Route path="command-log" element={<CommandLogPage />} />
             <Route path="chatlog" element={<ChatlogPage />} />
             <Route path="console" element={<ConsolePage />} />

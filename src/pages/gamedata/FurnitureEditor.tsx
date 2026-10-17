@@ -396,7 +396,7 @@ const EditorBody = ({ definition, canManage }: { definition: FurnitureDefinition
     const differingIn = (target: Section) => fieldsOf(target).some(differs);
 
     return (
-        <div className="flex min-h-full flex-col">
+        <div className="flex flex-1 flex-col">
             {/* On a phone the bar and the section are two rows: the bar keeps its own height, the section takes the rest. */}
             <div className="grid flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] md:grid-cols-[12.5rem_minmax(0,1fr)] md:grid-rows-[minmax(0,1fr)]">
                 <nav aria-label="Sections" className="sticky top-0 z-10 flex gap-1 overflow-x-auto border-b border-line bg-surface p-2 md:static md:flex-col md:overflow-visible md:border-r md:border-b-0 md:bg-canvas/50 md:p-3">
@@ -499,7 +499,7 @@ export const FurnitureEditor = ({ id, canManage, onClose }: { id: number | null;
         <Modal
             open={id !== null}
             onClose={onClose}
-            className="sm:h-[88dvh]! sm:max-w-6xl"
+            className="sm:min-h-[88dvh] sm:max-w-6xl"
             title={shown
                 ? (
                         <span className="flex min-w-0 items-center gap-2.5">

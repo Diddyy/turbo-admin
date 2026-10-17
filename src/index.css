@@ -168,6 +168,11 @@ dialog::backdrop {
     background: rgb(5 8 12 / 0.6);
 }
 
+/* While a dialog is open the page behind it stays put: only the dialog scrolls. */
+html:has(dialog:modal) {
+    overflow: hidden;
+}
+
 /*
  * No zooming on phones. Double-tap zoom is off here; pinch is stopped in `lib/noZoom.ts`. iOS zooms
  * into any field whose text is under 16px when it is focused, so on phone widths every field is

@@ -43,6 +43,12 @@ It has:
   given a node, and the permission log. Seeing it needs `admin.permissions.view`; changing it
   needs `permissions.manage`, and only for groups and players below your heaviest group, with
   nodes you hold yourself.
+- **Plugins**: every plugin the server found, with its manifest, whether it loaded (and why not),
+  and the capabilities, packet headers and migrations it added. Only shown if you have
+  `admin.plugins.view`. With `admin.plugins.manage`, reload one, rescan the plugin folders and turn
+  one off or on (it stays off across restarts). Installing a plugin package (a zip) also needs
+  `admin.plugins.install`, which no wildcard grants, and the server's `Turbo:Plugin:UploadEnabled`.
+  Every action is in the command log.
 - **Console**: the operator commands you may run (`online`, `whois`, `ban`, `hotelalert`,
   `reload`, ...), run as you, with your permissions. Every use is logged like typing it in the
   hotel, and commands that need confirming ask first.

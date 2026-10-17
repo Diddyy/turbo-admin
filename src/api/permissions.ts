@@ -80,6 +80,8 @@ export interface AuditEntry {
     subject: string;
     value: string | null;
     expiresAtUtc: string | null;
+    /** A player changed their own permissions, which only a superuser may. */
+    self: boolean;
 }
 
 export interface PlayerGroup extends GroupRef {

@@ -159,6 +159,7 @@ export const AuditTable = ({ entries, showTarget = true }: { entries: AuditEntry
                                 {entry.actorId !== null
                                     ? <Link to={`/permissions/players/${entry.actorId}`} className="hover:text-accent">{entry.actorName}</Link>
                                     : <span className="text-muted">console</span>}
+                                {entry.self && <Badge tone="amber" className="ml-1.5">self</Badge>}
                             </span>
                         </Row>
                     ))}

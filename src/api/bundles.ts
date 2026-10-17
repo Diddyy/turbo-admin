@@ -47,7 +47,7 @@ export const DEFAULT_PORTS: Record<TargetProtocol, number> = { folder: 0, ftp: 2
 /** A sync or a publish: one runs at a time, and the last one is kept until the next. */
 export interface AssetJob {
     id: string;
-    kind: 'sync' | 'publish';
+    kind: 'sync' | 'publish' | 'client-build';
     title: string;
     status: 'running' | 'done' | 'failed' | 'canceled';
     phase: string;
@@ -214,6 +214,43 @@ export const useStartSync = () => {
 
     return useMutation({
         mutationFn: () => post<AssetJob>('/assets/sync'),
+        onSuccess: job => started(queryClient, job),
+    });
+};
+
+/** One bundle built from Habbo's HTML client. */
+export interface HabboClientBuiltLibrary {
+    library: string;
+    kind: 'avatar' | 'variable-fx' | 'texts' | 'chat' | 'template' | 'window-manager';
+    /** The hotel's own upload stands in its place: a build leaves it alone. */
+    uploaded: boolean;
+    size: number;
+    updatedAt: string | null;
+}
+
+/** What the hotel builds from Habbo's HTML client, and what the last build said. */
+export interface HabboClientBuild {
+    libraries: HabboClientBuiltLibrary[];
+    version: string | null;
+    builtAt: string | null;
+    /** The window templates' problems: a bitmap no library has, a layout the client would refuse. */
+    problems: string[];
+    /** What the last build left unbuilt, and why. */
+    notes: string[];
+}
+
+/** Read again whenever an asset job ends, as every asset query is. */
+export const useHabboClientBuild = () => useQuery({
+    queryKey: [ 'assets', 'client-build' ],
+    queryFn: () => api<HabboClientBuild>('/gamedata/habbo/client/build'),
+});
+
+/** Builds every library from the client again, as an asset job. */
+export const useStartClientBuild = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: () => post<AssetJob>('/gamedata/habbo/client/build'),
         onSuccess: job => started(queryClient, job),
     });
 };

@@ -480,6 +480,10 @@ export interface ChatStyle {
     owners: number;
     preferring: number;
     drawable: boolean;
+    /** Its look was taken from Habbo's HTML client. */
+    fromClient: boolean;
+    /** Taken from the client, then changed here: a new release leaves it alone unless told to replace it. */
+    changedHere: boolean;
 }
 
 export interface ChatStyleList {
@@ -517,6 +521,8 @@ export interface ChatStyleImportResult {
     added: number;
     updated: number;
     libraryBitmaps: number;
+    /** Styles changed here since they were taken from the client, left as they are. */
+    kept: number;
 }
 
 const CHAT_STYLES = [ 'content', 'chat-styles' ];
@@ -559,9 +565,9 @@ export const useImportChatStyles = () => {
     const refresh = useRefreshContent();
 
     return useMutation({
-        mutationFn: (from: File | 'client') => {
-            if (from === 'client')
-                return post<ChatStyleImportResult>('/content/chat-styles/import-client');
+        mutationFn: (from: File | 'client' | 'client-replace') => {
+            if (from === 'client' || from === 'client-replace')
+                return post<ChatStyleImportResult>(`/content/chat-styles/import-client${from === 'client-replace' ? '?replace=true' : ''}`);
 
             const form = new FormData();
 

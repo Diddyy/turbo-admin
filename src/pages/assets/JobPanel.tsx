@@ -51,6 +51,8 @@ const JobLog = ({ log, running }: { log: string[]; running: boolean }) => {
  * how. Staff who manage the assets can stop one that runs. `compact` keeps the log folded, for the
  * tabs that show the job above their own content.
  */
+const KIND_NAMES: Record<AssetJob['kind'], string> = { sync: 'Sync from Habbo', publish: 'Publish', 'client-build': 'Build from the client' };
+
 export const JobPanel = ({ job, canManage, compact = false, actions }: { job: AssetJob; canManage: boolean; compact?: boolean; actions?: ReactNode }) => {
     const running = job.status === 'running';
     const [ logOpen, setLogOpen ] = useState(!compact && running);
@@ -69,7 +71,7 @@ export const JobPanel = ({ job, canManage, compact = false, actions }: { job: As
                     </Badge>
                 </span>
             )}
-            description={<span title={formatTime(job.finishedAt ?? job.startedAt)}>{job.title === (job.kind === 'sync' ? 'Sync from Habbo' : 'Publish') ? when.charAt(0).toUpperCase() + when.slice(1) : `${job.kind === 'sync' ? 'Sync from Habbo' : 'Publish'}, ${when}`}</span>}
+            description={<span title={formatTime(job.finishedAt ?? job.startedAt)}>{job.title === KIND_NAMES[job.kind] ? when.charAt(0).toUpperCase() + when.slice(1) : `${KIND_NAMES[job.kind]}, ${when}`}</span>}
             actions={(
                 <>
                     {actions}
@@ -78,7 +80,7 @@ export const JobPanel = ({ job, canManage, compact = false, actions }: { job: As
                             variant="danger"
                             icon={<Square />}
                             disabled={cancel.isPending}
-                            onClick={() => ask(`Stop the ${job.kind}? What it has done so far is kept; the next ${job.kind} picks up from there.`, () => cancel.mutate(undefined, { onError: toastError }))}
+                            onClick={() => ask(`Stop the ${KIND_NAMES[job.kind].toLowerCase()}? What it has done so far is kept; the next one picks up from there.`, () => cancel.mutate(undefined, { onError: toastError }))}
                         >
                             Stop
                         </Button>

@@ -1,6 +1,7 @@
-import { Download, MonitorDown, RefreshCw, Trash2 } from 'lucide-react';
+import { Download, Hammer, MonitorDown, RefreshCw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
+import { type HabboClientBuiltLibrary, useAssetJob, useHabboClientBuild, useStartClientBuild } from '#/api/bundles';
 import { type HabboClientRelease, useCheckHabboClient, useForgetHabboClientRelease, useHabboClient } from '#/api/gamedata';
 import { ask } from '#/components/confirm';
 import { toastError } from '#/components/toast';
@@ -8,6 +9,76 @@ import { Badge, Button, ErrorNotice, IconButton, Loading, Panel } from '#/compon
 import { fromNow } from '#/lib/time';
 
 const megabytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+
+const size = (bytes: number) => (bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : megabytes(bytes));
+
+const KINDS: Record<HabboClientBuiltLibrary['kind'], string> = {
+    avatar: 'avatar data',
+    'variable-fx': 'Variable FX',
+    texts: 'texts',
+    chat: 'chat styles',
+    template: 'templates',
+    'window-manager': 'templates and theme',
+};
+
+/** The bundles built from the release followed, what the last build left out, and the templates' problems. */
+const BuiltLibraries = ({ canManage }: { canManage: boolean }) => {
+    const { data } = useHabboClientBuild();
+    const { data: job } = useAssetJob();
+    const build = useStartClientBuild();
+    const [ showProblems, setShowProblems ] = useState(false);
+
+    if (!data)
+        return null;
+
+    return (
+        <>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line px-4 pt-3 pb-1">
+                <span className="font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase">Built from the client</span>
+                <span className="text-xs text-muted">
+                    {data.builtAt ? `${data.version}, ${fromNow(data.builtAt)}` : 'not built yet'}
+                </span>
+                {canManage && (
+                    <Button
+                        variant="secondary"
+                        icon={<Hammer />}
+                        className="ml-auto"
+                        disabled={build.isPending || job?.status === 'running'}
+                        title="Builds every library from the release followed again, whether it changed or not"
+                        onClick={() => build.mutate(undefined, { onError: toastError })}
+                    >
+                        Build now
+                    </Button>
+                )}
+            </div>
+            {data.libraries.length > 0 && (
+                <ul className="divide-y divide-line">
+                    {data.libraries.map(x => (
+                        <li key={x.library} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2">
+                            <span className="min-w-0 font-mono text-sm">{x.library}</span>
+                            <Badge>{KINDS[x.kind]}</Badge>
+                            {x.uploaded && <span title="An upload on the Assets tab stands in its place: a build leaves it alone. Delete the upload to have it built."><Badge tone="red">your upload, not built</Badge></span>}
+                            <span className="ml-auto text-xs text-muted">{[ size(x.size), x.updatedAt ? fromNow(x.updatedAt) : null ].filter(Boolean).join(' · ')}</span>
+                        </li>
+                    ))}
+                </ul>
+            )}
+            {data.notes.length > 0 && (
+                <ul className="border-t border-line px-4 py-2 text-xs text-muted">
+                    {data.notes.map(x => <li key={x}>{x}</li>)}
+                </ul>
+            )}
+            {data.problems.length > 0 && (
+                <div className="border-t border-line px-4 py-2 text-xs">
+                    <button type="button" className="text-muted hover:text-accent" onClick={() => setShowProblems(!showProblems)}>
+                        {`${data.problems.length} template ${data.problems.length === 1 ? 'problem' : 'problems'}: a bitmap no library has, or a layout the client would refuse`}
+                    </button>
+                    {showProblems && <ul className="mt-1 font-mono text-[11px] leading-5 text-muted">{data.problems.map(x => <li key={x}>{x}</li>)}</ul>}
+                </div>
+            )}
+        </>
+    );
+};
 
 /** A release kept, and - opened - the client libraries in it. */
 const ReleaseRow = ({ release, followed, canManage }: { release: HabboClientRelease; followed: boolean; canManage: boolean }) => {
@@ -90,6 +161,7 @@ export const HabboClientPanel = ({ canManage }: { canManage: boolean }) => {
                     </ul>
                 </>
             )}
+            <BuiltLibraries canManage={canManage} />
         </Panel>
     );
 };

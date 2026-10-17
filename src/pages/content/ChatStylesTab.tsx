@@ -22,7 +22,7 @@ import { Cog, Copy, Crown, Dices, Flag, MessageCircle, MonitorDown, Palette, Pen
 import { type ReactNode, useMemo, useState } from 'react';
 
 import { CHAT_STYLE_FILES, type ChatStyle, chatStyleBitmapPath, type ChatStyleFile, type ChatStyleInput, useChatStyles, useDeleteChatStyle, useImportChatStyles, useSaveChatStyle } from '#/api/content';
-import { ask } from '#/components/confirm';
+import { ask, confirmAsync } from '#/components/confirm';
 import { SearchInput } from '#/components/SearchInput';
 import { Tabs } from '#/components/Tabs';
 import { toast, toastError } from '#/components/toast';
@@ -61,13 +61,14 @@ interface Draft {
 
 type EditTab = 'look' | 'words' | 'shape' | 'flags';
 
-type Filter = 'all' | 'players' | 'system' | 'nolook';
+type Filter = 'all' | 'players' | 'system' | 'nolook' | 'changed';
 
 const FILTERS: { value: Filter; label: string; title: string }[] = [
     { value: 'all', label: 'All', title: 'Every style' },
     { value: 'players', label: 'Players', title: 'The ones players may pick' },
     { value: 'system', label: 'System', title: 'The hotel\'s own: bots, notifications, wired' },
     { value: 'nolook', label: 'No look', title: 'Not in the bundle: no reg points, or a bitmap missing' },
+    { value: 'changed', label: 'Changed', title: 'Taken from Habbo\'s client and changed here since: a new release leaves them as they are' },
 ];
 
 const WIDTHS = [ { value: CHAT_BUBBLE_WIDTH_THIN, label: 'Thin' }, { value: CHAT_BUBBLE_WIDTH_NORMAL, label: 'Normal' }, { value: CHAT_BUBBLE_WIDTH_WIDE, label: 'Wide' } ];
@@ -128,7 +129,10 @@ const StyleCard = ({ style, selected, onPick }: { style: ChatStyle; selected: bo
             <span className="flex min-w-0 flex-col gap-0.5 px-2 py-1.5">
                 <span className="truncate font-mono text-xs font-medium" title={style.assetId}>{style.assetId || 'unnamed'}</span>
                 <span className="flex items-center justify-between gap-1 text-[11px] text-muted">
-                    <span className="tabular-nums">{`#${style.clientStyleId}`}</span>
+                    <span className="tabular-nums">
+                        {`#${style.clientStyleId}`}
+                        {style.changedHere && <span className="ml-1 text-accent" title="Changed here since it was taken from Habbo's client">changed</span>}
+                    </span>
                     {style.drawable ? <WhoIcons style={style} /> : <span>no look</span>}
                 </span>
             </span>
@@ -208,7 +212,7 @@ export const ChatStylesTab = ({ canManage }: { canManage: boolean }) => {
 
     const query = text.trim().toLowerCase();
     const shown = items.filter(style => (!query || style.assetId.toLowerCase().includes(query) || String(style.clientStyleId) === query)
-        && (filter === 'all' || (filter === 'nolook' ? !style.drawable : filter === 'system' ? style.system : !style.system)));
+        && (filter === 'all' || (filter === 'nolook' ? !style.drawable : filter === 'changed' ? style.changedHere : filter === 'system' ? style.system : !style.system)));
     const drawable = items.filter(x => x.drawable).length;
 
     const change = (next: Partial<Draft>) => setDraft(was => (was ? { ...was, ...next } : was));
@@ -283,17 +287,29 @@ export const ChatStylesTab = ({ canManage }: { canManage: boolean }) => {
         onError: toastError,
     });
 
-    const takeIn = (source: File | 'client', what: string) => ask(
-        {
+    const takeIn = async (source: File | 'client', what: string) => {
+        const yes = await confirmAsync({
             title: `Take in ${what}?`,
             body: 'Each style in it gets the bundle\'s look, and one the hotel lacks is added. Who may speak with the hotel\'s own stays as it is set here.',
             confirm: 'Take it in',
-        },
-        () => take.mutate(source, {
-            onSuccess: result => toast(`Took in ${result.added + result.updated} styles: ${result.added} new, ${result.updated} changed.`),
+        });
+
+        if (!yes)
+            return;
+
+        // Styles changed here since they were taken from the client: kept, unless the viewer says to replace them.
+        const changed = source === 'client' ? items.filter(x => x.changedHere).length : 0;
+        const replace = changed > 0 && await confirmAsync({
+            title: `Replace the ${changed} ${changed === 1 ? 'style' : 'styles'} changed here too?`,
+            body: 'They were changed here since they were taken from Habbo\'s client. Replace gives them the client\'s look again; cancel keeps them as they are and takes the rest.',
+            confirm: 'Replace them',
+        });
+
+        take.mutate(replace ? 'client-replace' : source, {
+            onSuccess: result => toast(`Took in ${result.added + result.updated} styles: ${result.added} new, ${result.updated} changed${result.kept ? `, ${result.kept} kept as changed here` : ''}.`),
             onError: toastError,
-        }),
-    );
+        });
+    };
 
     const editingNormal = draft?.id !== null && draft?.clientStyleId === 0;
 
@@ -309,7 +325,7 @@ export const ChatStylesTab = ({ canManage }: { canManage: boolean }) => {
                     <ToolChoice label="Show" value={filter} options={FILTERS} onChange={setFilter} />
                     {canManage && (
                         <div className="flex flex-wrap gap-2">
-                            <Button variant="secondary" icon={<MonitorDown />} disabled={take.isPending} onClick={() => takeIn('client', 'the chat styles of Habbo\'s client')} title="The chat library of the release of Habbo's HTML client the hotel builds from">
+                            <Button variant="secondary" icon={<MonitorDown />} disabled={take.isPending} onClick={() => void takeIn('client', 'the chat styles of Habbo\'s client')} title="The chat library of the release of Habbo's HTML client the hotel builds from">
                                 From Habbo's client
                             </Button>
                             <label className={cx('inline-flex h-11 cursor-pointer items-center gap-2 rounded-lg border border-line px-3 text-sm font-medium text-ink hover:bg-subtle sm:h-9 [&>svg]:size-4', take.isPending && 'pointer-events-none opacity-60')}>
@@ -323,7 +339,7 @@ export const ChatStylesTab = ({ canManage }: { canManage: boolean }) => {
                                         const file = event.target.files?.[0];
 
                                         if (file)
-                                            takeIn(file, file.name);
+                                            void takeIn(file, file.name);
 
                                         event.target.value = '';
                                     }}

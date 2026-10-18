@@ -1,4 +1,4 @@
-import { Activity, Armchair, Bug, CloudDownload, Disc3, Gauge, History, House, KeyRound, Landmark, Languages, MessagesSquare, Milestone, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
+import { Activity, Armchair, Bug, CloudDownload, Disc3, Gauge, History, House, KeyRound, Landmark, Languages, MessagesSquare, Milestone, PackagePlus, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router';
 
@@ -31,6 +31,7 @@ const PAGES = {
     catalog: { to: '/catalog', label: 'Catalog', icon: <Store />, end: false, key: 'c', needs: 'canViewCatalog' },
     vouchers: { to: '/vouchers', label: 'Vouchers', icon: <Ticket />, end: false, key: 'u', needs: 'canViewCatalog' },
     songs: { to: '/catalog/songs', label: 'Songs', icon: <Disc3 />, end: false, needs: 'canViewCatalog' },
+    discounts: { to: '/catalog/discounts', label: 'Bundle discounts', icon: <PackagePlus />, end: false, needs: 'canViewSettings' },
     hotelView: { to: '/hotel-view', label: 'Hotel view', icon: <Landmark />, end: false, key: 'v', needs: 'canViewGamedata' },
     rewardTracks: { to: '/reward-tracks', label: 'Reward tracks', icon: <Milestone />, end: false, key: 'w', needs: 'canManageRewardTracks' },
     content: { to: '/content', label: 'Content', icon: <Puzzle />, end: false, key: 't', needs: 'canViewContent' },
@@ -89,7 +90,7 @@ const SECTIONS: NavSection[] = [
     },
     {
         label: 'Shop',
-        entries: [ { label: 'Catalog', icon: <Store />, pages: [ 'catalog', 'vouchers', 'songs' ], hint: 'Pages, offers, vouchers and songs' } ],
+        entries: [ { label: 'Catalog', icon: <Store />, pages: [ 'catalog', 'vouchers', 'songs', 'discounts' ], hint: 'Pages, offers, vouchers, songs and bundle discounts' } ],
     },
     {
         label: 'World',

@@ -51,6 +51,7 @@
     --animate-back-in: back-in 0.25s ease-out both;
     --animate-back-out: back-out 0.2s ease-in both;
     --animate-sheet: sheet 0.22s ease-out both;
+    --animate-drawer: drawer 0.22s ease-out both;
 }
 
 .dark {
@@ -108,6 +109,12 @@
 /* A phone's sheet coming up from the bottom edge. */
 @keyframes sheet {
     from { transform: translateY(100%); }
+    to { transform: none; }
+}
+
+/* A phone's menu sliding in from the left edge. */
+@keyframes drawer {
+    from { transform: translateX(-100%); }
     to { transform: none; }
 }
 

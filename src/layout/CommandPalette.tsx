@@ -267,14 +267,17 @@ export const CommandPalette = () => {
     return open ? <Palette onClose={() => setOpen(false)} /> : null;
 };
 
-/** The search's box under the sidebar's logo (on a phone the bottom bar holds the search). */
-export const SearchButton = () => {
+/** The search's box under the sidebar's logo. `onOpen` closes a phone's menu as the search opens over it. */
+export const SearchButton = ({ onOpen }: { onOpen?: () => void }) => {
     const setOpen = usePalette(state => state.setOpen);
 
     return (
         <button
             type="button"
-            onClick={() => setOpen(true)}
+            onClick={() => {
+                onOpen?.();
+                setOpen(true);
+            }}
             aria-label="Search everything"
             className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-left text-[13px] text-muted transition-colors hover:border-muted/50"
         >

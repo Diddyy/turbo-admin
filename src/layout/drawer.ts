@@ -5,7 +5,7 @@ interface DrawerState {
     setOpen: (open: boolean) => void;
 }
 
-/** Whether the menu is open on a phone or a tablet: a sheet from the bottom, opened from the bottom bar. */
+/** Whether the menu is open on a phone or a tablet: the sidebar sliding in from the left, opened from the header. */
 export const useDrawer = create<DrawerState>(set => ({
     open: false,
     setOpen: open => set({ open }),

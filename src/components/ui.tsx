@@ -1,8 +1,9 @@
-import { CheckCircle2, XCircle } from 'lucide-react';
+import { CheckCircle2, Menu, XCircle } from 'lucide-react';
 import { type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes, useState } from 'react';
 import { Link } from 'react-router';
 
 import { useClientAssets } from '#/api/assets';
+import { useDrawer } from '#/layout/drawer';
 import { HotelStatusPill } from '#/layout/HotelStatus';
 import { useActiveNavItem } from '#/layout/nav';
 import { NotificationsBell } from '#/layout/NotificationsBell';
@@ -32,14 +33,15 @@ interface PageHeaderProps {
  * The top of every page, in the bar along the top of the window as nitro-studio has it: the title
  * and a line under it; the page's actions to the right (actions that do not fit go under "More");
  * and along its bottom edge the page's tabs (or, with none, the page's name marked as a tab is, so
- * every header is the same height). On a phone it stays at the top as an app bar, with the hotel's
- * state at a glance and the bell (the bottom bar holds the menu and the search); from a laptop up
- * it scrolls away with the page, and the search and the bell sit in the sidebar.
+ * every header is the same height). On a phone it stays at the top as an app bar, with the menu's
+ * button before the title and the hotel's state at a glance and the bell after it; from a laptop
+ * up it scrolls away with the page, and the search and the bell sit in the sidebar.
  */
 export const PageHeader = ({ title, description, back, tabs, children }: PageHeaderProps) => {
     return (
         <header className="sticky top-0 z-30 border-b border-line bg-chrome/95 backdrop-blur lg:static lg:z-auto lg:bg-chrome lg:backdrop-blur-none">
             <div className={cx(PAGE_WIDTH, 'flex min-h-14 items-center gap-x-2.5 px-3 py-2 sm:gap-x-3 sm:px-4 lg:min-h-17 lg:px-6')}>
+                <MenuButton />
                 <BackArrow back={back} />
                 <HeaderIcon />
                 <div data-title className="min-w-0 flex-1">
@@ -64,6 +66,22 @@ export const PageHeader = ({ title, description, back, tabs, children }: PageHea
                     : <HeaderPage title={title} />}
             </div>
         </header>
+    );
+};
+
+/** On a phone and a tablet, the button that slides the menu in from the left. */
+const MenuButton = () => {
+    const setOpen = useDrawer(state => state.setOpen);
+
+    return (
+        <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label="Menu"
+            className="-ml-1 grid size-10 shrink-0 place-items-center rounded-lg text-muted transition-colors hover:bg-subtle hover:text-ink lg:hidden [&>svg]:size-5"
+        >
+            <Menu />
+        </button>
     );
 };
 

@@ -34,6 +34,8 @@ export interface ServerSetting {
     pendingRestart: boolean;
     /** Read as it is used, so a change applies at once (`[LiveSetting]`). */
     live: boolean;
+    /** The key of the plugin whose setting it is, listed while that plugin is loaded; null for the server's own. */
+    plugin: string | null;
 }
 
 export interface SettingsResponse {

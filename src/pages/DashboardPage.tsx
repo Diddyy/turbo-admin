@@ -91,12 +91,13 @@ const NO_FILTER = { player: '', command: '', outcome: '', source: '' };
 /** The last few commands staff and the console ran, newest first: what has been done lately, a click from the whole log. */
 const RecentCommands = () => {
     const { data, error } = useCommandLog(NO_FILTER, 1);
+    const canViewPlayers = useMe().data?.canViewPlayers ?? false;
     const entries = data?.entries.slice(0, 6);
 
     return (
         <Panel
             title="Recent commands"
-            className="mt-4 overflow-clip lg:mt-5"
+            className="overflow-clip"
             actions={<Link to="/command-log" className="inline-flex items-center gap-0.5 text-xs font-medium text-accent hover:underline">The whole log <ChevronRight className="size-3.5" /></Link>}
         >
             {error && <div className="p-4"><ErrorNotice error={error} /></div>}
@@ -107,7 +108,11 @@ const RecentCommands = () => {
                     {entries.map(entry => (
                         <li key={entry.id} className="flex min-h-12 items-center gap-3 border-t border-line px-4 py-2 first:border-t-0">
                             <span className="w-24 shrink-0 truncate text-sm font-medium">
-                                {entry.playerId === 0 ? <span className="font-normal text-muted">console</span> : entry.playerName ?? `#${entry.playerId}`}
+                                {entry.playerId === 0
+                                    ? <span className="font-normal text-muted">console</span>
+                                    : canViewPlayers
+                                        ? <Link to={`/players/${entry.playerId}`} className="hover:text-accent">{entry.playerName ?? `#${entry.playerId}`}</Link>
+                                        : entry.playerName ?? `#${entry.playerId}`}
                             </span>
                             <span className="min-w-0 flex-1 truncate font-mono text-[13px]">
                                 :{entry.command}
@@ -155,7 +160,7 @@ export const DashboardPage = () => {
                         <section aria-label="At a glance" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
                             <Stat label="Players online" value={data.playersOnline.toLocaleString()} />
                             <Stat label="Rooms loaded" value={data.roomsLoaded.toLocaleString()} />
-                            <Stat label="Uptime" value={formatUptime(data.startedAtUtc, Math.max(now, dataUpdatedAt))} detail={`Turbo ${data.version}`} />
+                            <Stat label="Uptime" value={formatUptime(data.startedAtUtc, Math.max(now, dataUpdatedAt))} detail={`since ${new Date(data.startedAtUtc).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}`} />
                             <Stat
                                 label="Memory"
                                 value={`${data.workingSetMb.toLocaleString()} MB`}
@@ -164,8 +169,8 @@ export const DashboardPage = () => {
                         </section>
                         {canControl && <HotelCard phase={data.availability} atUtc={data.availabilityAtUtc} />}
                         <div className="flex flex-wrap items-start gap-4 lg:gap-5">
-                            <div className="min-w-0 flex-[999_1_480px]">
-                                <Panel title="Busiest rooms" actions={live ? undefined : <Label>refreshes every 10 s</Label>}>
+                            <div className="flex min-w-0 flex-[999_1_480px] flex-col gap-4 lg:gap-5">
+                                <Panel title="Busiest rooms">
                                     {data.busiestRooms.length === 0
                                         ? <EmptyState>Nobody is in a room right now.</EmptyState>
                                         : (

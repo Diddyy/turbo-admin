@@ -134,6 +134,15 @@ body {
     input:disabled {
         cursor: not-allowed;
     }
+
+    /*
+     * A ring on whatever the keyboard has reached: links, buttons, tabs and rows that open
+     * something. Zero specificity, so a control with its own `focus-visible:` keeps it.
+     */
+    :where(a[href], button, [role="tab"], summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 2px;
+    }
 }
 
 /* Drop-downs drawn as the other fields are, with a chevron in the muted text colour. */

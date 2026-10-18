@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router';
 
 import { checkNode, type CheckResponse, type CheckSource, playerCalls, type PlayerPermissions, useCatalog, useGroups, usePermissionChange, usePlayerAudit, usePlayerPermissions } from '#/api/permissions';
 import { useMe } from '#/api/queries';
+import { ask } from '#/components/confirm';
 import { Badge, Button, EmptyState, ErrorNotice, HeaderLink, Input, Labeled, Loading, PageBody, Panel, Select } from '#/components/ui';
 
 import { MetaCard, NodesCard } from './AssignmentCards';
@@ -44,7 +45,7 @@ const GroupsCard = ({ player }: { player: PlayerPermissions }) => {
                                             label={`Take ${player.name} out of ${g.name}`}
                                             icon={<X />}
                                             disabled={removeGroup.isPending}
-                                            onClick={() => removeGroup.mutate([ g.name, g.expiresAtUtc !== null ])}
+                                            onClick={() => ask({ title: `Take ${player.name} out of ${g.displayName}?`, body: 'They lose whatever the group gave them.', confirm: 'Take out' }, () => removeGroup.mutate([ g.name, g.expiresAtUtc !== null ]))}
                                         />
                                     )}
                                 </li>

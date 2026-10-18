@@ -91,7 +91,7 @@ const ParentsCard = ({ group }: { group: GroupResponse }) => {
                                             label={`Stop inheriting ${p.name}`}
                                             icon={<X />}
                                             disabled={removeParent.isPending}
-                                            onClick={() => removeParent.mutate([ p.name ])}
+                                            onClick={() => ask({ title: `Remove ${p.displayName} from what ${group.displayName} inherits?`, body: 'Whatever it gave this group goes with it.', confirm: 'Remove' }, () => removeParent.mutate([ p.name ]))}
                                         />
                                     )}
                                 </li>

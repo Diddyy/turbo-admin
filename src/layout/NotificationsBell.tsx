@@ -3,7 +3,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { type NotificationItem, useNotifications, useSeenNotifications } from '#/api/notifications';
-import { Label } from '#/components/ui';
+import { ErrorNotice, Label, Loading } from '#/components/ui';
 import { cx } from '#/lib/cx';
 import { fromNow } from '#/lib/time';
 
@@ -98,8 +98,8 @@ export const NotificationsBell = () => {
                         )}
                     </div>
                     <div className="max-h-[min(28rem,70dvh)] overflow-y-auto overscroll-contain p-1.5">
-                        {error && <p className="px-3 py-3 text-sm text-bad">{error.message}</p>}
-                        {!error && !data && <p className="px-3 py-6 text-center text-sm text-muted">Loading...</p>}
+                        {error && <div className="p-1.5"><ErrorNotice error={error} /></div>}
+                        {!error && !data && <Loading />}
                         {data && items.length === 0 && (
                             <div className="flex flex-col items-center gap-1.5 px-4 py-8 text-center">
                                 <Bell className="size-6 text-muted" />

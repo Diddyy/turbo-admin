@@ -16,6 +16,8 @@ interface Hit {
     icon: ReactNode;
     title: string;
     subtitle?: string;
+    /** The keys after `g` that go to it, shown at the row's end. */
+    shortcut?: string;
     to: string;
 }
 
@@ -93,7 +95,7 @@ const Palette = ({ onClose }: { onClose: () => void }) => {
         });
 
     if (pages.length > 0)
-        groups.push({ label: 'Pages', hits: pages.map(page => ({ key: `page:${page.to}`, icon: page.icon, title: page.label, subtitle: `g ${page.key}`, to: page.to })) });
+        groups.push({ label: 'Pages', hits: pages.map(page => ({ key: `page:${page.to}`, icon: page.icon, title: page.label, shortcut: page.key, to: page.to })) });
 
     if (id !== null) {
         const byId: Hit[] = [];
@@ -223,6 +225,12 @@ const Palette = ({ onClose }: { onClose: () => void }) => {
                                         <span className="block truncate text-sm">{hit.title}</span>
                                         {hit.subtitle && <span className="block truncate text-xs text-muted">{hit.subtitle}</span>}
                                     </span>
+                                    {hit.shortcut && (
+                                        <span className="flex shrink-0 gap-1 font-mono text-[10px] text-muted max-sm:hidden">
+                                            <kbd className="rounded border border-line px-1.5">g</kbd>
+                                            <kbd className="rounded border border-line px-1.5">{hit.shortcut}</kbd>
+                                        </span>
+                                    )}
                                 </button>
                             );
                         })}

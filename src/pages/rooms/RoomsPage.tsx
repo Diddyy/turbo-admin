@@ -1,7 +1,7 @@
 import { type FormEvent, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
-import { useRoomSearch } from '#/api/queries';
+import { useMe, useRoomSearch } from '#/api/queries';
 import type { RoomSearchMode } from '#/api/types';
 import { ListToolbar } from '#/components/ListToolbar';
 import { SearchInput } from '#/components/SearchInput';
@@ -40,6 +40,7 @@ export const RoomsPage = () => {
     const [ draft, setDraft ] = useState(text);
     const [ draftBy, setDraftBy ] = useState(by);
     const search = useRoomSearch(text, by, page);
+    const canViewPlayers = useMe().data?.canViewPlayers ?? false;
 
     const go = (next: { q?: string; by?: RoomSearchMode; page?: number }) =>
         setParams({ q: next.q ?? text, by: next.by ?? by, page: String(next.page ?? page) });
@@ -115,7 +116,7 @@ export const RoomsPage = () => {
                                                             <Th>Room</Th>
                                                             <Th>Owner</Th>
                                                             <Th>Access</Th>
-                                                            <Th>Players</Th>
+                                                            <Th className="text-right">Players</Th>
                                                             <Th>Last active</Th>
                                                         </tr>
                                                     </thead>
@@ -124,15 +125,19 @@ export const RoomsPage = () => {
                                                             <tr key={room.id} className="hover:bg-subtle/60">
                                                                 <Td>
                                                                     <Link to={`/rooms/${room.id}`} className="font-medium hover:text-accent">{room.name}</Link>
-                                                                    <span className="ml-2 text-muted">#{room.id}</span>
+                                                                    <span className="ml-2 font-mono text-[11px] text-muted">#{room.id}</span>
                                                                     {room.categoryName && <div className="text-xs text-muted">{room.categoryName}</div>}
                                                                 </Td>
-                                                                <Td className="text-muted">{room.ownerName}</Td>
+                                                                <Td>
+                                                                    {canViewPlayers
+                                                                        ? <Link to={`/players/${room.ownerId}`} className="text-muted hover:text-accent">{room.ownerName}</Link>
+                                                                        : <span className="text-muted">{room.ownerName}</span>}
+                                                                </Td>
                                                                 <Td><DoorMode mode={room.doorMode} /></Td>
-                                                                <Td className="tabular-nums">
+                                                                <Td className="text-right font-mono tabular-nums">
                                                                     {room.isLoaded
                                                                         ? <>{room.population}<span className="text-muted"> / {room.playersMax}</span></>
-                                                                        : <span className="text-muted">not loaded</span>}
+                                                                        : <span className="font-sans text-xs text-muted">not loaded</span>}
                                                                 </Td>
                                                                 <Td className="text-muted"><span title={formatDateTime(room.lastActiveUtc)}>{fromNow(room.lastActiveUtc)}</span></Td>
                                                             </tr>

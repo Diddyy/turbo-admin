@@ -66,7 +66,7 @@ export const GroupsPage = () => {
                 section="groups"
                 description={data ? `${data.groups.length} groups. Players reach a group directly or through its children.` : 'Groups and what they hold'}
             />
-            <PageBody className="grid gap-5 xl:grid-cols-[1fr_20rem]">
+            <PageBody className="grid gap-4 lg:gap-5 xl:grid-cols-[1fr_20rem]">
                 {error && <ErrorNotice error={error} />}
                 {isPending && <Loading />}
                 {data && (

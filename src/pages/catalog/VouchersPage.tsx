@@ -10,6 +10,7 @@ import { ListToolbar } from '#/components/ListToolbar';
 import { SearchInput } from '#/components/SearchInput';
 import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, PageBody, PageHeader, Panel, Select, SuccessNotice, Switch } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import { useDebounced } from '#/lib/debounce';
 import { inputToIso, isoTime, isoToInput } from '#/pages/hotel-view/model';
 
 import { catalogTabs } from './catalogTabs';
@@ -50,7 +51,7 @@ const rewards = (item: VoucherItem, currencyName: (id: number) => string) => {
 const FurniturePicker = ({ id, name, onChange, disabled }: { id: number | null; name: string | null; onChange: (id: number | null, name: string | null) => void; disabled?: boolean }) => {
     const assets = useClientAssets();
     const [ text, setText ] = useState('');
-    const { data: found } = useFurnitureSearch(text);
+    const { data: found } = useFurnitureSearch(useDebounced(text));
     const icon = furniIconUrl(assets, name);
 
     return (
@@ -282,7 +283,7 @@ export const VouchersPage = () => {
     const [ text, setText ] = useState('');
     const [ page, setPage ] = useState(0);
     const [ open, setOpen ] = useState<number | 'new' | 'generate' | null>(null);
-    const { data, error } = useVouchers(text.trim(), page);
+    const { data, error } = useVouchers(useDebounced(text.trim()), page);
     const currencies = useCatalogTree().data?.currencies ?? [];
     const currencyName = (id: number) => currencies.find(x => x.id === id)?.name ?? `currency #${id}`;
     const canManage = data?.canManage ?? false;
@@ -298,7 +299,7 @@ export const VouchersPage = () => {
                     </>
                 )}
             </PageHeader>
-            <PageBody className="flex flex-col gap-4">
+            <PageBody className="flex flex-col gap-4 lg:gap-5">
                 {open === 'generate' && <Panel title="Make many vouchers" description="Each its own random code, giving the same."><div className="p-4"><Generator onDone={() => setOpen(null)} /></div></Panel>}
                 <Panel className="overflow-clip">
                     <ListToolbar watch={[ text, page ]} page={{ offset: page * (data?.pageSize ?? 50), limit: data?.pageSize ?? 50, total: data?.total, onChange: offset => setPage(Math.floor(offset / (data?.pageSize ?? 50))) }}>

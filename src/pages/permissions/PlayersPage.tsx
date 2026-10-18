@@ -34,7 +34,7 @@ export const PlayersPage = () => {
     return (
         <>
             <PermissionsHeader section="players" description="Any player's groups, nodes and meta, and why they hold what they hold" />
-            <PageBody className="grid gap-5">
+            <PageBody className="grid gap-4 lg:gap-5">
                 <Panel title="Find a player">
                     <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 p-4">
                         <SearchInput value={name} onValueChange={setName} placeholder="Their exact name" aria-label="Player name" className="min-w-48 flex-1 sm:max-w-80" />

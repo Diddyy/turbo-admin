@@ -3,6 +3,7 @@ import { type FormEvent, useId, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 
 import { type MetaAssignment, type NodeAssignment, type Target, targetCalls, useCatalog, usePermissionChange } from '#/api/permissions';
+import { ask } from '#/components/confirm';
 import { PhoneLabel, Row, RowList } from '#/components/RowList';
 import { Button, EmptyState, ErrorNotice, Input, Labeled, Panel, Select } from '#/components/ui';
 
@@ -66,9 +67,11 @@ export const NodesCard = ({ target, nodes, canEdit }: { target: Target; nodes: N
     };
 
     const handleRemove = (assignment: NodeAssignment) => {
-        setMessage(null);
-        set.reset();
-        unset.mutate([ assignment.node, assignment.expiresAtUtc !== null ]);
+        ask({ title: `Remove the node ${assignment.node}?`, confirm: 'Remove' }, () => {
+            setMessage(null);
+            set.reset();
+            unset.mutate([ assignment.node, assignment.expiresAtUtc !== null ]);
+        });
     };
 
     return (
@@ -202,11 +205,11 @@ export const MetaCard = ({ target, meta, canEdit }: { target: Target; meta: Meta
                                             label={`Unset ${assignment.key}`}
                                             icon={<Trash2 />}
                                             disabled={unset.isPending}
-                                            onClick={() => {
+                                            onClick={() => ask({ title: `Remove the meta ${assignment.key}?`, confirm: 'Remove' }, () => {
                                                 setMessage(null);
                                                 set.reset();
                                                 unset.mutate([ assignment.key, assignment.expiresAtUtc !== null ]);
-                                            }}
+                                            })}
                                             className="ml-auto"
                                         />
                                     )}

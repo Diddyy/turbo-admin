@@ -8,6 +8,7 @@ import { Pagination } from '#/components/Pagination';
 import { SearchInput } from '#/components/SearchInput';
 import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, Panel, Select, SuccessNotice, Switch, Textarea } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import { useDebounced } from '#/lib/debounce';
 
 /**
  * One bot: standing in a room, everything its owner's skills could set, saved through the room so
@@ -92,7 +93,7 @@ export const BotsTab = ({ canManage }: { canManage: boolean }) => {
     const [ text, setText ] = useState('');
     const [ page, setPage ] = useState(0);
     const [ open, setOpen ] = useState<number | null>(null);
-    const { data, error, isFetching } = useBots(text.trim(), page);
+    const { data, error, isFetching } = useBots(useDebounced(text.trim()), page);
     const size = data?.pageSize ?? 25;
     const selected = data?.bots.find(x => x.id === open) ?? null;
 

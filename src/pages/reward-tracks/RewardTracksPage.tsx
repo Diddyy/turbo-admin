@@ -44,20 +44,21 @@ const TrackList = ({ tracks, onOpen }: { tracks: RewardTrackListItem[]; onOpen: 
                         <Th>Premium</Th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody className="[&>tr:last-child>td]:border-b-0">
                     {tracks.map((track) => {
                         const status = STATUS[statusOf(track)];
 
                         return (
-                            <tr key={track.id} onClick={() => onOpen(track.id)} className="cursor-pointer hover:bg-subtle">
+                            <tr key={track.id} onClick={() => onOpen(track.id)} className="cursor-pointer hover:bg-subtle/60">
                                 <Td>
-                                    <span className="flex items-center gap-2.5">
+                                    {/* A button for the keyboard: its click goes on to the row's. */}
+                                    <button type="button" className="flex items-center gap-2.5 rounded text-left">
                                         <span className="size-4 shrink-0 rounded border border-black/10" style={{ background: css(themeOf(track.theme).dark) }} title={`Theme ${track.theme || 'blue'}`} />
                                         <span className="min-w-0">
                                             {names.has(track.id) && <span className="block truncate font-medium">{names.get(track.id)}</span>}
                                             <span className={cx('block font-mono', names.has(track.id) ? 'text-[11px] text-muted' : 'text-sm')}>{track.id}</span>
                                         </span>
-                                    </span>
+                                    </button>
                                 </Td>
                                 <Td><span title={status.meaning}><Badge tone={status.tone}>{status.label}</Badge></span></Td>
                                 <Td><Schedule track={track} /></Td>
@@ -129,7 +130,7 @@ export const RewardTracksPage = () => {
                     </>
                 )}
             </PageHeader>
-            <PageBody className="flex flex-col gap-4">
+            <PageBody className="flex flex-col gap-4 lg:gap-5">
                 {error && <ErrorNotice error={error} />}
                 {!data && !error && <Loading />}
                 {data && importing && <ImportTracks onOpen={id => go({ track: id })} />}

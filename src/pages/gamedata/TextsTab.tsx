@@ -8,6 +8,7 @@ import { ListToolbar } from '#/components/ListToolbar';
 import { SearchInput } from '#/components/SearchInput';
 import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, Panel, Textarea } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import { useDebounced } from '#/lib/debounce';
 
 import { WaitingFromHabbo } from './frame';
 import { HabboDiffers, HabboUpdate, OpenRow, ReviewItem } from './parts';
@@ -111,7 +112,7 @@ export const TextsTab = ({ status }: { status: GamedataStatus }) => {
     const [ text, setText ] = useState(() => params.get('q') ?? '');
     const [ page, setPage ] = useState(0);
     const [ open, setOpen ] = useState<string | null>(() => params.get('open'));
-    const { data: found, isFetching, error } = useTextSearch(text, page);
+    const { data: found, isFetching, error } = useTextSearch(useDebounced(text), page);
     const size = found?.pageSize ?? 1;
 
     return (

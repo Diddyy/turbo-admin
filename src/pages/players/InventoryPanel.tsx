@@ -68,15 +68,18 @@ export const InventoryPanel = ({ player }: { player: PlayerDetailResponse }) => 
                     content: loading ?? (inventory && (inventory.badges.length === 0
                         ? <EmptyState>No badges.</EmptyState>
                         : (
-                                <ul className="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-px bg-line">
-                                    {inventory.badges.map(badge => (
-                                        <li key={badge.code} className="flex min-h-12 items-center gap-2 bg-surface px-3 py-2">
-                                            <ProductIcon type="badge" name={badge.code} />
-                                            <span className="min-w-0 flex-1 truncate font-mono text-xs">{badge.code}</span>
-                                            {badge.slot !== null && <Badge tone="accent">#{badge.slot}</Badge>}
-                                        </li>
-                                    ))}
-                                </ul>
+                                // Each tile ruled on its right and bottom, the outer edges clipped: a short last row ends clean.
+                                <div className="overflow-hidden rounded-b-xl">
+                                    <ul className="-mr-px -mb-px grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))]">
+                                        {inventory.badges.map(badge => (
+                                            <li key={badge.code} className="flex min-h-12 items-center gap-2 border-r border-b border-line px-3 py-2">
+                                                <ProductIcon type="badge" name={badge.code} />
+                                                <span className="min-w-0 flex-1 truncate font-mono text-xs">{badge.code}</span>
+                                                {badge.slot !== null && <Badge tone="accent">#{badge.slot}</Badge>}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
                             ))),
                 },
                 {

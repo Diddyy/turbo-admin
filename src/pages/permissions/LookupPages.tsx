@@ -129,7 +129,7 @@ export const NodesPage = () => {
                 section="nodes"
                 description={catalog.data ? `${catalog.data.nodes.length} nodes and ${catalog.data.metaKeys.length} meta keys are registered` : 'What exists to be granted'}
             />
-            <PageBody className="grid gap-5 xl:grid-cols-[1fr_22rem]">
+            <PageBody className="grid gap-4 lg:gap-5 xl:grid-cols-[1fr_22rem]">
                 <div className="min-w-0">
                     <Panel className="overflow-clip">
                         <ListToolbar

@@ -171,7 +171,7 @@ export const TrackEditor = ({ id, isNew, actionTypes, onBack }: { id: string; is
     return (
         <>
             {header}
-            <PageBody className="flex flex-col gap-4">
+            <PageBody className="flex flex-col gap-4 lg:gap-5">
                 <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
                     <Badge tone={STATUS[statusOf(track)].tone}>{STATUS[statusOf(track)].label}</Badge>
                     <span>{track.tasks.length} tasks · {track.tasks.reduce((sum, x) => sum + x.levels.length, 0)} levels · {trackPoints(track).toLocaleString()} points to earn · {track.prizes.length} prizes</span>

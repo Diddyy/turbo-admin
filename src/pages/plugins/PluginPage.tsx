@@ -327,9 +327,14 @@ export const PluginPage = () => {
     const page = plugin?.pages.find(x => x.id === pageId);
     const item = usePageItem(key ?? '', page?.blocks ?? [], id);
 
-    if (error) return <PageBody><ErrorNotice error={error} /></PageBody>;
-
-    if (!plugins) return <Loading />;
+    // Under the same header as the page it becomes, so nothing jumps when it arrives.
+    if (error || !plugins)
+        return (
+            <>
+                <PageHeader title="Plugin page" />
+                {error ? <PageBody><ErrorNotice error={error} /></PageBody> : <Loading />}
+            </>
+        );
 
     if (!plugin || !page)
         return (
@@ -352,7 +357,7 @@ export const PluginPage = () => {
                 description={page.description ?? `From the plugin ${plugin.name} ${plugin.version}`}
                 back={parent ? { to: `/plugin/${plugin.key}/${parent.id}`, label: parent.title } : undefined}
             />
-            <PageBody className="flex flex-col gap-4">
+            <PageBody className="flex flex-col gap-4 lg:gap-5">
                 {page.blocks.map((block, i) => <Block key={`${plugin.revision}-${i}`} block={block} context={{ plugin, id, back: parent && `/plugin/${plugin.key}/${parent.id}` }} item={item} />)}
             </PageBody>
         </>

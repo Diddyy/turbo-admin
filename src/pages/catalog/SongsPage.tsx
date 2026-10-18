@@ -142,7 +142,7 @@ export const SongsPage = () => {
             <PageHeader title="Catalog" tabs={catalogTabs('songs')} description={songs.data ? `${songs.data.songs.length} songs · ${songs.data.songs.filter(x => x.official).length} official` : 'What jukeboxes play'}>
                 {canManage && <Button icon={<Plus />} onClick={() => open('new')}>New song</Button>}
             </PageHeader>
-            <PageBody className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+            <PageBody className="grid items-start gap-4 lg:gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
                 <Panel title="Songs" className={cx(selected !== null && 'max-lg:hidden')}>
                     {songs.error && <div className="p-4"><ErrorNotice error={songs.error} /></div>}
                     {songs.isPending && <Loading />}

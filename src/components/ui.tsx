@@ -113,7 +113,8 @@ export const Panel = ({ title, description, actions, children, className }: Pane
     <section className={cx('rounded-xl border border-line bg-surface', className)}>
         {(title || actions) && (
             <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line px-4 py-3">
-                <div className="min-w-0">
+                {/* Shrinks to 8rem, its description wrapping, before the actions drop below it. */}
+                <div className="min-w-0 flex-[1_1_8rem]">
                     {title && <h2 className="text-[13px] font-semibold tracking-wide">{title}</h2>}
                     {description && <div className="mt-0.5 text-xs text-muted">{description}</div>}
                 </div>

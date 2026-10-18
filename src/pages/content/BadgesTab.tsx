@@ -10,6 +10,7 @@ import { ask } from '#/components/confirm';
 import { SearchInput } from '#/components/SearchInput';
 import { Button, EmptyState, ErrorNotice, IconButton, Input, Labeled, Loading, Panel, Select } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import { useDebounced } from '#/lib/debounce';
 
 import { PlayerPicker } from './PlayerPicker';
 
@@ -102,7 +103,7 @@ export const BadgesTab = ({ canManage }: { canManage: boolean }) => {
     const assets = useClientAssets();
     const [ text, setText ] = useState('');
     const [ open, setOpen ] = useState<string | null>(null);
-    const { data, error, isFetching } = useBadges(text.trim());
+    const { data, error, isFetching } = useBadges(useDebounced(text.trim()));
     const rarity = useSetBadgeRarity();
     const typed = text.trim();
     const badges = data?.badges ?? [];

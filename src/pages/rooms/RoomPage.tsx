@@ -78,12 +78,15 @@ const InsideRow = ({ room, player, run, busy, onMore, linked }: { room: RoomDeta
         <li className="group flex min-h-14 items-center gap-3 border-t border-line px-4 py-2 first:border-t-0">
             <Avatar id={player.id} name={player.name} figure={player.figure} />
             <div className="min-w-0 flex-1">
-                {linked
-                    ? <Link to={`/players/${player.id}`} className="block truncate text-sm font-medium hover:text-accent">{player.name}</Link>
-                    : <div className="truncate text-sm font-medium">{player.name}</div>}
+                {/* The role beside the name, where it lines up whether or not the row has actions; a visitor is the rest, untagged. */}
+                <div className="flex min-w-0 items-center gap-2">
+                    {linked
+                        ? <Link to={`/players/${player.id}`} className="truncate text-sm font-medium hover:text-accent">{player.name}</Link>
+                        : <span className="truncate text-sm font-medium">{player.name}</span>}
+                    {role !== 'visitor' && <Badge tone={role === 'owner' ? 'accent' : 'neutral'}>{role}</Badge>}
+                </div>
                 <div className="font-mono text-[11px] text-muted">#{player.id}</div>
             </div>
-            <Badge tone={role === 'owner' ? 'accent' : 'neutral'}>{role}</Badge>
             {actionable && (
                 <>
                     {/* Kick asks, then acts; muting and banning need a length, so they open the sheet with every action. With a mouse, they show on the row it is over. */}

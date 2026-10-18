@@ -152,15 +152,6 @@ export const PlayerPage = () => {
                             </div>
 
                             <div className="flex min-w-0 flex-[1_1_300px] flex-col gap-4 max-lg:contents lg:gap-5">
-                                <div className="min-w-0 max-lg:w-full">
-                                    <PlayerActions key={player.id} player={player} />
-                                </div>
-                                {(abilities?.issueTickets || player.discord) && (
-                                    <div className="flex min-w-0 flex-col gap-4 max-lg:order-2 max-lg:w-full lg:gap-5">
-                                        {abilities?.issueTickets && <LoginTicketCard key={`ticket-${player.id}`} playerId={player.id} playerName={player.name} />}
-                                        {player.discord && <DiscordCard playerId={player.id} playerName={player.name} discord={player.discord} canManage={abilities?.manageAccounts ?? false} />}
-                                    </div>
-                                )}
                                 <Panel title="Profile" className="max-lg:order-first max-lg:w-full">
                                     <div className="flex items-center gap-3 border-b border-line px-4 py-3">
                                         <Avatar id={player.id} name={player.name} figure={player.figure} large className="size-12 text-sm sm:size-12" />
@@ -170,7 +161,7 @@ export const PlayerPage = () => {
                                         </div>
                                     </div>
                                     <dl>
-                                        <Kv label="Status">{player.isOnline ? 'online' : 'offline'}</Kv>
+                                        <Kv label="Status"><span className={player.isOnline ? 'text-good' : 'text-muted'}>{player.isOnline ? 'online' : 'offline'}</span></Kv>
                                         {player.currentRoom && (
                                             <Kv label="In room">
                                                 {me?.canViewRooms
@@ -184,6 +175,15 @@ export const PlayerPage = () => {
                                     </dl>
                                     <Figure figure={player.figure} />
                                 </Panel>
+                                <div className="min-w-0 max-lg:w-full">
+                                    <PlayerActions key={player.id} player={player} />
+                                </div>
+                                {(abilities?.issueTickets || player.discord) && (
+                                    <div className="flex min-w-0 flex-col gap-4 max-lg:order-2 max-lg:w-full lg:gap-5">
+                                        {abilities?.issueTickets && <LoginTicketCard key={`ticket-${player.id}`} playerId={player.id} playerName={player.name} />}
+                                        {player.discord && <DiscordCard playerId={player.id} playerName={player.name} discord={player.discord} canManage={abilities?.manageAccounts ?? false} />}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </>

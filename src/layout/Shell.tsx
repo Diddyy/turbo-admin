@@ -8,6 +8,7 @@ import { useLiveUpdates } from '#/api/live';
 import { useSession } from '#/auth/session';
 import { ConfirmHost } from '#/components/ConfirmHost';
 import { useModalDialog } from '#/components/dialog';
+import { PageErrorBoundary } from '#/components/PageErrorBoundary';
 import { Toasts } from '#/components/Toasts';
 import { Segmented } from '#/components/ui';
 import { cx } from '#/lib/cx';
@@ -320,6 +321,7 @@ const useFreshPage = (root: RefObject<HTMLElement | null>) => {
 export const Shell = () => {
     useLiveUpdates();
     const main = useRef<HTMLElement>(null);
+    const { pathname } = useLocation();
 
     useFreshPage(main);
 
@@ -333,7 +335,9 @@ export const Shell = () => {
             <ConfirmHost />
             <Toasts />
             <main ref={main} data-scroll-root className="flex min-h-0 min-w-0 flex-1 flex-col pb-8 max-lg:overflow-y-auto max-lg:overscroll-contain lg:pb-10">
-                <Outlet />
+                <PageErrorBoundary key={pathname}>
+                    <Outlet />
+                </PageErrorBoundary>
             </main>
             <BottomBar />
         </div>

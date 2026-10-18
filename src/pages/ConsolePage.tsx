@@ -204,7 +204,7 @@ export const ConsolePage = () => {
     return (
         <>
             <PageHeader title="Console" description="Operator commands, run as you, with your permissions" />
-            <PageBody className="grid gap-5 lg:grid-cols-[18rem_1fr]">
+            <PageBody className="grid gap-4 lg:gap-5 lg:grid-cols-[18rem_1fr]">
                 <div className="order-2 lg:order-1">
                     {commands.isPending && <Loading />}
                     {commands.error && <ErrorNotice error={commands.error} />}

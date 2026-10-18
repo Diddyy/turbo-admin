@@ -7,6 +7,7 @@ import { SearchInput } from '#/components/SearchInput';
 import { Button, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Panel, Td, Th } from '#/components/ui';
 import { useHubTabs } from '#/layout/nav';
 import { cx } from '#/lib/cx';
+import { fromNow } from '#/lib/time';
 import { formatDateTime } from '#/pages/rooms/labels';
 
 /**
@@ -91,7 +92,7 @@ export const GroupsPage = () => {
                                                         <Th>Owner</Th>
                                                         <Th>Home room</Th>
                                                         <Th>Kind</Th>
-                                                        <Th>Members</Th>
+                                                        <Th className="text-right">Members</Th>
                                                         <Th>Created</Th>
                                                     </tr>
                                                 </thead>
@@ -100,13 +101,13 @@ export const GroupsPage = () => {
                                                         <tr key={group.id} className="hover:bg-subtle/60">
                                                             <Td>
                                                                 <Link to={`/groups/${group.id}`} className="font-medium hover:text-accent">{group.name}</Link>
-                                                                <span className="ml-2 text-muted">#{group.id}</span>
+                                                                <span className="ml-2 font-mono text-[11px] text-muted">#{group.id}</span>
                                                             </Td>
                                                             <Td><Link to={`/players/${group.ownerId}`} className="text-muted hover:text-accent">{group.ownerName}</Link></Td>
                                                             <Td><Link to={`/rooms/${group.roomId}`} className="text-muted hover:text-accent">{group.roomName}</Link></Td>
                                                             <Td>{GROUP_TYPES[group.type] ?? group.type}</Td>
-                                                            <Td className="tabular-nums">{group.members.toLocaleString()}</Td>
-                                                            <Td className="text-muted">{formatDateTime(group.createdAt)}</Td>
+                                                            <Td className="text-right font-mono tabular-nums">{group.members.toLocaleString()}</Td>
+                                                            <Td className="text-muted"><span title={formatDateTime(group.createdAt)}>{fromNow(group.createdAt)}</span></Td>
                                                         </tr>
                                                     ))}
                                                 </tbody>

@@ -5,7 +5,7 @@ import { catalogImageUrl, useClientAssets } from '#/api/assets';
 import { catalogCalls, type CatalogPageDetail, type CatalogTree, type PageDisplay, useCatalogEdit } from '#/api/catalog';
 import { ask } from '#/components/confirm';
 import { toast } from '#/components/toast';
-import { Button, ErrorNotice, Field, Input, Label, Labeled, Textarea } from '#/components/ui';
+import { Button, ErrorNotice, Field, IconButton, Input, Label, Labeled, Textarea } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 import { IconPicker } from './IconPicker';
@@ -290,9 +290,7 @@ export const PageInspector = ({ tree, page, draft, onDraft, focus, onOpen }: Pag
                                         <span className="shrink-0 text-muted">{x.list === 'imageData' ? 'Picture' : 'Text'} {x.index + 1}</span>
                                         <span className="min-w-0 flex-1 truncate font-mono">{x.value}</span>
                                         {canManage && (
-                                            <button type="button" onClick={() => set(x.list, withSlot(draft[x.list], x.index, ''))} aria-label="Clear it" className="grid size-6 place-items-center rounded text-muted hover:text-bad">
-                                                <X className="size-3.5" />
-                                            </button>
+                                            <IconButton label="Clear it" icon={<X />} tone="bad" small onClick={() => set(x.list, withSlot(draft[x.list], x.index, ''))} />
                                         )}
                                     </li>
                                 ))}

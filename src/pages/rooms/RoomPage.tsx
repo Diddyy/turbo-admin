@@ -9,7 +9,7 @@ import type { RoomDetailResponse, RoomPlayerRef } from '#/api/types';
 import { ask, type Question } from '#/components/confirm';
 import { Sheet, SheetItem } from '#/components/Sheet';
 import { TabbedPanel } from '#/components/TabbedPanel';
-import { Avatar, Badge, Button, EmptyState, ErrorNotice, HeaderLink, IconButton, Input, Kv, Label, Loading, PageBody, Panel, Segmented, Select, Stat, Switch, Textarea } from '#/components/ui';
+import { Avatar, Badge, Button, EmptyState, ErrorNotice, HeaderLink, IconButton, Input, Kv, Label, Loading, PageBody, Panel, Segmented, Select, Stat, Switch, Textarea, TextLink } from '#/components/ui';
 import { fromNow } from '#/lib/time';
 
 import { doorModeLabel, formatDateTime, tradeModeLabel, whoLabel } from './labels';
@@ -349,7 +349,7 @@ export const RoomPage = () => {
                             <div className="flex min-w-0 flex-[1_1_300px] flex-col gap-4 max-lg:order-first lg:gap-5">
                                 <RoomControls room={room} run={run} busy={action.isPending} />
                                 {/* Only what bears on the people in the room now; everything else is on the Settings tab. */}
-                                <Panel title="Who may do what" actions={room.can.editSettings ? <Link to={`/rooms/${id}/settings`} className="text-xs text-accent hover:underline">All settings</Link> : undefined}>
+                                <Panel title="Who may do what" actions={room.can.editSettings ? <TextLink to={`/rooms/${id}/settings`}>All settings</TextLink> : undefined}>
                                     <dl>
                                         <Kv label="Door">{doorModeLabel(room.doorMode).toLowerCase()}{room.hasPassword ? ' · password set' : ''}</Kv>
                                         <Kv label="Trading">{tradeModeLabel(room.tradeMode).toLowerCase()}</Kv>

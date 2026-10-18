@@ -32,6 +32,10 @@
     --color-series-1: #008f85;
     --color-series-2: #7048e8;
 
+    /* The catalogue's own: coins and club (amber), VIP (violet), as the client marks them. */
+    --color-coin: #c26a00;
+    --color-vip: #8b3fd9;
+
     /* States: live and fine, needs attention, destructive or refused. Each with a fill and a line. */
     --color-good: #157a45;
     --color-good-soft: #e3f5ec;
@@ -67,6 +71,9 @@
 
     --color-series-1: #14a397;
     --color-series-2: #8b6ff0;
+
+    --color-coin: #f59e0b;
+    --color-vip: #c084fc;
 
     --color-good: #5bd68a;
     --color-good-soft: #0f2219;

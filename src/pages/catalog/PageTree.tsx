@@ -7,7 +7,7 @@ import { type KeyboardEventHandler, type ReactNode, useState } from 'react';
 import { catalogIconUrl, useClientAssets } from '#/api/assets';
 import { type CatalogPageNode, type CatalogTree, FRONT_PAGE_LAYOUT } from '#/api/catalog';
 import { SearchInput } from '#/components/SearchInput';
-import { EmptyState } from '#/components/ui';
+import { EmptyState, IconButton } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 import { DISPLAY_LABELS, inBuildersClub } from './labels';
@@ -43,7 +43,7 @@ const Highlight = ({ text, needle }: { text: string; needle: string }) => {
 /** A page's marks: the front page, hidden, in the Builders Club catalog. */
 const Marks = ({ page }: { page: CatalogPageNode }) => (
     <>
-        {page.layout === FRONT_PAGE_LAYOUT && <span title="The front page"><Star className="size-3.5 shrink-0 text-[#f59e0b]" aria-label="front page" /></span>}
+        {page.layout === FRONT_PAGE_LAYOUT && <span title="The front page"><Star className="size-3.5 shrink-0 text-coin" aria-label="front page" /></span>}
         {page.display === 'invisible' && <span title="Hidden"><EyeOff className="size-3.5 shrink-0 text-muted" aria-label="hidden" /></span>}
         {inBuildersClub(page.display) && <span title={DISPLAY_LABELS[page.display]}><Hammer className="size-3.5 shrink-0 text-muted" aria-label={DISPLAY_LABELS[page.display]} /></span>}
     </>
@@ -161,9 +161,7 @@ const Row = ({ row, selected, open, canManage, projectedDepth, onToggle, onSelec
 };
 
 const ToolButton = ({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) => (
-    <button type="button" onClick={onClick} title={label} aria-label={label} className="grid size-8 shrink-0 place-items-center rounded-lg text-muted hover:bg-subtle hover:text-ink [&>svg]:size-4">
-        {children}
-    </button>
+    <IconButton label={label} icon={children} onClick={onClick} />
 );
 
 interface PageTreeProps {

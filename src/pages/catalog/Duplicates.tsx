@@ -5,7 +5,7 @@ import { catalogCalls, type CatalogTree, type Duplicate, type DuplicateOffer, us
 import { ask } from '#/components/confirm';
 import { SearchInput } from '#/components/SearchInput';
 import { toast, toastError } from '#/components/toast';
-import { Button, ErrorNotice, Loading, Switch } from '#/components/ui';
+import { Button, EmptyState, ErrorNotice, IconButton, Loading, Switch, TextButton } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 import { priceOf } from './offers';
@@ -29,12 +29,10 @@ const OfferRow = ({ tree, offer, busy, onOpen, onDelete, onKeepOnly }: { tree: C
         <span className="font-mono text-xs tabular-nums sm:w-28 sm:text-right">{priceOf(offer, tree)}</span>
         {tree.canManage && (
             <span className="flex items-center gap-1">
-                <button type="button" disabled={busy} onClick={onKeepOnly} className="min-h-10 rounded-md px-2 py-1 text-xs text-accent hover:bg-accent-soft sm:min-h-0 disabled:pointer-events-none disabled:opacity-40" title="Delete the other offers of it">
+                <TextButton disabled={busy} onClick={onKeepOnly} title="Delete the other offers of it" className="min-h-10 px-2 sm:min-h-0">
                     Keep only this
-                </button>
-                <button type="button" disabled={busy} onClick={onDelete} aria-label={`Delete offer ${offer.offerId}`} title="Delete this offer" className="grid size-10 place-items-center rounded-md text-muted hover:bg-bad-soft hover:text-bad disabled:opacity-40 sm:size-8">
-                    <Trash2 className="size-3.5" />
-                </button>
+                </TextButton>
+                <IconButton label={`Delete offer ${offer.offerId}`} icon={<Trash2 />} tone="bad" small disabled={busy} onClick={onDelete} />
             </span>
         )}
     </li>
@@ -95,10 +93,9 @@ export const Duplicates = ({ tree, onOpen }: { tree: CatalogTree; onOpen: (pageI
             {duplicates.error && <ErrorNotice error={duplicates.error} />}
             {duplicates.isPending && <Loading />}
             {duplicates.data && shown.length === 0 && (
-                <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-line px-6 py-16 text-center">
-                    <CheckCircle2 className="size-8 text-good" />
-                    <p className="text-sm text-muted">{all.length === 0 ? 'No furni is sold by more than one offer.' : 'None of them matches.'}</p>
-                </div>
+                <EmptyState framed icon={<CheckCircle2 className="text-good" />}>
+                    {all.length === 0 ? 'No furni is sold by more than one offer.' : 'None of them matches.'}
+                </EmptyState>
             )}
 
             <ul className="grid gap-3 xl:grid-cols-2">

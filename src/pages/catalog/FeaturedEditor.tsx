@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { promoImageUrl, useClientAssets } from '#/api/assets';
 import { catalogCalls, type CatalogFeaturedInput, type CatalogFeaturedItem, type CatalogOffer, type CatalogTree, FEATURED_MAX, type FeaturedLinkType, useCatalogEdit } from '#/api/catalog';
 import { toast } from '#/components/toast';
-import { Button, EmptyState, ErrorNotice, Input, Labeled, Segmented, Select } from '#/components/ui';
+import { Button, EmptyState, ErrorNotice, IconButton, Input, Labeled, Segmented, Select } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 import { givesOf } from './offers';
@@ -55,9 +55,7 @@ const ItemCard = ({ item, index, tree, offers, onChange, onRemove, disabled }: {
                 )}
                 <span className="text-xs font-semibold">{index + 1}. {SLOT_NAMES[index]}</span>
                 {!disabled && (
-                    <button type="button" onClick={onRemove} aria-label="Remove it" className="ml-auto grid size-10 place-items-center rounded-lg text-muted hover:bg-bad-soft hover:text-bad sm:size-7">
-                        <Trash2 className="size-3.5" />
-                    </button>
+                    <IconButton label="Remove it" icon={<Trash2 />} tone="bad" small onClick={onRemove} className="ml-auto" />
                 )}
             </div>
             <div className="flex flex-col gap-3 p-3">

@@ -28,7 +28,7 @@ export interface Price {
 export const PriceFields = ({ tree, value, onChange }: { tree: CatalogTree; value: Price; onChange: (price: Price) => void }) => (
     <div className="flex items-center gap-1.5">
         <div className="relative w-24 shrink-0">
-            <Coins className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-[#f59e0b]" />
+            <Coins className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-coin" />
             <Input type="number" min={0} value={value.costCredits} onChange={event => onChange({ ...value, costCredits: Math.max(0, Math.floor(Number(event.target.value) || 0)) })} className="w-full pl-8 font-mono" aria-label="Credits" title="Credits" />
         </div>
         {tree.currencies.length > 0 && (

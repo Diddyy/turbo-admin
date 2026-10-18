@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router';
 
 import { type PlayerSanctionItem, usePlayer, usePlayerAbilities } from '#/api/players';
 import { useMe } from '#/api/queries';
-import { Avatar, Badge, EmptyState, ErrorNotice, HeaderLink, Kv, Label, LiveBadge, Loading, PageBody, PageHeader, Panel, Stat } from '#/components/ui';
+import { Avatar, Badge, EmptyState, ErrorNotice, HeaderLink, Kv, Label, LiveBadge, Loading, PageBody, PageHeader, Panel, Stat, TextLink } from '#/components/ui';
 import { useRememberRecent } from '#/lib/recent';
 import { fromNow } from '#/lib/time';
 import { formatDateTime } from '#/pages/rooms/labels';
@@ -120,7 +120,7 @@ export const PlayerPage = () => {
                                 <Panel
                                     title={`Rooms (${player.roomsOwned})`}
                                     actions={player.roomsOwned > player.recentRooms.length && me?.canViewRooms
-                                        ? <Link to={`/rooms?${new URLSearchParams({ q: player.name, by: 'owner', page: '1' })}`} className="text-xs text-accent hover:underline">All {player.roomsOwned}</Link>
+                                        ? <TextLink to={`/rooms?${new URLSearchParams({ q: player.name, by: 'owner', page: '1' })}`}>All {player.roomsOwned}</TextLink>
                                         : undefined}
                                 >
                                     {player.recentRooms.length === 0

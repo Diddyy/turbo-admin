@@ -5,7 +5,7 @@ import { type AuditFacet, type AuditFurni, catalogCalls, type CatalogTree, type 
 import { Pagination } from '#/components/Pagination';
 import { SearchInput } from '#/components/SearchInput';
 import { toast, toastError } from '#/components/toast';
-import { Button, ErrorNotice, Input, Label, Loading, Segmented } from '#/components/ui';
+import { Button, EmptyState, ErrorNotice, IconButton, Input, Label, Loading, Segmented, TextButton } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 import { PageSelect, type Price, PriceFields } from './fields';
@@ -24,7 +24,7 @@ const FacetList = ({ title, facets, value, none, onChange }: { title: string; fa
         <section className="flex min-h-0 flex-col gap-1.5">
             <div className="flex items-center justify-between gap-2">
                 <Label as="h3">{title}</Label>
-                {value !== '' && <button type="button" onClick={() => onChange('')} className="text-xs text-accent hover:underline">all</button>}
+                {value !== '' && <TextButton onClick={() => onChange('')}>all</TextButton>}
             </div>
             {facets.length > 8 && <Input value={filter} onChange={event => setFilter(event.target.value)} placeholder={`Find a ${title.toLowerCase().replace(/s$/, '')}`} className="h-9 w-full text-xs sm:h-8" />}
             <ul className="flex max-h-64 flex-col overflow-y-auto">
@@ -187,8 +187,7 @@ export const MissingFurni = ({ tree, pageId, onOpenPage, onAdded }: MissingFurni
                         )}
                     </span>
                     {items.length > 0 && tree.canManage && (
-                        <button
-                            type="button"
+                        <TextButton
                             onClick={() => setPicked((current) => {
                                 const next = new Map(current);
 
@@ -201,10 +200,9 @@ export const MissingFurni = ({ tree, pageId, onOpenPage, onAdded }: MissingFurni
 
                                 return next;
                             })}
-                            className="text-xs text-accent hover:underline"
                         >
                             {allPicked ? 'Unpick these' : `Pick these ${items.length}`}
-                        </button>
+                        </TextButton>
                     )}
                     <span className="ml-auto">
                         {data && <Pagination offset={page * PAGE_SIZE} limit={PAGE_SIZE} total={data.total} onChange={offset => setPage(Math.floor(offset / PAGE_SIZE))} />}
@@ -214,10 +212,9 @@ export const MissingFurni = ({ tree, pageId, onOpenPage, onAdded }: MissingFurni
                 {result.error && <ErrorNotice error={result.error} />}
                 {result.isPending && <Loading />}
                 {data && items.length === 0 && (
-                    <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-line px-6 py-16 text-center">
-                        <PackageSearch className="size-8 text-good" />
-                        <p className="text-sm text-muted">{scope === 'missing' ? 'Every furni that matches is in the catalog.' : 'Nothing that matches is sold only out of sight.'}</p>
-                    </div>
+                    <EmptyState framed icon={<PackageSearch className="text-good" />}>
+                        {scope === 'missing' ? 'Every furni that matches is in the catalog.' : 'Nothing that matches is sold only out of sight.'}
+                    </EmptyState>
                 )}
                 <ul className={cx('grid grid-cols-[repeat(auto-fill,minmax(7rem,1fr))] gap-2 transition-opacity', result.isFetching && !result.isPending && 'opacity-60')}>
                     {items.map(x => <FurniTile key={x.id} furni={x} picked={picked.has(x.id)} onToggle={() => tree.canManage && toggle(x)} />)}
@@ -227,11 +224,11 @@ export const MissingFurni = ({ tree, pageId, onOpenPage, onAdded }: MissingFurni
                     <div className="sticky bottom-3 z-20 flex flex-wrap items-center gap-2 rounded-xl border border-accent/50 bg-surface/95 p-2.5 shadow-xl backdrop-blur">
                         <span className="flex items-center gap-1.5 px-1 text-sm font-medium">
                             {picked.size} picked
-                            <button type="button" onClick={() => setPicked(new Map())} aria-label="Unpick them all" className="grid size-9 place-items-center rounded text-muted hover:bg-subtle hover:text-ink sm:size-6"><X className="size-3.5" /></button>
+                            <IconButton label="Unpick them all" icon={<X />} small onClick={() => setPicked(new Map())} />
                         </span>
                         <span className="text-xs text-muted">add to</span>
                         <PageSelect tree={tree} value={target} onChange={setTarget} className="flex-1 sm:w-56 sm:flex-none" />
-                        {target && <button type="button" onClick={() => onOpenPage(target)} className="text-xs text-accent hover:underline">open</button>}
+                        {target && <TextButton onClick={() => onOpenPage(target)}>open</TextButton>}
                         <span className="text-xs text-muted">at</span>
                         <PriceFields tree={tree} value={price} onChange={setPrice} />
                         <Button icon={<PackagePlus />} disabled={!target || add.isPending || (price.costCurrency > 0 && !price.currencyTypeId)} onClick={submit} className="ml-auto">

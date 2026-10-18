@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { previewRewardTrackImport, type RewardTrackImportChange, type RewardTrackImportRequest, useImportRewardTracks } from '#/api/rewardTracks';
 import { ask } from '#/components/confirm';
 import { celebrate, toast, toastError } from '#/components/toast';
-import { Badge, Button, Checkbox, ErrorNotice, Label } from '#/components/ui';
+import { Badge, Button, Checkbox, EmptyState, ErrorNotice, Label, Stat } from '#/components/ui';
 
 interface CaptureTrack {
     id?: unknown;
@@ -191,19 +191,15 @@ export const ImportTracks = ({ onOpen }: { onOpen: (id: string) => void }) => {
 
             <div className="flex min-w-0 flex-col gap-3">
                 {!data && (
-                    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line px-6 py-20 text-center text-muted">
-                        <Layers className="size-9 text-accent" />
-                        <p className="max-w-md text-sm">Pick a capture and plan it. Each track shows here with what happens to it, before anything is made.</p>
-                    </div>
+                    <EmptyState framed icon={<Layers className="text-accent" />}>
+                        Pick a capture and plan it. Each track shows here with what happens to it, before anything is made.
+                    </EmptyState>
                 )}
                 {data && (
                     <>
                         <div className="grid grid-cols-3 gap-2">
                             {([ 'added', 'changed', 'unchanged' ] as const).map(action => (
-                                <div key={action} className="rounded-xl border border-line bg-surface px-3 py-2.5">
-                                    <div className="font-mono text-[10px] tracking-[0.08em] text-muted uppercase">{action === 'unchanged' ? 'the same' : action}</div>
-                                    <div className="font-mono text-xl font-semibold tabular-nums">{data.tracks.filter(x => x.action === action).length}</div>
-                                </div>
+                                <Stat key={action} label={action === 'unchanged' ? 'the same' : action} value={data.tracks.filter(x => x.action === action).length} compact />
                             ))}
                         </div>
                         {!data.changes && <p className="text-xs text-muted">Nothing to do: the hotel's tracks are in line with the capture.</p>}

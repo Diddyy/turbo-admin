@@ -95,9 +95,12 @@ export const HeaderLink = ({ to, icon, children }: { to: string; icon: ReactNode
     </Link>
 );
 
-/** The page under its header, to the same width. */
-export const PageBody = ({ children, className }: { children: ReactNode; className?: string }) => (
-    <div className={cx(PAGE_WIDTH, 'animate-rise px-3 py-4 sm:px-4 lg:px-6 lg:py-6', className)}>{children}</div>
+/**
+ * The page under its header, to the same width. `still` leaves out its rising entrance, for a page
+ * with drag and drop: a transformed parent would move the drag overlay.
+ */
+export const PageBody = ({ children, className, still }: { children: ReactNode; className?: string; still?: boolean }) => (
+    <div className={cx(PAGE_WIDTH, !still && 'animate-rise', 'px-3 py-4 sm:px-4 lg:px-6 lg:py-6', className)}>{children}</div>
 );
 
 interface PanelProps {
@@ -135,12 +138,13 @@ export const Label = ({ as: Tag = 'span', children, className }: { as?: 'span' |
 
 /**
  * A number worth a glance, in the mono face, with what it is above it. `meter` (0 to 1) draws how
- * full it is under it; `tone` colours a number that needs attention.
+ * full it is under it; `tone` colours a number that needs attention. `compact` for a row of
+ * figures inside a tool (what a plan would make), smaller than a page's own.
  */
-export const Stat = ({ label, value, detail, meter, tone }: { label: string; value: ReactNode; detail?: ReactNode; meter?: number; tone?: 'warn' | 'bad' }) => (
-    <div className="rounded-xl border border-line bg-surface px-4 py-3.5">
-        <Label>{label}</Label>
-        <div className={cx('mt-1.5 font-mono text-2xl font-semibold tabular-nums', tone === 'warn' && 'text-warn', tone === 'bad' && 'text-bad')}>{value}</div>
+export const Stat = ({ label, value, detail, meter, tone, icon, compact }: { label: string; value: ReactNode; detail?: ReactNode; meter?: number; tone?: 'warn' | 'bad'; icon?: ReactNode; compact?: boolean }) => (
+    <div className={cx('rounded-xl border border-line bg-surface', compact ? 'px-3 py-2.5' : 'px-4 py-3.5')}>
+        <Label className="flex items-center gap-1 [&>svg]:size-3">{icon}{label}</Label>
+        <div className={cx('font-mono font-semibold tabular-nums', compact ? 'mt-0.5 text-xl' : 'mt-1.5 text-2xl', tone === 'warn' && 'text-warn', tone === 'bad' && 'text-bad')}>{value}</div>
         {meter !== undefined && (
             <div className="mt-2.5 h-1 rounded-full bg-line" aria-hidden>
                 <div className="h-1 rounded-full bg-accent" style={{ width: `${Math.round(Math.min(1, Math.max(0, meter)) * 100)}%` }} />
@@ -336,16 +340,21 @@ export const Button = ({ variant = 'primary', icon, className, children, ...butt
     </button>
 );
 
-/** A button that is only an icon: named for screen readers and on hover. */
-export const IconButton = ({ label, icon, tone, className, ...button }: ButtonHTMLAttributes<HTMLButtonElement> & { label: string; icon: ReactNode; tone?: 'bad' }) => (
+/**
+ * A button that is only an icon: named for screen readers and on hover. `small` for a dense row
+ * (an item in a list inside a card), still a thumb's size on a phone. `tone="bad"` deletes: muted
+ * until pointed at, then red.
+ */
+export const IconButton = ({ label, icon, tone, small, className, ...button }: ButtonHTMLAttributes<HTMLButtonElement> & { label: string; icon: ReactNode; tone?: 'bad'; small?: boolean }) => (
     <button
         type="button"
         title={label}
         aria-label={label}
         {...button}
         className={cx(
-            'grid size-11 shrink-0 place-items-center rounded-lg border border-transparent transition sm:size-8 [&>svg]:size-[18px]',
-            tone === 'bad' ? 'text-bad hover:border-bad-line hover:bg-bad-soft' : 'text-muted hover:border-line hover:bg-subtle hover:text-ink',
+            'grid shrink-0 place-items-center rounded-lg border border-transparent transition',
+            small ? 'size-10 sm:size-7 [&>svg]:size-3.5' : 'size-11 sm:size-8 [&>svg]:size-[18px]',
+            tone === 'bad' ? 'text-muted hover:border-bad-line hover:bg-bad-soft hover:text-bad' : 'text-muted hover:border-line hover:bg-subtle hover:text-ink',
             'disabled:pointer-events-none disabled:opacity-50',
             className,
         )}
@@ -354,7 +363,34 @@ export const IconButton = ({ label, icon, tone, className, ...button }: ButtonHT
     </button>
 );
 
-/** A label and its value, as one line of a settings summary. */
+const TEXT_ACTION = 'inline-flex items-center gap-0.5 rounded text-xs font-medium text-accent hover:underline disabled:pointer-events-none disabled:opacity-50 [&>svg]:size-3.5';
+
+/** A small action in words, in the accent: "all", "none", "open all", beside what it acts on. */
+export const TextButton = ({ className, ...button }: ButtonHTMLAttributes<HTMLButtonElement>) => (
+    <button type="button" {...button} className={cx(TEXT_ACTION, className)} />
+);
+
+/** A small link in words, in the accent: a card's "The whole log ›" or "All settings". */
+export const TextLink = ({ to, className, children }: { to: string; className?: string; children: ReactNode }) => (
+    <Link to={to} className={cx(TEXT_ACTION, className)}>{children}</Link>
+);
+
+/** A pill that is on or off: a quick value to pick, or a filter to narrow a list by. */
+export const Chip = ({ active, className, children, ...button }: ButtonHTMLAttributes<HTMLButtonElement> & { active: boolean }) => (
+    <button
+        type="button"
+        aria-pressed={active}
+        {...button}
+        className={cx(
+            'inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 text-xs transition-colors disabled:pointer-events-none disabled:opacity-50 sm:min-h-7',
+            active ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted hover:border-accent hover:text-accent',
+            className,
+        )}
+    >
+        {children}
+    </button>
+);
+
 /** A fact and its value on one line; `mono` for a value that is code (a hash, a path, an id). */
 export const Kv = ({ label, mono, children }: { label: string; mono?: boolean; children: ReactNode }) => (
     <div className="flex items-baseline justify-between gap-4 border-t border-line px-4 py-2.5 text-[13px] first:border-t-0">
@@ -371,7 +407,20 @@ export const Td = ({ children, className }: { children?: ReactNode; className?: 
     <td className={cx('border-b border-line px-4 py-2.5 align-middle', className)}>{children}</td>
 );
 
-export const EmptyState = ({ children }: { children: ReactNode }) => <p className="px-4 py-6 text-sm text-muted">{children}</p>;
+/**
+ * What shows where a list has nothing. Inside a card, a line; `framed`, a dashed box of its own
+ * for a page or a tool's results area, with `icon` over the words (coloured by the caller).
+ */
+export const EmptyState = ({ children, icon, framed }: { children: ReactNode; icon?: ReactNode; framed?: boolean }) => (
+    framed
+        ? (
+                <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-line px-6 py-16 text-center [&>svg]:size-8">
+                    {icon}
+                    <p className="max-w-md text-sm text-muted">{children}</p>
+                </div>
+            )
+        : <p className="px-4 py-6 text-sm text-muted">{children}</p>
+);
 
 /** A player's initials in a coloured tile, the colour picked from their id so it stays theirs. */
 export const Avatar = ({ id, name, figure, large, className }: { id: number; name: string; figure?: string; large?: boolean; className?: string }) => {

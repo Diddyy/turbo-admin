@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 import { Modal } from '#/components/Modal';
 import { SearchInput } from '#/components/SearchInput';
-import { Label } from '#/components/ui';
+import { Chip, Label } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 import { isKnownLayout, LAYOUT_GROUPS, LAYOUTS } from './layouts';
@@ -74,9 +74,9 @@ export const LayoutPicker = ({ value, open, extra, onPick, onClose }: { value: s
                         <p className="text-xs text-muted">Codes the hotel lists (Turbo:Admin:CatalogLayouts) or pages use, that this list doesn't describe.</p>
                         <div className="flex flex-wrap gap-1.5">
                             {others.map(code => (
-                                <button key={code} type="button" onClick={() => pick(code)} className={cx('rounded-lg border px-2.5 py-1 font-mono text-xs hover:border-accent', code === value ? 'border-accent bg-accent-soft' : 'border-line')}>
+                                <Chip key={code} active={code === value} onClick={() => pick(code)} className="font-mono">
                                     {code}
-                                </button>
+                                </Chip>
                             ))}
                         </div>
                     </section>

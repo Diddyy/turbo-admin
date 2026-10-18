@@ -2,7 +2,7 @@ import { ArrowRight, ChevronRight, Copy, EyeOff, PackageSearch, Star, Wand2 } fr
 import type { ReactNode } from 'react';
 
 import { type CatalogTree, FRONT_PAGE_LAYOUT, useDuplicates, useUnoffered } from '#/api/catalog';
-import { Button, Label } from '#/components/ui';
+import { Button, Label, Stat } from '#/components/ui';
 import { cx } from '#/lib/cx';
 import { plural } from '#/lib/plural';
 
@@ -109,12 +109,7 @@ export const CatalogHome = ({ tree, busy, compact, onOpenPage, onView, onCreateF
     return (
         <div className="flex min-w-0 flex-col gap-4">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {stats.map(x => (
-                    <div key={x.label} className="rounded-xl border border-line bg-surface px-3 py-2.5">
-                        <div className="flex items-center gap-1 font-mono text-[10px] tracking-[0.08em] text-muted uppercase">{x.icon}{x.label}</div>
-                        <div className="font-mono text-xl font-semibold tabular-nums">{x.value.toLocaleString()}</div>
-                    </div>
-                ))}
+                {stats.map(x => <Stat key={x.label} label={x.label} icon={x.icon} value={x.value.toLocaleString()} compact />)}
             </div>
 
             <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-4">

@@ -6,7 +6,7 @@ import { useCommandLog } from '#/api/commandLog';
 import { useLive } from '#/api/live';
 import { useDashboard, useHotelAbilities, useMe } from '#/api/queries';
 import type { AvailabilityPhase } from '#/api/types';
-import { Badge, Button, EmptyState, ErrorNotice, Label, LiveBadge, Loading, PageBody, PageHeader, Panel, Stat } from '#/components/ui';
+import { Badge, Button, EmptyState, ErrorNotice, Label, LiveBadge, Loading, PageBody, PageHeader, Panel, Stat, TextLink } from '#/components/ui';
 import { phaseOf } from '#/layout/availability';
 import { useHotelSheet } from '#/layout/hotelSheet';
 import { useHubTabs } from '#/layout/nav';
@@ -98,7 +98,7 @@ const RecentCommands = () => {
         <Panel
             title="Recent commands"
             className="overflow-clip"
-            actions={<Link to="/command-log" className="inline-flex items-center gap-0.5 text-xs font-medium text-accent hover:underline">The whole log <ChevronRight className="size-3.5" /></Link>}
+            actions={<TextLink to="/command-log">The whole log <ChevronRight /></TextLink>}
         >
             {error && <div className="p-4"><ErrorNotice error={error} /></div>}
             {!data && !error && <Loading />}

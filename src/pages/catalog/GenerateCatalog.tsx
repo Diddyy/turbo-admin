@@ -5,7 +5,7 @@ import { type ReactNode, useState } from 'react';
 import { catalogCalls, type CatalogTree, type GeneratedPage, type GenerateMode, type GeneratePageEdit, type GeneratePlan, type GenerateRequest, type GenerateSection, useCatalogEdit } from '#/api/catalog';
 import { ask } from '#/components/confirm';
 import { celebrate, toast, toastError } from '#/components/toast';
-import { Button, ErrorNotice, Input, Label, Labeled, Switch } from '#/components/ui';
+import { Button, EmptyState, ErrorNotice, Input, Label, Labeled, Stat, Switch, TextButton } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 import { type Price, PriceFields } from './fields';
@@ -239,9 +239,9 @@ export const GenerateCatalog = ({ tree, onDone }: { tree: CatalogTree; onDone: (
                 <section className="flex flex-col gap-1">
                     <div className="flex items-center justify-between">
                         <Label as="h3">Tabs</Label>
-                        <button type="button" onClick={() => changed(setSections)(new Set(sections.size === SECTIONS.length ? [] : SECTIONS.map(x => x.key)))} className="text-xs text-accent hover:underline">
+                        <TextButton onClick={() => changed(setSections)(new Set(sections.size === SECTIONS.length ? [] : SECTIONS.map(x => x.key)))}>
                             {sections.size === SECTIONS.length ? 'none' : 'all'}
-                        </button>
+                        </TextButton>
                     </div>
                     {SECTIONS.map(x => (
                         <label key={x.key} className="flex cursor-pointer items-start gap-2.5 rounded-lg px-1.5 py-1.5 hover:bg-subtle">
@@ -287,10 +287,9 @@ export const GenerateCatalog = ({ tree, onDone }: { tree: CatalogTree; onDone: (
 
             <div className="flex min-w-0 flex-col gap-3">
                 {!data && (
-                    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line px-6 py-20 text-center text-muted">
-                        <Layers className="size-9 text-accent" />
-                        <p className="max-w-md text-sm">Pick what to generate and plan it. The whole tree shows here - rename a page, give it another icon, or leave it out - before anything is made.</p>
-                    </div>
+                    <EmptyState framed icon={<Layers className="text-accent" />}>
+                        Pick what to generate and plan it. The whole tree shows here - rename a page, give it another icon, or leave it out - before anything is made.
+                    </EmptyState>
                 )}
                 {data && (
                     <>
@@ -300,12 +299,7 @@ export const GenerateCatalog = ({ tree, onDone }: { tree: CatalogTree; onDone: (
                                 { label: 'Pages', value: data.pages },
                                 { label: 'Offers made', value: data.newOffers },
                                 { label: 'Offers moved', value: data.movedOffers },
-                            ].map(x => (
-                                <div key={x.label} className="rounded-xl border border-line bg-surface px-3 py-2.5">
-                                    <div className="font-mono text-[10px] tracking-[0.08em] text-muted uppercase">{x.label}</div>
-                                    <div className="font-mono text-xl font-semibold tabular-nums">{x.value.toLocaleString()}</div>
-                                </div>
-                            ))}
+                            ].map(x => <Stat key={x.label} label={x.label} value={x.value.toLocaleString()} compact />)}
                         </div>
                         {data.warnings.length > 0 && (
                             <ul className="flex flex-col gap-1.5">
@@ -320,8 +314,8 @@ export const GenerateCatalog = ({ tree, onDone }: { tree: CatalogTree; onDone: (
                         <div className="rounded-xl border border-line bg-surface">
                             <div className="flex items-center gap-2 border-b border-line px-3 py-2 text-xs text-muted">
                                 <span className="flex-1">Click a title to rename it, an icon to change it; untick a page to leave it out.</span>
-                                <button type="button" onClick={() => setOpen(new Set(allKeys(data.tabs)))} className="text-accent hover:underline">open all</button>
-                                <button type="button" onClick={() => setOpen(new Set())} className="text-accent hover:underline">close all</button>
+                                <TextButton onClick={() => setOpen(new Set(allKeys(data.tabs)))}>open all</TextButton>
+                                <TextButton onClick={() => setOpen(new Set())}>close all</TextButton>
                             </div>
                             <ul className="p-1.5">
                                 {data.tabs.map(tab => (

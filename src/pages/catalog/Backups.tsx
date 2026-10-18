@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { type CatalogBackup, catalogCalls, type CatalogTree, useCatalogBackups, useCatalogEdit } from '#/api/catalog';
 import { ask } from '#/components/confirm';
 import { toast, toastError } from '#/components/toast';
-import { Badge, Button, ErrorNotice, Input, Loading } from '#/components/ui';
+import { Badge, Button, EmptyState, ErrorNotice, IconButton, Input, Loading } from '#/components/ui';
 
 /** The longest name a backup takes, as the server holds it. */
 const NAME_MAX_LENGTH = 100;
@@ -32,9 +32,7 @@ const BackupRow = ({ backup, canManage, busy, onRollback, onDelete }: { backup: 
                 <Button variant="secondary" icon={<ArchiveRestore />} disabled={busy} onClick={onRollback} title="Put the catalog back as this backup has it">
                     Roll back
                 </Button>
-                <button type="button" disabled={busy} onClick={onDelete} aria-label={`Delete the backup ${backup.name}`} title="Delete this backup" className="grid size-11 place-items-center rounded-md text-muted hover:bg-bad-soft hover:text-bad disabled:opacity-40 sm:size-9">
-                    <Trash2 className="size-4" />
-                </button>
+                <IconButton label={`Delete the backup ${backup.name}`} icon={<Trash2 />} tone="bad" disabled={busy} onClick={onDelete} />
             </div>
         )}
     </li>
@@ -112,10 +110,7 @@ export const Backups = ({ tree }: { tree: CatalogTree }) => {
             {backups.error && <ErrorNotice error={backups.error} />}
             {backups.isPending && <Loading />}
             {backups.data && items.length === 0 && (
-                <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-line px-6 py-16 text-center">
-                    <DatabaseBackup className="size-8 text-muted" />
-                    <p className="text-sm text-muted">No backups yet.</p>
-                </div>
+                <EmptyState framed icon={<DatabaseBackup className="text-muted" />}>No backups yet.</EmptyState>
             )}
             {items.length > 0 && (
                 <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">

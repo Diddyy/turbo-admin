@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { catalogCalls, type CatalogTree, type ImportPageChange, type ImportPlan, type ImportRequest, useCatalogEdit } from '#/api/catalog';
 import { ask } from '#/components/confirm';
 import { celebrate, toast, toastError } from '#/components/toast';
-import { Button, ErrorNotice, Label, Switch } from '#/components/ui';
+import { Button, EmptyState, ErrorNotice, Label, Stat, Switch } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 const ACTIONS: Record<ImportPageChange['action'], { label: string; tone: string }> = {
@@ -125,10 +125,9 @@ export const ImportCapture = ({ tree }: { tree: CatalogTree }) => {
 
             <div className="flex min-w-0 flex-col gap-3">
                 {!data && (
-                    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line px-6 py-20 text-center text-muted">
-                        <Layers className="size-9 text-accent" />
-                        <p className="max-w-md text-sm">Pick a capture and plan it. Every page shows here with what happens to it, and what is left out and why, before anything is made.</p>
-                    </div>
+                    <EmptyState framed icon={<Layers className="text-accent" />}>
+                        Pick a capture and plan it. Every page shows here with what happens to it, and what is left out and why, before anything is made.
+                    </EmptyState>
                 )}
                 {data && (
                     <>
@@ -139,12 +138,7 @@ export const ImportCapture = ({ tree }: { tree: CatalogTree }) => {
                                 { label: 'Offers added', value: data.offersAdded },
                                 { label: 'Offers changed', value: data.offersChanged },
                                 { label: 'Left out', value: data.skipped.length },
-                            ].map(x => (
-                                <div key={x.label} className="rounded-xl border border-line bg-surface px-3 py-2.5">
-                                    <div className="font-mono text-[10px] tracking-[0.08em] text-muted uppercase">{x.label}</div>
-                                    <div className="font-mono text-xl font-semibold tabular-nums">{x.value.toLocaleString()}</div>
-                                </div>
-                            ))}
+                            ].map(x => <Stat key={x.label} label={x.label} value={x.value.toLocaleString()} compact />)}
                         </div>
                         <p className="text-xs text-muted">
                             Under the tab <span className="font-semibold text-ink">{data.category}</span>. {data.offersUnchanged.toLocaleString()} offers already in line{data.offersKept > 0 && `, ${data.offersKept.toLocaleString()} kept that the capture does not have`}.

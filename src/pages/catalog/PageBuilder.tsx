@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import { type BuildPlan, type BuildRequest, catalogCalls, type CatalogPageDetail, type CatalogTree, type PageDisplay, useCatalogEdit, useFurniLines } from '#/api/catalog';
 import { Modal } from '#/components/Modal';
 import { toast } from '#/components/toast';
-import { Button, EmptyState, ErrorNotice, Input, Labeled, Segmented, Select, Switch, WarningNotice } from '#/components/ui';
+import { Button, EmptyState, ErrorNotice, IconButton, Input, Labeled, Segmented, Select, Switch, TextButton, WarningNotice } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 import { buildersFor, type BuilderSpec } from './builders';
@@ -33,9 +33,13 @@ const BuilderInputs = ({ spec, request, onChange }: { spec: BuilderSpec; request
         case 'line':
             return (
                 <div className="flex flex-col gap-2">
-                    <div className="flex gap-2 text-xs">
-                        <button type="button" onClick={() => setByPrefix(false)} className={cx('rounded-full border px-2.5 py-1', !byPrefix ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted')}>By furni line</button>
-                        <button type="button" onClick={() => setByPrefix(true)} className={cx('rounded-full border px-2.5 py-1', byPrefix ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted')}>By class name prefix</button>
+                    <div className="self-start">
+                        <Segmented
+                            label="Pick the furni"
+                            value={byPrefix ? 'prefix' : 'line'}
+                            onChange={value => setByPrefix(value === 'prefix')}
+                            options={[ { value: 'line', label: 'By furni line' }, { value: 'prefix', label: 'By class name prefix' } ]}
+                        />
                     </div>
                     {byPrefix
                         ? <Input value={request.prefix ?? ''} onChange={event => onChange({ ...request, line: null, prefix: event.target.value.trim() || null })} placeholder="e.g. hween_c23_" spellCheck={false} className="w-full font-mono" aria-label="Class name prefix" />
@@ -185,7 +189,7 @@ export const PageBuilder = ({ tree, page, open, onClose, onBuiltPage }: PageBuil
     const changesLayout = onPage && data && !data.createsPages && data.layout !== onPage.layout;
 
     return (
-        <Modal title={spec ? <span className="flex items-center gap-2"><button type="button" onClick={reset} aria-label="Back to the builders" className="grid size-7 place-items-center rounded-lg text-muted hover:bg-subtle hover:text-ink"><ArrowLeft className="size-4" /></button>Build: {spec.title}</span> : 'Build'} open={open} onClose={close} className="sm:max-w-3xl">
+        <Modal title={spec ? <span className="flex items-center gap-2"><IconButton label="Back to the builders" icon={<ArrowLeft />} small onClick={reset} />Build: {spec.title}</span> : 'Build'} open={open} onClose={close} className="sm:max-w-3xl">
             {!spec && (
                 <div className="flex flex-col gap-3 p-4">
                     <div className="flex flex-col gap-3 rounded-xl border border-line bg-subtle/40 p-3">
@@ -274,9 +278,9 @@ export const PageBuilder = ({ tree, page, open, onClose, onBuiltPage }: PageBuil
                             <div className="flex flex-wrap items-center gap-2 text-xs">
                                 <span className="font-medium">{picked.size} of {data.items.length} picked</span>
                                 <span className="text-muted">·</span>
-                                <button type="button" className="text-accent hover:underline" onClick={() => setPicked(new Set(data.items.map(x => x.key)))}>all</button>
-                                <button type="button" className="text-accent hover:underline" onClick={() => setPicked(new Set(data.items.filter(x => !x.alreadyOffered).map(x => x.key)))}>only new</button>
-                                <button type="button" className="text-accent hover:underline" onClick={() => setPicked(new Set())}>none</button>
+                                <TextButton onClick={() => setPicked(new Set(data.items.map(x => x.key)))}>all</TextButton>
+                                <TextButton onClick={() => setPicked(new Set(data.items.filter(x => !x.alreadyOffered).map(x => x.key)))}>only new</TextButton>
+                                <TextButton onClick={() => setPicked(new Set())}>none</TextButton>
                             </div>
                             {data.items.length === 0
                                 ? <EmptyState>Nothing to build from that.</EmptyState>
@@ -312,7 +316,7 @@ export const PageBuilder = ({ tree, page, open, onClose, onBuiltPage }: PageBuil
                                     <Labeled label="Each costs">
                                         <div className="flex gap-2">
                                             <div className="relative w-28">
-                                                <Coins className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-[#f59e0b]" />
+                                                <Coins className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-coin" />
                                                 <Input type="number" min={0} value={price.costCredits} onChange={event => setPrice({ ...price, costCredits: Math.max(0, Number(event.target.value) || 0) })} className="w-full pl-8 font-mono" aria-label="Credits" />
                                             </div>
                                             <Input type="number" min={0} value={price.costCurrency} onChange={event => setPrice({ ...price, costCurrency: Math.max(0, Number(event.target.value) || 0) })} disabled={tree.currencies.length === 0} className="w-20 font-mono" aria-label="Currency amount" />

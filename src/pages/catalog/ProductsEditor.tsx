@@ -5,7 +5,7 @@ import { badgeUrl, useClientAssets } from '#/api/assets';
 import { type CatalogFurniture, type CatalogProductInput, type EditableKind, type Membership, useFurnitureSearch } from '#/api/catalog';
 import { useProductLookup } from '#/api/gamedata';
 import { SearchInput } from '#/components/SearchInput';
-import { Input, Labeled, Segmented, Textarea } from '#/components/ui';
+import { Chip, IconButton, Input, Labeled, Segmented, Select, Textarea } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 import { lengthOf } from './labels';
@@ -94,10 +94,10 @@ export const PetPicker = ({ value, onChange, disabled }: { value: string; onChan
         <Labeled label="Pet type" hint="The buyer picks the breed and colour and names it. Its offer's name key should be a0 pet<type>, which the pet page reads.">
             <div className="flex gap-2">
                 <Input type="number" min={0} value={value} onChange={event => onChange(String(Math.max(0, Math.floor(Number(event.target.value) || 0))))} disabled={disabled} className="w-20 font-mono" aria-label="Pet type number" />
-                <select value={value} onChange={event => onChange(event.target.value)} disabled={disabled} aria-label="Pet type" className="h-11 min-w-0 flex-1 rounded-lg border border-line bg-canvas px-2 text-sm sm:h-9">
+                <Select value={value} onChange={event => onChange(event.target.value)} disabled={disabled} aria-label="Pet type" className="min-w-0 flex-1">
                     {!names.has(Number(value)) && <option value={value}>Type {value}</option>}
                     {[ ...names.entries() ].sort((a, b) => a[0] - b[0]).map(([ id, name ]) => <option key={id} value={String(id)}>{id} · {name ?? `pet ${id}`}</option>)}
-                </select>
+                </Select>
             </div>
         </Labeled>
     );
@@ -183,9 +183,9 @@ const ProductFields = ({ product, onChange, disabled, locked }: { product: Produ
                         </Labeled>
                         <div className="flex flex-wrap gap-1 pb-0.5">
                             {[ 31, 93, 186, 372 ].map(days => (
-                                <button key={days} type="button" disabled={disabled} onClick={() => set('subscriptionDays', days)} className={cx('rounded-full border px-2 py-0.5 text-[11px]', product.subscriptionDays === days ? 'border-accent bg-accent-soft text-accent' : 'border-line text-muted hover:text-ink')}>
+                                <Chip key={days} active={product.subscriptionDays === days} disabled={disabled} onClick={() => set('subscriptionDays', days)}>
                                     {lengthOf(days)}
-                                </button>
+                                </Chip>
                             ))}
                         </div>
                     </div>
@@ -241,9 +241,7 @@ export const ProductsEditor = ({ products, onChange, disabled, locked, allowed }
                                 <span className="text-xs font-semibold">{kind?.label ?? product.type}</span>
                                 {products.length > 1 && <span className="font-mono text-[11px] text-muted">{i + 1} of {products.length}</span>}
                                 {canEdit && products.length > 1 && (
-                                    <button type="button" onClick={() => onChange(products.filter(x => x.key !== product.key))} aria-label="Remove it" title="Remove it" className="ml-auto grid size-10 place-items-center rounded-lg text-muted hover:bg-bad-soft hover:text-bad sm:size-7">
-                                        <Trash2 className="size-3.5" />
-                                    </button>
+                                    <IconButton label="Remove it" icon={<Trash2 />} tone="bad" small onClick={() => onChange(products.filter(x => x.key !== product.key))} className="ml-auto" />
                                 )}
                             </div>
                             <ProductFields product={product} onChange={next => onChange(products.map(x => (x.key === product.key ? next : x)))} disabled={disabled} locked={locked} />

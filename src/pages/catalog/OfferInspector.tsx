@@ -1,4 +1,4 @@
-import { Coins, Copy, Crown, RotateCcw, Save, Star, Trash2, X } from 'lucide-react';
+import { Coins, Copy, Crown, RotateCcw, Save, Star, Trash2 } from 'lucide-react';
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
 
 import { catalogCalls, type CatalogFeaturedItem, type CatalogOffer, type CatalogOfferInput, type CatalogProductInput, type CatalogTree, type EditableKind, FEATURED_MAX, useCatalogEdit } from '#/api/catalog';
@@ -21,8 +21,8 @@ export type OfferStart = 'item' | 'membership' | 'gift';
 
 const CLUB_LEVELS: { value: number; label: string; icon?: ReactNode }[] = [
     { value: 0, label: 'Anyone' },
-    { value: 1, label: 'Club', icon: <Crown className="size-3.5 text-[#f59e0b]" /> },
-    { value: 2, label: 'VIP', icon: <Crown className="size-3.5 text-[#c084fc]" /> },
+    { value: 1, label: 'Club', icon: <Crown className="size-3.5 text-coin" /> },
+    { value: 2, label: 'VIP', icon: <Crown className="size-3.5 text-vip" /> },
 ];
 
 interface OfferDraft extends Omit<CatalogOfferInput, 'product' | 'products'> {
@@ -183,9 +183,6 @@ export const OfferInspector = ({ tree, pageId, offer, start, featured, onDone, o
                     <div className="truncate text-sm font-semibold">{offer ? (draft.localizationId || givesOf({ products: offer.products })) : 'New offer'}</div>
                     <div className="truncate font-mono text-[11px] text-muted">{offer ? `#${offer.id} · ${givesOf({ products: offer.products })}` : `on ${page?.localization ?? 'this page'}`}</div>
                 </div>
-                <button type="button" onClick={onDone} aria-label="Close the offer" className="grid size-9 shrink-0 place-items-center rounded-lg text-muted hover:bg-subtle hover:text-ink">
-                    <X className="size-4" />
-                </button>
             </div>
 
             <Group title="It gives">
@@ -230,7 +227,7 @@ export const OfferInspector = ({ tree, pageId, offer, start, featured, onDone, o
                     <div className="grid grid-cols-[7rem_minmax(0,1fr)] gap-2">
                         <Labeled label="Credits">
                             <div className="relative">
-                                <Coins className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-[#f59e0b]" />
+                                <Coins className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-coin" />
                                 <Input type="number" min={0} value={draft.costCredits} onChange={event => set('costCredits', Math.max(0, Number(event.target.value) || 0))} disabled={!canManage} className="w-full pl-8 font-mono" aria-label="Credits" />
                             </div>
                         </Labeled>

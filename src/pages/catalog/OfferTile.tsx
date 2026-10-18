@@ -28,11 +28,11 @@ export const OfferFace = ({ offer, tree }: { offer: CatalogOffer; tree: CatalogT
                 )}
                 <span className="absolute top-0 left-0 flex flex-col gap-0.5">
                     {!offer.visible && <EyeOff className="size-3.5 text-muted" aria-label="hidden" />}
-                    {offer.clubLevel > 0 && <Crown className={cx('size-3.5', offer.clubLevel === 2 ? 'text-[#c084fc]' : 'text-[#f59e0b]')} aria-label={offer.clubLevel === 2 ? 'VIP' : 'club'} />}
+                    {offer.clubLevel > 0 && <Crown className={cx('size-3.5', offer.clubLevel === 2 ? 'text-vip' : 'text-coin')} aria-label={offer.clubLevel === 2 ? 'VIP' : 'club'} />}
                     {offer.isClubGift && <Gift className="size-3.5 text-accent" aria-label="club gift" />}
                 </span>
                 {limited && (
-                    <span className="absolute top-0 right-0 rounded bg-[#f59e0b] px-1 font-mono text-[9px] font-bold text-black" title={`${limited.remaining} of ${limited.total} left`}>
+                    <span className="absolute top-0 right-0 rounded bg-coin px-1 font-mono text-[9px] font-bold text-black" title={`${limited.remaining} of ${limited.total} left`}>
                         LTD
                     </span>
                 )}

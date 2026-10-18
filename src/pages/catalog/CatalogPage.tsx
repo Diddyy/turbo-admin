@@ -39,7 +39,7 @@ import { ask } from '#/components/confirm';
 import { Modal } from '#/components/Modal';
 import { Tabs } from '#/components/Tabs';
 import { celebrate, toast, toastError } from '#/components/toast';
-import { Badge, Button, EmptyState, ErrorNotice, Loading, PageHeader, Segmented, WarningNotice } from '#/components/ui';
+import { Badge, Button, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Segmented, WarningNotice } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 import { Backups } from './Backups';
@@ -446,8 +446,8 @@ export const CatalogPage = () => {
                     onChange: value => setView(value === 'audit' ? 'missing' : value as View),
                 }}
             />
-            {/* The usual page body's width, without its rising entrance: a transformed parent would move the drag overlay. */}
-            <div className="mx-auto flex w-full max-w-[1240px] flex-col gap-3 px-3 py-4 sm:px-4 lg:px-6 lg:py-6">
+            {/* Without the rising entrance: a transformed parent would move the drag overlay. */}
+            <PageBody still className="flex flex-col gap-4 lg:gap-5">
                 {tree.error && <ErrorNotice error={tree.error} />}
                 {tree.isPending && <Loading />}
                 {data?.canManage && (
@@ -644,7 +644,7 @@ export const CatalogPage = () => {
                                 </DndContext>
                             )
                 )}
-            </div>
+            </PageBody>
             {data && page.data && (
                 <Modal
                     title={selectedOffer === 'new' ? `New offer on ${page.data.localization}` : offer ? `Offer ${offer.id}` : 'Offer'}

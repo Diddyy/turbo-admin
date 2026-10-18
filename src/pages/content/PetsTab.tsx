@@ -2,6 +2,7 @@ import { Plus, Save, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 import { type PetBreed, type PetLine, useDeletePetLine, usePets, useSavePet } from '#/api/content';
+import { ask } from '#/components/confirm';
 import { Badge, Button, EmptyState, ErrorNotice, IconButton, Input, Loading, Panel, Select } from '#/components/ui';
 
 /** A pet type by its number; the hotel's texts name them in the client. */
@@ -50,7 +51,7 @@ const LineRow = ({ line, canManage }: { line: PetLine; canManage: boolean }) => 
         <li className="flex items-center gap-2 px-3 py-1.5">
             <Input value={text} onChange={event => setText(event.target.value)} className="h-8 min-w-0 flex-1 sm:h-8" disabled={!canManage} aria-label="Line" />
             {canManage && text !== line.line && <IconButton label="Save" icon={<Save />} disabled={save.isPending} onClick={() => save.mutate({ kind: 'speech', id: line.id, body: { line: text } })} />}
-            {canManage && <IconButton label="Remove" icon={<Trash2 />} tone="bad" disabled={remove.isPending} onClick={() => remove.mutate(line.id)} />}
+            {canManage && <IconButton label="Remove" icon={<Trash2 />} tone="bad" disabled={remove.isPending} onClick={() => ask({ title: 'Remove this line?', body: line.line, confirm: 'Remove' }, () => remove.mutate(line.id))} />}
         </li>
     );
 };

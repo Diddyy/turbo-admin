@@ -67,10 +67,31 @@ const SourceBadge = ({ setting }: { setting: ServerSetting }) => {
     return null;
 };
 
+/** Text without one pair of quotes typed around the whole of it, as the server saves it. */
+const unquoted = (text: string) => text.length >= 2 && (text[0] === '"' || text[0] === '\'') && text.at(-1) === text[0] ? text.slice(1, -1) : text;
+
+/** Whether text is empty or a whole web address, as the server checks a `[UrlSetting]`: placeholders read as any text. */
+const isWebAddress = (text: string) => {
+    if (text === '') return true;
+
+    const filled = text.replace(/\{[^{}]*\}|%[^%]*%/g, 'x');
+
+    if (/\s/.test(filled) || !/^https?:\/\//i.test(filled)) return false;
+
+    try {
+        return new URL(filled).hostname !== '';
+    } catch {
+        return false;
+    }
+};
+
+const NOT_AN_ADDRESS = 'A whole web address, such as https://example.com/, or nothing.';
+
 /** The value typed as JSON for the server, or why it isn't one. */
 const toJson = (setting: ServerSetting, text: string): { json: string } | { problem: string } => {
     switch (setting.kind) {
         case 'string':
+            return setting.url && !isWebAddress(unquoted(text)) ? { problem: NOT_AN_ADDRESS } : { json: JSON.stringify(unquoted(text)) };
         case 'enum':
         case 'duration':
             return { json: JSON.stringify(text) };
@@ -133,6 +154,8 @@ const SettingEditor = ({ setting, canManage }: { setting: ServerSetting; canMana
     const typed = toJson(setting, text);
     const locked = setting.startup || setting.source === SOURCE.environment;
     const editable = canManage && !locked;
+    // Text is compared as it would be saved, so a value kept with its quotes can be saved again without them.
+    const unchanged = setting.kind === 'string' && 'json' in typed ? typed.json === setting.value : text === start;
 
     return (
         <form
@@ -162,14 +185,16 @@ const SettingEditor = ({ setting, canManage }: { setting: ServerSetting; canMana
             </dl>
             {setting.startup && <WarningNotice>The panel stands on this setting, so it is changed in appsettings.json or the environment, not here.</WarningNotice>}
             {!setting.startup && setting.source === SOURCE.environment && <WarningNotice>{setting.sourceName} sets this, and the environment always wins over the panel. Change it there.</WarningNotice>}
+            {setting.url && !setting.secret && !isWebAddress(shown(setting, setting.value)) && <WarningNotice>{shown(setting, setting.value)} isn't a web address, so what reads it can't use it. Give the whole address, or nothing.</WarningNotice>}
             {editable && (
                 <>
                     <Labeled label={setting.secret ? 'New value' : 'Value'} hint={setting.kind === 'list' ? 'A list starts with its default items: they can be added to, not taken away.' : undefined}>
                         <ValueInput setting={setting} text={text} onChange={setText} />
                     </Labeled>
                     {'problem' in typed && text !== '' && <p className="text-xs text-warn">{typed.problem}</p>}
+                    {setting.kind === 'string' && !setting.secret && unquoted(text) !== text && 'json' in typed && <p className="text-xs text-muted">Saved without the quotes around it.</p>}
                     <div className="flex flex-wrap items-center gap-2">
-                        <Button type="submit" icon={<Save />} disabled={!('json' in typed) || save.isPending || (!setting.secret && text === start) || (setting.secret && text === '')}>Save</Button>
+                        <Button type="submit" icon={<Save />} disabled={!('json' in typed) || save.isPending || (!setting.secret && unchanged) || (setting.secret && text === '')}>Save</Button>
                         {setting.source === SOURCE.panel && (
                             <Button
                                 variant="ghost"
@@ -221,6 +246,9 @@ const SettingsTab = () => {
 
     return (
         <>
+            {data.startupError && (
+                <WarningNotice>The settings set here couldn't be read as the server started, so it runs without them until it restarts and reads them: {data.startupError}</WarningNotice>
+            )}
             {waiting > 0 && (
                 <WarningNotice>
                     <div className="flex flex-col gap-3">

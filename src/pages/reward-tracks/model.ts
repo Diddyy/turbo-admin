@@ -145,3 +145,48 @@ export const prizeText = (prize: RewardTrackPrize, furni: FurniNames) => {
         default: return `${productLabel(prize.productType)} ${prize.rewardTypeId}`;
     }
 };
+
+/**
+ * The draft as the `RewardTracks` message the server sends a player with `points` points, nothing
+ * claimed and no task done (`PlayerRewardTrackGrain.Snapshot`), as the client's preview host takes it.
+ */
+export const rewardTracksMessage = (track: RewardTrack, points: number, premiumBought: boolean) => {
+    const premium = premiumBought && !!track.premium;
+
+    return {
+        disabled: false,
+        reload: false,
+        tracks: [ {
+            id: track.id,
+            theme: track.theme,
+            points,
+            hasPremiumConfig: !!track.premium,
+            taskPointsBoost: track.premium?.taskPointsBoost ?? 0,
+            instantPoints: track.premium?.instantPoints ?? 0,
+            costDiamonds: track.premium?.costDiamonds ?? 0,
+            costCredits: track.premium?.costCredits ?? 0,
+            premium,
+            complete: !track.prizes.some(prize => !prize.premium),
+            premiumComplete: !track.premium || track.prizes.length === 0,
+            tasks: track.tasks.map(task => ({
+                id: task.id,
+                actionType: task.actionType,
+                parameter: task.parameter,
+                progressCount: 0,
+                premium: task.premium,
+                levels: task.levels.map(level => ({ requiredCount: level.requiredCount, pointsReward: level.points, premium: level.premium })),
+            })),
+            prizes: track.prizes.map(prize => ({
+                id: prize.id,
+                requiredPoints: prize.requiredPoints,
+                productItemTypeId: prize.productType,
+                rewardTypeId: prize.rewardTypeId,
+                extraParams: prize.extraParams,
+                rewardAmount: prize.amount,
+                premium: prize.premium,
+                available: (!prize.premium || premium) && points >= prize.requiredPoints,
+                claimed: false,
+            })),
+        } ],
+    };
+};

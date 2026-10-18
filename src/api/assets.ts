@@ -22,6 +22,11 @@ export interface ClientAssets {
     templates: string;
     /** The nitro-imager the panel draws avatars with (`Turbo:Admin:ImagerUrl`), without a trailing slash. */
     imager: string;
+    /**
+     * The client's preview host (`Turbo:Admin:ClientPreviewUrl`, else the client's login page, with
+     * `?preview`): the game's own windows, drawn from what the panel posts it. Empty without either.
+     */
+    preview: string;
 }
 
 /** The addresses change only when the client is redeployed, so they are asked for once a session. */

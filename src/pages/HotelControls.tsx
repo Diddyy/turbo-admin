@@ -1,12 +1,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Megaphone, MessageSquareText, Power, Wrench } from 'lucide-react';
+import { Megaphone, MessageSquareText, Power, RotateCw, Wrench } from 'lucide-react';
 import { type ReactNode, useId, useState } from 'react';
 
 import { post } from '#/api/client';
 import { actOnHotel, type HotelActionRequest, saveWelcomeMessage, useHotelAbilities, useWelcomeMessage, type WelcomeMessage } from '#/api/queries';
+import { restartState, useServerRestart } from '#/api/server';
 import type { AvailabilityPhase, RunCommandResponse } from '#/api/types';
 import { CommandAnswer } from '#/components/CommandAnswer';
 import { ask, type Question } from '#/components/confirm';
+import { RestartServer } from '#/components/RestartServer';
 import { Button, ErrorNotice, Input, Labeled, Loading, Segmented, SuccessNotice, Textarea } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
@@ -24,7 +26,7 @@ const SHUTDOWN_MINUTES = [
     { value: '30', label: '30 min' },
 ];
 
-type Control = 'alert' | 'maintenance' | 'shutdown' | 'welcome';
+type Control = 'alert' | 'maintenance' | 'shutdown' | 'restart' | 'welcome';
 
 type Tone = 'neutral' | 'warn' | 'bad';
 
@@ -121,17 +123,18 @@ const WelcomeMessageForm = () => {
 };
 
 /**
- * The whole hotel's controls: a pop-up for everyone online, maintenance and shutdown, each with
- * its countdown and a way to call it off, and the welcome message shown at login. They are tiles
+ * The whole hotel's controls: a pop-up for everyone online, maintenance, shutdown and restart,
+ * each with its countdown and a way to call it off, and the welcome message shown at login. They are tiles
  * that say how each stands, in a grid that fits a phone's sheet as well as the dashboard (a tile
  * puts its icon over its words when the grid is narrow); the one
  * picked opens under them. A countdown running opens on its own control. Each action is the
  * hotel's own command, run as you: its node, its confirmation and the command log, as typed in
- * game. Only what you may do is shown.
+ * game; a restart is the server's own (RestartServer). Only what you may do is shown.
  */
 export const HotelControls = ({ phase, atUtc = null }: { phase: AvailabilityPhase; atUtc?: string | null }) => {
     const { data: can } = useHotelAbilities();
     const welcome = useWelcomeMessage(!!can?.welcomeMessage);
+    const { data: restart } = useServerRestart();
     const queryClient = useQueryClient();
     const formId = useId();
     const [ alert, setAlert ] = useState('');
@@ -147,7 +150,9 @@ export const HotelControls = ({ phase, atUtc = null }: { phase: AvailabilityPhas
         onSettled: () => void queryClient.invalidateQueries({ queryKey: [ 'dashboard' ] }),
     });
 
-    if (!can || (!can.alert && !can.maintenance && !can.shutdown && !can.welcomeMessage))
+    const canRestart = !!restart?.canRestart;
+
+    if (!can || (!can.alert && !can.maintenance && !can.shutdown && !can.welcomeMessage && !canRestart))
         return null;
 
     const run = (request: HotelActionRequest, question?: Question, then?: () => void) => {
@@ -164,16 +169,19 @@ export const HotelControls = ({ phase, atUtc = null }: { phase: AvailabilityPhas
 
     const confirmPending = () => act.mutate(() => post<RunCommandResponse>('/commands/run', { line: 'confirm' }));
     const inMaintenance = phase === 'MaintenanceScheduled' || phase === 'Maintenance';
-    const shuttingDown = phase === 'ShutdownScheduled' || phase === 'ShuttingDown';
+    const restarting = !!restart && (restart.scheduled || restart.restarting);
+    // A restart is a shutdown the host starts again: it shows on its own control.
+    const shuttingDown = !restarting && (phase === 'ShutdownScheduled' || phase === 'ShuttingDown');
     const at = atUtc ? ` at ${clock(atUtc)}` : '';
     const controls: Control[] = [
         ...(can.alert ? [ 'alert' as const ] : []),
         ...(can.maintenance ? [ 'maintenance' as const ] : []),
         ...(can.shutdown ? [ 'shutdown' as const ] : []),
+        ...(canRestart ? [ 'restart' as const ] : []),
         ...(can.welcomeMessage ? [ 'welcome' as const ] : []),
     ];
     // What a running countdown is about opens first; otherwise the first control.
-    const running: Control | null = shuttingDown && can.shutdown ? 'shutdown' : inMaintenance && can.maintenance ? 'maintenance' : null;
+    const running: Control | null = restarting && canRestart ? 'restart' : shuttingDown && can.shutdown ? 'shutdown' : inMaintenance && can.maintenance ? 'maintenance' : null;
     const chosen = picked && controls.includes(picked) ? picked : running ?? controls[0]!;
     const welcomeText = welcome.data?.message ?? '';
 
@@ -194,11 +202,22 @@ export const HotelControls = ({ phase, atUtc = null }: { phase: AvailabilityPhas
             <ControlTile
                 icon={<Power />}
                 label="Shutdown"
-                state={phase === 'ShuttingDown' ? 'Shutting down' : phase === 'ShutdownScheduled' ? `Shuts down${at}` : 'Not scheduled'}
+                state={!shuttingDown ? 'Not scheduled' : phase === 'ShuttingDown' ? 'Shutting down' : `Shuts down${at}`}
                 tone={shuttingDown ? 'bad' : 'neutral'}
                 chosen={chosen === 'shutdown'}
                 controls={formId}
                 onChoose={() => setPicked('shutdown')}
+            />
+        ),
+        restart: (
+            <ControlTile
+                icon={<RotateCw />}
+                label="Restart"
+                state={restartState(restart) ?? 'Not scheduled'}
+                tone={restarting ? 'bad' : 'neutral'}
+                chosen={chosen === 'restart'}
+                controls={formId}
+                onChoose={() => setPicked('restart')}
             />
         ),
         welcome: (
@@ -278,10 +297,11 @@ export const HotelControls = ({ phase, atUtc = null }: { phase: AvailabilityPhas
                     >
                         {`Shut down in ${shutdownIn} min`}
                     </Button>
-                    {phase === 'ShutdownScheduled' && <Button variant="secondary" disabled={act.isPending} onClick={() => run({ action: 'shutdown-cancel' })}>Call it off</Button>}
+                    {phase === 'ShutdownScheduled' && !restarting && <Button variant="secondary" disabled={act.isPending} onClick={() => run({ action: 'shutdown-cancel' })}>Call it off</Button>}
                 </div>
             </div>
         ),
+        restart: <RestartServer />,
         welcome: <WelcomeMessageForm />,
     };
 

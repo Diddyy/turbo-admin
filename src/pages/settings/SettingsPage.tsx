@@ -188,7 +188,7 @@ const SettingEditor = ({ setting, canManage }: { setting: ServerSetting; canMana
             {setting.url && !setting.secret && !isWebAddress(shown(setting, setting.value)) && <WarningNotice>{shown(setting, setting.value)} isn't a web address, so what reads it can't use it. Give the whole address, or nothing.</WarningNotice>}
             {editable && (
                 <>
-                    <Labeled label={setting.secret ? 'New value' : 'Value'} hint={setting.kind === 'list' ? 'A list starts with its default items: they can be added to, not taken away.' : undefined}>
+                    <Labeled label={setting.secret ? 'New value' : 'Value'} hint={setting.kind === 'list' ? 'The whole list: an item left out is taken out, a default one too.' : setting.kind === 'map' ? 'The whole map: a key left out is taken out, a default one too.' : undefined}>
                         <ValueInput setting={setting} text={text} onChange={setText} />
                     </Labeled>
                     {'problem' in typed && text !== '' && <p className="text-xs text-warn">{typed.problem}</p>}

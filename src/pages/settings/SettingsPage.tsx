@@ -21,6 +21,7 @@ const FILTERS = [
     { value: 'all', label: 'All' },
     { value: 'panel', label: 'Set here' },
     { value: 'restart', label: 'Waiting on restart' },
+    { value: 'plugins', label: 'Plugins' },
 ];
 
 /** The setting's name within its section: `MaxUsersPerRoom`, `Discord:ClientSecret`. */
@@ -200,7 +201,7 @@ const SettingsTab = () => {
         const words = text.trim().toLowerCase();
 
         return (data?.settings ?? []).filter(setting =>
-            (filter === 'all' || (filter === 'panel' && setting.source === SOURCE.panel) || (filter === 'restart' && setting.pendingRestart))
+            (filter === 'all' || (filter === 'panel' && setting.source === SOURCE.panel) || (filter === 'restart' && setting.pendingRestart) || (filter === 'plugins' && !!setting.plugin))
             && (!words || setting.path.toLowerCase().includes(words) || setting.summary.toLowerCase().includes(words) || (!setting.secret && (setting.value ?? '').toLowerCase().includes(words))));
     }, [ data, text, filter ]);
 
@@ -231,12 +232,18 @@ const SettingsTab = () => {
             <Panel className="overflow-clip">
                 <ListToolbar watch={[ text, filter ]}>
                     <SearchInput value={text} onValueChange={setText} placeholder="Name, text or value" aria-label="Find settings" className="min-w-48 flex-1 sm:max-w-96" />
-                    <div className="w-full sm:w-80"><Segmented label="Show" value={filter} onChange={setFilter} options={FILTERS} /></div>
+                    <div className="w-full sm:w-96"><Segmented label="Show" value={filter} onChange={setFilter} options={FILTERS} /></div>
                 </ListToolbar>
                 {sections.length === 0 && <EmptyState>No setting matches.</EmptyState>}
             </Panel>
             {sections.map(([ section, settings ]) => (
-                <Panel key={section} title={section} className="overflow-clip">
+                <Panel
+                    key={section}
+                    title={section}
+                    description={settings[0].plugin ? <>From the plugin <Link to="/plugins" className="font-mono underline-offset-2 hover:underline">{settings[0].plugin}</Link>: listed while it is loaded, and applied as it reads them.</> : undefined}
+                    actions={settings[0].plugin ? <Badge>plugin</Badge> : undefined}
+                    className="overflow-clip"
+                >
                     <ul className="divide-y divide-line">
                         {settings.map(setting => (
                             <OpenRow

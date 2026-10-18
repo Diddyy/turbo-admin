@@ -431,6 +431,50 @@ export interface GenerateResult {
     unpublishedChanges: number;
 }
 
+/** A Builders Club catalogue to take in from a capture of Habbo's: its index and every page, as its client was sent them. */
+export interface ImportRequest {
+    capture: unknown;
+    takeOthersOut: boolean;
+    publish: boolean;
+}
+
+/** A page of the capture and what happens to it; `out` is a page here taken out of the Builders Club. */
+export interface ImportPageChange {
+    name: string;
+    title: string;
+    path: string;
+    action: 'add' | 'update' | 'unchanged' | 'out';
+    pageId: number | null;
+    fields: string[];
+    offersAdded: number;
+    offersChanged: number;
+}
+
+/** Part of the capture left out, and why. */
+export interface ImportSkip {
+    what: string;
+    reason: string;
+    offers: number;
+}
+
+/** What importing a capture would do, or did. */
+export interface ImportPlan {
+    category: string;
+    pages: ImportPageChange[];
+    pagesTakenOut: ImportPageChange[];
+    offersAdded: number;
+    offersChanged: number;
+    offersKept: number;
+    offersUnchanged: number;
+    skipped: ImportSkip[];
+    missingClasses: string[];
+    warnings: string[];
+    saved: boolean;
+    published: boolean;
+    unpublishedChanges: number;
+    changes: boolean;
+}
+
 /** A kept copy of the catalog's pages, offers and featured items, to roll back to. */
 export interface CatalogBackup {
     id: number;
@@ -502,6 +546,8 @@ export const catalogCalls = {
     deleteBackup: (backupId: number) => remove<Saved>(`/catalog/backups/${backupId}`),
     previewGenerate: (request: GenerateRequest) => post<GeneratePlan>('/catalog/generate/preview', request),
     generate: (request: GenerateRequest) => post<GenerateResult>('/catalog/generate', request),
+    previewImport: (request: ImportRequest) => post<ImportPlan>('/catalog/import/preview', request),
+    importCapture: (request: ImportRequest) => post<ImportPlan>('/catalog/import', request),
 };
 
 /** A catalog edit; the tree and pages are read again once it lands, saved or not. */

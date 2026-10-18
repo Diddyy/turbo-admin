@@ -1,4 +1,4 @@
-import { Activity, Armchair, Bug, CloudDownload, Disc3, Gauge, House, KeyRound, Landmark, Languages, MessagesSquare, Milestone, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
+import { Activity, Armchair, Bug, CloudDownload, Disc3, Gauge, History, House, KeyRound, Landmark, Languages, MessagesSquare, Milestone, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router';
 
@@ -42,6 +42,7 @@ const PAGES = {
     staff: { to: '/staff', label: 'Staff passkeys', icon: <ShieldCheck />, end: false, key: 's', needs: 'canResetPasskeys' },
     commandLog: { to: '/command-log', label: 'Command log', icon: <ScrollText />, end: false, key: 'l', needs: 'canViewCommandLog' },
     chatlog: { to: '/chatlog', label: 'Chat log', icon: <MessagesSquare />, end: false, key: 'h', needs: 'canViewChatlog' },
+    permissionLog: { to: '/permission-log', label: 'Permission log', icon: <History />, end: false, needs: 'canViewPermissions' },
     settings: { to: '/settings', label: 'Settings', icon: <SlidersHorizontal />, end: false, key: 'e', needs: 'canViewSettings' },
     plugins: { to: '/plugins', label: 'Plugins', icon: <Plug />, end: false, key: 'i', needs: 'canViewPlugins' },
     console: { to: '/console', label: 'Console', icon: <SquareTerminal />, end: false, key: 'o' },
@@ -72,7 +73,7 @@ export interface NavSection {
 }
 
 const OVERVIEW: NavEntry = { label: 'Overview', icon: <Gauge />, pages: [ 'dashboard', 'performance' ], hint: 'The hotel now, and how the server runs' };
-const LOGS: NavEntry = { label: 'Logs', icon: <ScrollText />, pages: [ 'commandLog', 'chatlog' ], hint: 'Commands run and chat in rooms' };
+const LOGS: NavEntry = { label: 'Logs', icon: <ScrollText />, pages: [ 'commandLog', 'chatlog', 'permissionLog' ], hint: 'Commands run, chat in rooms, permission changes' };
 const GROUPS: NavEntry = { label: 'Groups', icon: <Shield />, pages: [ 'groups', 'badgeParts' ], hint: 'Groups, their members, and badge parts' };
 const ACCESS: NavEntry = { label: 'Access', icon: <KeyRound />, pages: [ 'permissions', 'staff' ], hint: 'Groups, nodes and staff passkeys' };
 

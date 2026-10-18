@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes } from 'react-router';
+import { Navigate, Route, Routes, useLocation } from 'react-router';
 
 import { LoginPage } from '#/auth/LoginPage';
 import { RequireSession } from '#/auth/RequireSession';
@@ -42,6 +42,9 @@ import { StaffPage } from '#/pages/StaffPage';
 // Its charts are a large library that no other page needs, so it loads when opened.
 const PerformancePage = lazy(() => import('#/pages/PerformancePage').then(x => ({ default: x.PerformancePage })));
 
+/** The permission log's old address, from before it moved under Logs: its search kept. */
+const ToPermissionLog = () => <Navigate to={{ pathname: '/permission-log', search: useLocation().search }} replace />;
+
 export const App = () => (
     <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -74,6 +77,7 @@ export const App = () => (
             <Route path="plugin/:key/:page/:id" element={<PluginPage />} />
             <Route path="command-log" element={<CommandLogPage />} />
             <Route path="chatlog" element={<ChatlogPage />} />
+            <Route path="permission-log" element={<LogPage />} />
             <Route path="console" element={<ConsolePage />} />
             <Route path="permissions" element={<Navigate to="/permissions/groups" replace />} />
             <Route path="permissions/groups" element={<GroupsPage />} />
@@ -81,7 +85,7 @@ export const App = () => (
             <Route path="permissions/players" element={<PlayersPage />} />
             <Route path="permissions/players/:id" element={<PlayerPage />} />
             <Route path="permissions/search" element={<SearchPage />} />
-            <Route path="permissions/log" element={<LogPage />} />
+            <Route path="permissions/log" element={<ToPermissionLog />} />
             <Route path="permissions/nodes" element={<NodesPage />} />
             <Route path="staff" element={<StaffPage />} />
             <Route path="account" element={<AccountPage />} />

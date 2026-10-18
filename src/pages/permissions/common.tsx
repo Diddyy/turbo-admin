@@ -1,4 +1,4 @@
-import { History, KeyRound, ListTree, Search, ShieldCheck, Users } from 'lucide-react';
+import { KeyRound, ListTree, Search, ShieldCheck, Users } from 'lucide-react';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { Link } from 'react-router';
 
@@ -13,13 +13,12 @@ import { formatDateTime } from '#/pages/rooms/labels';
 
 import { DURATIONS, targetLink } from './links';
 
-export type Section = 'groups' | 'players' | 'search' | 'log' | 'nodes' | 'passkeys';
+export type Section = 'groups' | 'players' | 'search' | 'nodes' | 'passkeys';
 
 const SECTIONS: TabItem[] = [
     { value: 'groups', label: 'Groups', icon: <ListTree />, to: '/permissions/groups' },
     { value: 'players', label: 'Players', icon: <Users />, to: '/permissions/players' },
     { value: 'search', label: 'Who has a node', icon: <Search />, to: '/permissions/search' },
-    { value: 'log', label: 'Log', icon: <History />, to: '/permissions/log' },
     { value: 'nodes', label: 'Nodes', icon: <KeyRound />, to: '/permissions/nodes' },
 ];
 

@@ -5,7 +5,8 @@ import { useCatalog, useHolders, useLog } from '#/api/permissions';
 import { ListToolbar } from '#/components/ListToolbar';
 import { Row, RowList } from '#/components/RowList';
 import { SearchInput } from '#/components/SearchInput';
-import { Badge, Button, EmptyState, ErrorNotice, Loading, PageBody, Panel } from '#/components/ui';
+import { Badge, Button, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Panel } from '#/components/ui';
+import { useHubTabs } from '#/layout/nav';
 
 import { AuditTable, Expiry, PermissionsHeader, Verdict } from './common';
 import { targetLink } from './links';
@@ -75,8 +76,9 @@ export const SearchPage = () => {
     );
 };
 
-/** Recent changes to anyone's permissions, newest first. */
+/** Recent changes to anyone's permissions, newest first: under Logs, beside the command and chat logs. */
 export const LogPage = () => {
+    const tabs = useHubTabs('logs');
     const [ params, setParams ] = useSearchParams();
     const search = params.get('search') ?? '';
     const [ draft, setDraft ] = useState(search);
@@ -91,7 +93,7 @@ export const LogPage = () => {
 
     return (
         <>
-            <PermissionsHeader section="log" description="Every change to a group or a player's permissions, and who made it" />
+            <PageHeader title="Logs" tabs={tabs} description="Every change to a group or a player's permissions, and who made it" />
             <PageBody>
                 <Panel className="overflow-clip">
                     <ListToolbar

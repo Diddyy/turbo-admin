@@ -39,8 +39,11 @@ It has:
 - **Chat log**: what players said in rooms, whispers included, filtered by player, room or words,
   and any line in context with what was said around it. Only shown if you have
   `admin.chatlog.view`.
-- **Permissions**: groups, any player's permissions and why they hold what they hold, who is
-  given a node, and the permission log. Seeing it needs `admin.permissions.view`; changing it
+- **Permission log** (under Logs, beside the two above): every change to a group's or a player's
+  permissions and who made it, searched by node, key or group. Only shown if you have
+  `admin.permissions.view`.
+- **Permissions**: groups, any player's permissions and why they hold what they hold, and who is
+  given a node. Seeing it needs `admin.permissions.view`; changing it
   needs `permissions.manage`, and only for groups and players below your heaviest group, with
   nodes you hold yourself.
 - **Plugins**: every plugin the server found, with its manifest, whether it loaded (and why not),

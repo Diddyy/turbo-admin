@@ -1,7 +1,7 @@
 import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { type AssetJob, postForm } from './bundles';
-import { api, post, put, remove } from './client';
+import { api, apiBlob, post, put, remove } from './client';
 
 /** How a plugin stands: running, its last load failed, turned off, or found and not loaded yet. */
 export type PluginState = 'loaded' | 'failed' | 'disabled' | 'not_loaded';
@@ -94,6 +94,8 @@ export interface PluginsResponse {
     allowedSources: string[];
     /** Minutes between scheduled checks; 0 checks only on request. */
     checkMinutes: number;
+    /** Holds `admin.plugins.uninstall` as well: may uninstall a plugin and download its tables. */
+    canUninstall: boolean;
 }
 
 /** What an action did: a refusal or a failed load is `ok: false`, with why. */
@@ -142,6 +144,57 @@ export const useInstallPlugin = () => usePluginAction((file: File) => {
 
 export const useRollbackPlugin = () => usePluginAction(({ key, version }: { key: string; version: string }) =>
     post<PluginActionResponse>(`/plugins/${encodeURIComponent(key)}/rollback`, { version }));
+
+/** What uninstalling keeps: `keep-data` takes only its code and links, `delete-data` its tables, settings and grants too. */
+export type PluginUninstallMode = 'keep-data' | 'delete-data';
+
+/** One thing of a plugin's data: a table (`count` its rows), a setting overridden in the panel (`detail` its value, null for a secret) or a grant (`count` assignments, `detail` who). */
+export interface PluginDataItem {
+    kind: 'table' | 'setting' | 'grant';
+    name: string;
+    count: number;
+    detail: string | null;
+}
+
+/** The dry run of uninstalling a plugin. `refusal` says why it can't be now; null when it can. */
+export interface PluginUninstallPlan {
+    plugin: Plugin;
+    /** Its folder and the earlier versions kept, as the plugin folder names them. */
+    files: string[];
+    /** The GitHub repositories linked to it. */
+    sources: string[];
+    data: PluginDataItem[];
+    /** What could not be looked at. */
+    notes: string[];
+    refusal: string | null;
+}
+
+/** What uninstalling the plugin would take away; read when the dialog opens, never cached. */
+export const usePluginUninstallPlan = (key: string) => useQuery({
+    queryKey: [ ...PLUGINS_KEY, key, 'uninstall' ],
+    queryFn: () => api<PluginUninstallPlan>(`/plugins/${encodeURIComponent(key)}/uninstall`),
+    gcTime: 0,
+    staleTime: 0,
+});
+
+export const useUninstallPlugin = () => usePluginAction(({ key, mode, confirm }: { key: string; mode: PluginUninstallMode; confirm: string }) =>
+    post<PluginActionResponse>(`/plugins/${encodeURIComponent(key)}/uninstall`, { mode, confirm }));
+
+/**
+ * Saves the plugin's tables as SQL. The file needs the session's header, which a plain link can't
+ * carry, so it is fetched and handed to the browser as a download.
+ */
+export const downloadPluginData = async (key: string) => {
+    const url = URL.createObjectURL(await apiBlob(`/plugins/${encodeURIComponent(key)}/export`));
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = `${key}-tables.sql`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
 
 /** A link action; the list (and the job it started) is read again whatever came of it. */
 const useSourceAction = <T>(run: (input: T) => Promise<PluginSourceActionResponse>) => {

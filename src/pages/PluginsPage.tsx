@@ -1,4 +1,4 @@
-import { Download, ExternalLink, History, Link2, Pencil, Power, PowerOff, RefreshCw, ScanSearch, Unlink, Upload } from 'lucide-react';
+import { Download, ExternalLink, History, Link2, Pencil, Power, PowerOff, RefreshCw, ScanSearch, Trash2, Unlink, Upload } from 'lucide-react';
 import { useState } from 'react';
 
 import { type Plugin, type PluginActionResponse, type PluginSource, type PluginSourceActionResponse, type PluginState, useCheckPluginSource, useInstallPlugin, usePlugins, useReloadPlugin, useRemovePluginSource, useRescanPlugins, useRollbackPlugin, useSetPluginEnabled, useUpdatePluginSource } from '#/api/plugins';
@@ -11,6 +11,7 @@ import { JobPanel } from '#/pages/assets/JobPanel';
 import { OpenRow } from '#/pages/gamedata/parts';
 
 import { PluginSourceForm } from './PluginSourceForm';
+import { PluginUninstall } from './PluginUninstall';
 
 const STATES: Record<PluginState, { label: string; tone: BadgeTone }> = {
     loaded: { label: 'loaded', tone: 'green' },
@@ -38,7 +39,8 @@ const Items = ({ items }: { items: (string | number)[] }) =>
         : <span className="flex flex-wrap gap-1.5">{items.map(item => <code key={item} className="rounded bg-subtle px-1.5 py-0.5 text-xs">{item}</code>)}</span>;
 
 /** A plugin open: its manifest, what it added, why it failed, and what may be done with it. */
-const PluginDetail = ({ plugin, source, canManage, canInstall }: { plugin: Plugin; source: PluginSource | undefined; canManage: boolean; canInstall: boolean }) => {
+const PluginDetail = ({ plugin, source, canManage, canInstall, canUninstall }: { plugin: Plugin; source: PluginSource | undefined; canManage: boolean; canInstall: boolean; canUninstall: boolean }) => {
+    const [ uninstalling, setUninstalling ] = useState(false);
     const reload = useReloadPlugin();
     const setEnabled = useSetPluginEnabled();
     const rollback = useRollbackPlugin();
@@ -144,8 +146,14 @@ const PluginDetail = ({ plugin, source, canManage, canInstall }: { plugin: Plugi
                                     Turn off
                                 </Button>
                             )}
+                    {canUninstall && !plugin.dev && (
+                        <Button variant="ghost" icon={<Trash2 />} disabled={busy} onClick={() => setUninstalling(true)}>
+                            Uninstall
+                        </Button>
+                    )}
                 </div>
             )}
+            {uninstalling && <PluginUninstall pluginKey={plugin.key} onClose={() => setUninstalling(false)} />}
         </div>
     );
 };
@@ -256,7 +264,8 @@ const SourceRow = ({ source, canManage, canInstall, onEdit }: { source: PluginSo
 /**
  * The server's plugins: each one's manifest, whether it loaded and why not, and the capabilities,
  * packet headers and migrations it added. Staff who manage them reload one, scan the folders
- * again and turn one off or on; installing a package needs its own node and the server's leave.
+ * again and turn one off or on; installing a package needs its own node and the server's leave,
+ * and uninstalling one (keeping or deleting its data) its own node too.
  * Every action is in the command log.
  */
 export const PluginsPage = () => {
@@ -337,7 +346,7 @@ export const PluginsPage = () => {
                                         </div>
                                     )}
                                 >
-                                    <PluginDetail plugin={plugin} source={sourceOf(plugin.key)} canManage={data.canManage} canInstall={canLink} />
+                                    <PluginDetail plugin={plugin} source={sourceOf(plugin.key)} canManage={data.canManage} canInstall={canLink} canUninstall={data.canUninstall} />
                                 </OpenRow>
                             ))}
                         </ul>

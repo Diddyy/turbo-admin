@@ -32,6 +32,7 @@ import { PlayerPage as PlayerProfilePage } from '#/pages/players/PlayerPage';
 import { PlayersPage as PlayerListPage } from '#/pages/players/PlayersPage';
 import { PluginPage } from '#/pages/plugins/PluginPage';
 import { PluginsPage } from '#/pages/PluginsPage';
+import { RewardTracksPage } from '#/pages/reward-tracks/RewardTracksPage';
 import { RoomPage } from '#/pages/rooms/RoomPage';
 import { RoomSettingsPage } from '#/pages/rooms/RoomSettingsPage';
 import { RoomsPage } from '#/pages/rooms/RoomsPage';
@@ -65,6 +66,7 @@ export const App = () => (
             <Route path="gamedata/publish" element={<PublishPage />} />
             <Route path="assets" element={<AssetsRedirect />} />
             <Route path="hotel-view" element={<HotelViewPage />} />
+            <Route path="reward-tracks" element={<RewardTracksPage />} />
             <Route path="content" element={<ContentPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="plugins" element={<PluginsPage />} />

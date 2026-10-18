@@ -38,6 +38,8 @@ export interface MeResponse {
     canViewContent: boolean;
     /** Holds `admin.plugins.view`: may see the server's plugins; changing them needs `admin.plugins.manage`. */
     canViewPlugins: boolean;
+    /** Holds `admin.rewardtracks.manage`: may see and change the reward tracks. */
+    canManageRewardTracks: boolean;
 }
 
 export interface DashboardRoom {

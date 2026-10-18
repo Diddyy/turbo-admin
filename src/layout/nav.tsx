@@ -1,4 +1,4 @@
-import { Activity, Armchair, Bug, CloudDownload, Disc3, Gauge, House, KeyRound, Landmark, Languages, MessagesSquare, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
+import { Activity, Armchair, Bug, CloudDownload, Disc3, Gauge, House, KeyRound, Landmark, Languages, MessagesSquare, Milestone, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router';
 
@@ -7,7 +7,7 @@ import { useMe } from '#/api/queries';
 import type { MeResponse } from '#/api/types';
 import type { TabItem } from '#/components/Tabs';
 
-type Need = keyof Pick<MeResponse, 'canViewRooms' | 'canViewPlayers' | 'canViewPermissions' | 'canViewCommandLog' | 'canViewChatlog' | 'canViewCatalog' | 'canViewGamedata' | 'canViewSettings' | 'canViewContent' | 'canViewPlugins' | 'canResetPasskeys'>;
+type Need = keyof Pick<MeResponse, 'canViewRooms' | 'canViewPlayers' | 'canViewPermissions' | 'canViewCommandLog' | 'canViewChatlog' | 'canViewCatalog' | 'canViewGamedata' | 'canViewSettings' | 'canViewContent' | 'canViewPlugins' | 'canResetPasskeys' | 'canManageRewardTracks'>;
 
 /** One page of the panel: where `g` and its letter go, and what the search offers by name. */
 export interface NavItem {
@@ -32,6 +32,7 @@ const PAGES = {
     vouchers: { to: '/vouchers', label: 'Vouchers', icon: <Ticket />, end: false, key: 'u', needs: 'canViewCatalog' },
     songs: { to: '/catalog/songs', label: 'Songs', icon: <Disc3 />, end: false, needs: 'canViewCatalog' },
     hotelView: { to: '/hotel-view', label: 'Hotel view', icon: <Landmark />, end: false, key: 'v', needs: 'canViewGamedata' },
+    rewardTracks: { to: '/reward-tracks', label: 'Reward tracks', icon: <Milestone />, end: false, key: 'w', needs: 'canManageRewardTracks' },
     content: { to: '/content', label: 'Content', icon: <Puzzle />, end: false, key: 't', needs: 'canViewContent' },
     updates: { to: '/gamedata', label: 'Habbo updates', icon: <CloudDownload />, end: true, key: 'g', needs: 'canViewGamedata' },
     library: { to: '/gamedata/library', label: 'Library', icon: <Armchair />, end: false, key: 'f', needs: 'canViewGamedata' },
@@ -93,6 +94,7 @@ const SECTIONS: NavSection[] = [
         label: 'World',
         entries: [
             { label: 'Hotel view', icon: <Landmark />, pages: [ 'hotelView' ], hint: 'The reception players land in' },
+            { label: 'Reward tracks', icon: <Milestone />, pages: [ 'rewardTracks' ], hint: 'Progression tracks: tasks, prizes and premium' },
             { label: 'Content', icon: <Puzzle />, pages: [ 'content' ], hint: 'Achievements, badges, pets, chat styles' },
         ],
     },

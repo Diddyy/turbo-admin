@@ -36,11 +36,15 @@ export interface ServerSetting {
     live: boolean;
     /** The key of the plugin whose setting it is, listed while that plugin is loaded; null for the server's own. */
     plugin: string | null;
+    /** Text that is a whole web address or nothing (`[UrlSetting]`): the server refuses anything else. */
+    url?: boolean;
 }
 
 export interface SettingsResponse {
     settings: ServerSetting[];
     canManage: boolean;
+    /** Why the server couldn't read the settings set here as it started, so it runs without them; null when it could. */
+    startupError?: string | null;
 }
 
 export interface SettingChange {

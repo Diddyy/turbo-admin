@@ -132,7 +132,7 @@ export const PageInspector = ({ tree, page, draft, onDraft, focus, onOpen }: Pag
                                 onClick={() => setIconOpen(true)}
                                 disabled={!canManage}
                                 title="Change the icon"
-                                className="grid size-11 shrink-0 place-items-center rounded-xl border border-line bg-canvas transition hover:scale-105 hover:border-accent disabled:pointer-events-none sm:size-9"
+                                className="grid size-10 shrink-0 place-items-center rounded-lg border border-line bg-canvas transition hover:scale-105 hover:border-accent disabled:pointer-events-none sm:size-8"
                             >
                                 {draft.icon > 0 ? <PageIcon icon={draft.icon} /> : <span className="text-[10px] text-muted">icon</span>}
                             </button>

@@ -279,7 +279,7 @@ export const SearchButton = ({ onOpen }: { onOpen?: () => void }) => {
                 setOpen(true);
             }}
             aria-label="Search everything"
-            className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-left text-[13px] text-muted transition-colors hover:border-muted/50"
+            className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-left text-[13px] text-muted transition-colors hover:border-muted/50"
         >
             <Search className="size-4 shrink-0" />
             <span className="min-w-0 flex-1 truncate">Search</span>

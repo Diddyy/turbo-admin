@@ -26,7 +26,7 @@ const IconAction = ({ label, title, disabled, onClick, children }: { label: stri
         disabled={disabled}
         aria-label={label}
         title={title}
-        className="grid size-11 place-items-center rounded-lg border border-line bg-subtle text-ink transition hover:border-muted/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50 sm:size-9 [&>svg]:size-4"
+        className="grid size-10 place-items-center rounded-lg border border-line bg-subtle text-ink transition hover:border-muted/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50 sm:size-8 [&>svg]:size-4"
     >
         {children}
     </button>
@@ -100,7 +100,7 @@ export const ChangesBar = ({ history, unpublished, busy, onUndo, onRedo, onDisca
                         onClick={() => setOpen(!open)}
                         disabled={undo.length + redo.length === 0}
                         aria-expanded={open}
-                        className="flex h-11 items-center gap-1 rounded-lg border border-line bg-subtle px-2.5 text-sm text-ink transition hover:border-muted/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50 sm:h-9 [&>svg]:size-4"
+                        className="flex h-10 items-center gap-1 rounded-lg border border-line bg-subtle px-2.5 text-sm text-ink sm:text-[13px] transition hover:border-muted/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50 sm:h-8 [&>svg]:size-4"
                     >
                         <History />
                         <span className="max-sm:hidden">History</span>

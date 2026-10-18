@@ -20,7 +20,7 @@ const ColorField = ({ label, hint, colorKey, draft, fallback, disabled }: { labe
                     onChange={event => draft.setText(colorKey, event.target.value.slice(1))}
                     disabled={disabled}
                     aria-label={`${label}, picked`}
-                    className="h-9 w-12 shrink-0 cursor-pointer rounded-lg border border-line bg-canvas p-1"
+                    className="h-10 w-12 shrink-0 cursor-pointer rounded-lg border border-line bg-canvas p-1 sm:h-8"
                 />
                 <Input value={value} onChange={event => draft.setText(colorKey, event.target.value.trim().replace(/^#/, ''))} placeholder="the client's own" className="w-40 font-mono" disabled={disabled} />
                 <Changed on={draft.changed(colorKey)} />

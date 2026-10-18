@@ -114,7 +114,7 @@ export const LogicSelect = ({ value, logics, onChange, disabled }: { value: stri
                 aria-controls={`${id}-list`}
                 onClick={() => (open ? setOpen(false) : show())}
                 className={cx(
-                    'flex h-11 w-full items-center gap-2 rounded-lg border bg-canvas px-3 text-left text-[15px] sm:h-9 sm:text-sm',
+                    'flex h-10 w-full items-center gap-2 rounded-lg border bg-canvas px-2.5 text-left text-[15px] sm:h-8 sm:text-[13px]',
                     'focus:border-accent focus:ring-2 focus:ring-accent/25 focus:outline-none disabled:opacity-60',
                     open ? 'border-accent' : 'border-line hover:border-muted/50',
                 )}

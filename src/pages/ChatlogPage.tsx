@@ -199,7 +199,6 @@ export const ChatlogPage = () => {
                                             icon={<ChevronLeft />}
                                             disabled={!log.data?.hasNewer || !first}
                                             onClick={() => first && go(filter, { after: first.id })}
-                                            className="h-9 px-2.5"
                                         >
                                             Newer
                                         </Button>
@@ -207,7 +206,6 @@ export const ChatlogPage = () => {
                                             variant="ghost"
                                             disabled={!log.data?.hasOlder || !last}
                                             onClick={() => last && go(filter, { before: last.id })}
-                                            className="h-9 px-2.5"
                                         >
                                             Older
                                             <ChevronRight />

@@ -97,7 +97,7 @@ export const UnsetButton = ({ label, icon, className, ...button }: ButtonHTMLAtt
         title={label}
         {...button}
         className={cx(
-            'grid size-11 shrink-0 place-items-center rounded-lg border border-transparent text-muted transition hover:border-line hover:bg-subtle hover:text-ink disabled:pointer-events-none disabled:opacity-50 sm:size-7 [&>svg]:size-4',
+            'grid size-10 shrink-0 place-items-center rounded-lg border border-transparent text-muted transition hover:border-line hover:bg-subtle hover:text-ink disabled:pointer-events-none disabled:opacity-50 sm:size-7 [&>svg]:size-4',
             className,
         )}
     >

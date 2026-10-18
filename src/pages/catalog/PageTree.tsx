@@ -107,7 +107,7 @@ const Row = ({ row, selected, open, canManage, projectedDepth, onToggle, onSelec
                 {...(canManage ? pointer : {})}
                 className={cx(
                     'group relative flex items-center gap-1 rounded-lg pr-1 text-[13px] transition-colors select-none',
-                    isTab ? 'min-h-11 sm:min-h-10' : 'min-h-11 sm:min-h-8',
+                    isTab ? 'min-h-10' : 'min-h-10 sm:min-h-8',
                     isDragging
                         ? 'border-2 border-dashed border-accent bg-accent-soft/50'
                         : offerOver
@@ -229,7 +229,7 @@ export const PageTree = ({ tree, rows, open, selected, projection, onToggle, onS
                                         <button
                                             type="button"
                                             onClick={() => onSelect(page.id)}
-                                            className={cx('flex min-h-11 w-full items-center gap-2 rounded-lg px-2 py-1 text-left text-[13px] sm:min-h-9', selected === page.id ? 'bg-accent-soft text-accent' : 'hover:bg-subtle')}
+                                            className={cx('flex min-h-10 w-full items-center gap-2 rounded-lg px-2 py-1 text-left text-[13px] sm:min-h-8', selected === page.id ? 'bg-accent-soft text-accent' : 'hover:bg-subtle')}
                                         >
                                             <PageRowBody page={page} needle={needle} path={ancestorsOf(tree, page.id).map(x => x.localization).reverse().join(' / ') || 'Tab'} />
                                         </button>

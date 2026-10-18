@@ -74,7 +74,7 @@ const ColourInput = ({ label, value, faded, onChange }: { label: string; value: 
         aria-label={label}
         value={hexOf(value)}
         onChange={event => onChange(parseInt(event.target.value.slice(1), 16))}
-        className={cx('h-11 w-14 cursor-pointer rounded-lg border border-line bg-canvas p-1 sm:h-9', faded && 'opacity-40')}
+        className={cx('h-10 w-14 cursor-pointer rounded-lg border border-line bg-canvas p-1 sm:h-8', faded && 'opacity-40')}
     />
 );
 

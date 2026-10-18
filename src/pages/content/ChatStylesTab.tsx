@@ -328,7 +328,7 @@ export const ChatStylesTab = ({ canManage }: { canManage: boolean }) => {
                             <Button variant="secondary" icon={<MonitorDown />} disabled={take.isPending} onClick={() => void takeIn('client', 'the chat styles of Habbo\'s client')} title="The chat library of the release of Habbo's HTML client the hotel builds from">
                                 From Habbo's client
                             </Button>
-                            <label className={cx('inline-flex h-11 cursor-pointer items-center gap-2 rounded-lg border border-line px-3 text-sm font-medium text-ink hover:bg-subtle sm:h-9 [&>svg]:size-4', take.isPending && 'pointer-events-none opacity-60')}>
+                            <label className={cx('inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-lg border border-line px-3 text-sm font-medium text-ink hover:bg-subtle sm:h-8 sm:text-[13px] [&>svg]:size-4', take.isPending && 'pointer-events-none opacity-60')}>
                                 <Upload />
                                 A bundle file
                                 <input

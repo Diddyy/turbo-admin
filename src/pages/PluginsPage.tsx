@@ -163,7 +163,7 @@ const InstallButton = ({ maxBytes }: { maxBytes: number }) => {
     const install = useInstallPlugin();
 
     return (
-        <label className={cx('inline-flex h-11 cursor-pointer items-center gap-2 rounded-lg border border-line px-3 text-sm font-medium text-ink hover:bg-subtle sm:h-9 [&>svg]:size-4', install.isPending && 'pointer-events-none opacity-60')}>
+        <label className={cx('inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-lg border border-line px-3 text-sm font-medium text-ink hover:bg-subtle sm:h-8 sm:text-[13px] [&>svg]:size-4', install.isPending && 'pointer-events-none opacity-60')}>
             <Upload />
             Install
             <input

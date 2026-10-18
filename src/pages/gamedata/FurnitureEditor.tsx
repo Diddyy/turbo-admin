@@ -125,7 +125,7 @@ const Fact = ({ label, children }: { label: string; children: ReactNode }) => (
 
 const Card = ({ title, children, actions }: { title: string; children: ReactNode; actions?: ReactNode }) => (
     <section className="flex min-w-0 flex-col rounded-xl border border-line bg-surface">
-        <header className="flex min-h-11 items-center justify-between gap-2 border-b border-line px-4">
+        <header className="flex min-h-10 items-center justify-between gap-2 border-b border-line px-4">
             <h3 className="text-[13px] font-semibold">{title}</h3>
             {actions}
         </header>

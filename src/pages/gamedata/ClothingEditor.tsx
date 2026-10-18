@@ -132,7 +132,7 @@ const Chip = ({ on, onChange, disabled, children }: { on: boolean; onChange: (on
         disabled={disabled}
         onClick={() => onChange(!on)}
         className={cx(
-            'h-9 rounded-lg border px-3 text-[13px] font-medium transition-colors disabled:opacity-60',
+            'h-10 rounded-lg border px-3 text-[13px] font-medium transition-colors disabled:opacity-60 sm:h-8',
             on ? 'border-accent/50 bg-accent-soft text-accent' : 'border-line text-muted hover:text-ink',
         )}
     >

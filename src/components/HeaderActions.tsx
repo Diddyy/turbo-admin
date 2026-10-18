@@ -10,8 +10,8 @@ const TITLE_MIN_WIDTH = 288;
 const GAP = 8;
 const ROW_GAP = 12;
 
-/** The "More" button's width (size-9) and its gap. */
-const MORE_WIDTH = 36 + GAP;
+/** The "More" button's width (size-8) and its gap. */
+const MORE_WIDTH = 32 + GAP;
 
 /** A fragment's children are actions each, however deep: what fits is counted one action at a time. */
 const flatten = (nodes: ReactNode): ReactNode[] => Children.toArray(nodes).flatMap(child =>
@@ -119,7 +119,7 @@ export const HeaderActions = ({ children }: { children: ReactNode }) => {
                         aria-label="More actions"
                         aria-expanded={open}
                         className={cx(
-                            'grid size-11 place-items-center rounded-lg border border-line bg-subtle text-muted transition-colors hover:text-ink sm:size-9 [&>svg]:size-4',
+                            'grid size-10 place-items-center rounded-lg border border-line bg-subtle text-muted transition-colors hover:text-ink sm:size-8 [&>svg]:size-4',
                             open && 'border-accent text-accent',
                         )}
                     >

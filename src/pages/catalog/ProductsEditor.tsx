@@ -68,7 +68,7 @@ export const ItemPicker = ({ type, value, onPick, disabled }: { type: 'floor' | 
                                             onPick(item);
                                             setText('');
                                         }}
-                                        className={cx('flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm hover:bg-subtle sm:min-h-8', item.id === value.id && 'text-accent')}
+                                        className={cx('flex min-h-10 w-full items-center gap-2 px-3 text-left text-sm hover:bg-subtle sm:min-h-8', item.id === value.id && 'text-accent')}
                                     >
                                         <ProductIcon type={item.type} name={item.name} className="size-7" />
                                         <span className="min-w-0 flex-1 truncate font-mono">{item.name}</span>

@@ -84,7 +84,7 @@ export const ListToolbar = ({ children, page, watch }: {
                 <div className="flex items-start gap-2">
                     <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 [&>*]:max-w-full">{children}</div>
                     {page && page.total !== undefined && (
-                        <div className="ml-auto flex h-9 shrink-0 items-center">
+                        <div className="ml-auto flex h-10 shrink-0 items-center sm:h-8">
                             <Pagination offset={page.offset} limit={page.limit} total={page.total} onChange={page.onChange} />
                         </div>
                     )}

@@ -74,7 +74,7 @@ export const NotificationsBell = ({ align = 'end' }: { align?: 'start' | 'end' }
                 aria-expanded={open}
                 title={unread ? `${unread} new` : 'Notifications'}
                 aria-label={unread ? `Notifications, ${unread} new` : 'Notifications'}
-                className={cx('relative grid size-10 place-items-center rounded-lg text-muted transition-colors hover:bg-subtle hover:text-ink lg:size-9 [&>svg]:size-5 lg:[&>svg]:size-[18px]', open && 'bg-subtle text-ink')}
+                className={cx('relative grid size-10 place-items-center rounded-lg text-muted transition-colors hover:bg-subtle hover:text-ink lg:size-8 [&>svg]:size-5 lg:[&>svg]:size-4', open && 'bg-subtle text-ink')}
             >
                 <Bell />
                 {unread > 0 && (

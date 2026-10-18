@@ -107,7 +107,7 @@ const HeaderPage = ({ title }: { title: string }) => (
  * chat, commands, permissions or profile.
  */
 export const HeaderLink = ({ to, icon, children }: { to: string; icon: ReactNode; children: ReactNode }) => (
-    <Link to={to} className="inline-flex h-11 items-center gap-2 rounded-lg border border-line bg-subtle px-3.5 text-sm font-medium hover:border-muted/50 sm:h-9 [&>svg]:size-4">
+    <Link to={to} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line bg-subtle px-3 text-sm font-medium hover:border-muted/50 sm:h-8 sm:text-[13px] [&>svg]:size-4">
         {icon}
         {children}
     </Link>
@@ -228,8 +228,11 @@ export const Loading = () => (
     </div>
 );
 
-/** The look every text box and drop-down shares: a thumb's height on a phone, tighter from a tablet up. */
-export const FIELD_CLASS = 'h-11 sm:h-9 rounded-lg border border-line bg-canvas px-3 text-[15px] sm:text-sm text-ink placeholder:text-muted/70 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25 disabled:opacity-60';
+/**
+ * The look every text box and drop-down shares. Every control (a button, a field, a segmented
+ * row) is one height: 40px on a phone, a thumb's size, and 32px from a tablet up.
+ */
+export const FIELD_CLASS = 'h-10 sm:h-8 rounded-lg border border-line bg-canvas px-2.5 text-[15px] sm:text-[13px] text-ink placeholder:text-muted/70 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25 disabled:opacity-60';
 
 export const Input = ({ className, ...input }: InputHTMLAttributes<HTMLInputElement>) => (
     <input {...input} className={cx(FIELD_CLASS, className ?? 'w-full')} />
@@ -270,7 +273,7 @@ export const Checkbox = ({ label, checked, onChange, disabled, hint }: { label: 
 
 /** An on/off switch with its label beside it: a whole row a thumb can hit. */
 export const Switch = ({ label, checked, onChange, disabled, hint, className }: { label: ReactNode; checked: boolean; onChange: (checked: boolean) => void; disabled?: boolean; hint?: ReactNode; className?: string }) => (
-    <label className={cx('flex min-h-11 items-center justify-between gap-4 select-none', disabled ? 'opacity-60' : 'cursor-pointer', className)}>
+    <label className={cx('flex min-h-10 items-center justify-between gap-4 select-none', disabled ? 'opacity-60' : 'cursor-pointer', className)}>
         <span className="min-w-0">
             <span className="block text-sm">{label}</span>
             {hint && <span className="block text-xs text-muted">{hint}</span>}
@@ -297,7 +300,7 @@ export const Switch = ({ label, checked, onChange, disabled, hint, className }: 
  */
 export const Segmented = ({ label, value, onChange, options, disabled }: { label: string; value: string; onChange: (value: string) => void; options: { value: string; label: string }[]; disabled?: boolean }) => (
     // Each option as wide as its words at least: the row grows past a narrow box rather than cutting them.
-    <div role="radiogroup" aria-label={label} className="flex min-w-max gap-1 rounded-lg bg-canvas p-1">
+    <div role="radiogroup" aria-label={label} className="flex min-w-max gap-0.5 rounded-lg bg-canvas p-0.5">
         {options.map(option => (
             <button
                 key={option.value}
@@ -307,7 +310,7 @@ export const Segmented = ({ label, value, onChange, options, disabled }: { label
                 disabled={disabled}
                 onClick={() => onChange(option.value)}
                 className={cx(
-                    'h-9 flex-auto rounded-md px-3 text-[13px] font-medium whitespace-nowrap transition-colors',
+                    'h-9 flex-auto rounded-md px-2.5 text-[13px] font-medium whitespace-nowrap transition-colors sm:h-7',
                     option.value === value ? 'bg-subtle text-ink shadow-[0_0_0_1px_var(--color-line)]' : 'text-muted hover:text-ink',
                 )}
             >
@@ -348,7 +351,7 @@ export const Button = ({ variant = 'primary', icon, className, children, ...butt
         type="button"
         {...button}
         className={cx(
-            'inline-flex h-11 items-center justify-center gap-2 rounded-lg px-3.5 text-sm font-medium whitespace-nowrap transition active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50 sm:h-9 [&>svg]:size-4',
+            'inline-flex h-10 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium whitespace-nowrap transition active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:pointer-events-none disabled:opacity-50 sm:h-8 sm:text-[13px] [&>svg]:size-4',
             BUTTON_VARIANTS[variant],
             className,
         )}
@@ -371,7 +374,7 @@ export const IconButton = ({ label, icon, tone, small, className, ...button }: B
         {...button}
         className={cx(
             'grid shrink-0 place-items-center rounded-lg border border-transparent transition',
-            small ? 'size-10 sm:size-7 [&>svg]:size-3.5' : 'size-11 sm:size-8 [&>svg]:size-[18px]',
+            small ? 'size-10 sm:size-7 [&>svg]:size-3.5' : 'size-10 sm:size-8 [&>svg]:size-4',
             tone === 'bad' ? 'text-muted hover:border-bad-line hover:bg-bad-soft hover:text-bad' : 'text-muted hover:border-line hover:bg-subtle hover:text-ink',
             'disabled:pointer-events-none disabled:opacity-50',
             className,

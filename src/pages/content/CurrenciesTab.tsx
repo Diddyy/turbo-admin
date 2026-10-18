@@ -146,7 +146,7 @@ const CurrencyRow = ({ currency, canManage, editing, onEdit, onDone }: { currenc
                         />
                         <IconButton label={`Edit ${currency.name}`} icon={<Pencil />} onClick={onEdit} />
                         {/* A place kept for it on every row, so each row's switch and pencil line up. */}
-                        {(credits || uses.length > 0) && <span aria-hidden className="size-11 shrink-0 sm:size-8" />}
+                        {(credits || uses.length > 0) && <span aria-hidden className="size-10 shrink-0 sm:size-8" />}
                         {!credits && uses.length === 0 && (
                             <IconButton
                                 label={`Delete ${currency.name}`}

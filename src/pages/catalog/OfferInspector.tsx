@@ -253,7 +253,7 @@ export const OfferInspector = ({ tree, pageId, offer, start, featured, onDone, o
 
             <Group title="Who and how">
                 {!membership && !gift && (
-                    <div role="radiogroup" aria-label="Who may buy it" className="flex gap-1 rounded-lg bg-canvas p-1">
+                    <div role="radiogroup" aria-label="Who may buy it" className="flex gap-0.5 rounded-lg bg-canvas p-0.5">
                         {CLUB_LEVELS.map(x => (
                             <button
                                 key={x.value}
@@ -263,7 +263,7 @@ export const OfferInspector = ({ tree, pageId, offer, start, featured, onDone, o
                                 disabled={!canManage}
                                 onClick={() => set('clubLevel', x.value)}
                                 className={cx(
-                                    'flex h-9 flex-1 items-center justify-center gap-1.5 rounded-md text-[13px] font-medium transition-colors',
+                                    'flex h-9 flex-1 items-center justify-center gap-1.5 rounded-md text-[13px] font-medium transition-colors sm:h-7',
                                     draft.clubLevel === x.value ? 'bg-subtle text-ink shadow-[0_0_0_1px_var(--color-line)]' : 'text-muted hover:text-ink',
                                 )}
                             >

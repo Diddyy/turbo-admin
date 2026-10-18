@@ -135,7 +135,7 @@ const NavButton = ({ category, active, onClick }: { category: Category; active: 
         aria-current={active}
         title={category.note}
         className={cx(
-            'flex min-h-10 w-full items-center justify-between gap-2 rounded-lg px-3 text-left text-sm transition-colors sm:min-h-9',
+            'flex min-h-10 w-full items-center justify-between gap-2 rounded-lg px-3 text-left text-sm transition-colors sm:min-h-8',
             active ? 'bg-accent-soft font-medium text-accent' : 'hover:bg-subtle',
         )}
     >

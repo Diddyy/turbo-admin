@@ -138,7 +138,7 @@ const Inspector = ({ colour, index, count, canManage, onChange, onMove, onRemove
                     onChange={event => setHexText(event.target.value)}
                     disabled={!canManage}
                     aria-label="Pick a colour"
-                    className="h-11 w-11 cursor-pointer rounded-lg border border-line bg-canvas p-1 sm:h-9 sm:w-11"
+                    className="h-10 w-11 cursor-pointer rounded-lg border border-line bg-canvas p-1 sm:h-8"
                 />
                 <Labeled label="Hex">
                     <Input value={hex} onChange={event => setHexText(event.target.value)} maxLength={7} disabled={!canManage} className={cx('w-full font-mono uppercase', !HEX.test(hex) && 'border-bad')} />

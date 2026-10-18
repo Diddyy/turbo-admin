@@ -98,7 +98,7 @@ const RailTheme = () => {
                                 setTheme(entry.value);
                                 setOpen(false);
                             }}
-                            className={cx('grid size-9 place-items-center rounded-md [&>svg]:size-4', entry.value === choice ? 'bg-subtle text-accent' : 'text-muted hover:text-ink')}
+                            className={cx('grid size-8 place-items-center rounded-md [&>svg]:size-4', entry.value === choice ? 'bg-subtle text-accent' : 'text-muted hover:text-ink')}
                         >
                             {entry.icon}
                         </button>

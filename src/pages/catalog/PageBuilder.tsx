@@ -208,7 +208,7 @@ export const PageBuilder = ({ tree, page, open, onClose, onBuiltPage }: PageBuil
                         {target === 'new' && (
                             <div className="grid gap-3 sm:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)]">
                                 <Labeled label="Icon">
-                                    <button type="button" onClick={() => setIconOpen(true)} title="Pick its icon" className="grid size-11 place-items-center rounded-lg border border-line bg-canvas hover:border-accent sm:size-9">
+                                    <button type="button" onClick={() => setIconOpen(true)} title="Pick its icon" className="grid size-10 place-items-center rounded-lg border border-line bg-canvas hover:border-accent sm:size-8">
                                         {newIcon ? <PageIcon icon={newIcon} /> : <span className="text-[10px] text-muted">icon</span>}
                                     </button>
                                 </Labeled>

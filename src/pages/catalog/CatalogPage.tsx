@@ -49,6 +49,7 @@ import { ChangesBar } from './ChangesBar';
 import { Duplicates } from './Duplicates';
 import { FeaturedEditor } from './FeaturedEditor';
 import { GenerateCatalog } from './GenerateCatalog';
+import { ImportCapture } from './ImportCapture';
 import { DISPLAY_LABELS, stepLabel } from './labels';
 import { layoutOf, showsOffers } from './layouts';
 import { MissingFurni } from './MissingFurni';
@@ -70,9 +71,9 @@ const startOf = (layout: string): OfferStart => (layout === CLUB_BUY ? 'membersh
 type Dragging = { kind: 'page'; id: number } | { kind: 'offer'; id: number };
 
 /** The editor's views, along the header. */
-type View = 'editor' | 'missing' | 'duplicates' | 'generate' | 'backups';
+type View = 'editor' | 'missing' | 'duplicates' | 'generate' | 'import' | 'backups';
 
-const VIEWS: View[] = [ 'editor', 'missing', 'duplicates', 'generate', 'backups' ];
+const VIEWS: View[] = [ 'editor', 'missing', 'duplicates', 'generate', 'import', 'backups' ];
 
 const idOf = (dragId: string | number) => Number(String(dragId).split(':')[1]);
 const kindOf = (dragId: string | number) => String(dragId).split(':')[0];
@@ -486,6 +487,7 @@ export const CatalogPage = () => {
                 {data && view === 'missing' && <MissingFurni tree={data} pageId={selected} onOpenPage={id => openPage(id)} />}
                 {data && view === 'duplicates' && <Duplicates tree={data} onOpen={(pageId, offerId) => openPage(pageId, offerId)} />}
                 {data && view === 'generate' && <GenerateCatalog tree={data} onDone={() => openPage(null)} />}
+                {data && view === 'import' && <ImportCapture tree={data} />}
                 {data && view === 'backups' && <Backups tree={data} />}
 
                 {data && view === 'editor' && (

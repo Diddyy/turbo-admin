@@ -1,7 +1,8 @@
-import { Activity, Armchair, CloudDownload, Disc3, Gauge, House, KeyRound, Landmark, Languages, MessagesSquare, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
+import { Activity, Armchair, Bug, CloudDownload, Disc3, Gauge, House, KeyRound, Landmark, Languages, MessagesSquare, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router';
 
+import { usePluginPages } from '#/api/pluginPages';
 import { useMe } from '#/api/queries';
 import type { MeResponse } from '#/api/types';
 import type { TabItem } from '#/components/Tabs';
@@ -59,6 +60,8 @@ export interface NavEntry {
     pages: PageName[];
     /** A line about it, for the menu on a phone. */
     hint: string;
+    /** A plugin's page: where it is, which holds no page of the panel's own. */
+    path?: string;
 }
 
 export interface NavSection {
@@ -125,11 +128,30 @@ export interface ShownEntry extends NavEntry {
     shown: NavItem[];
 }
 
+/** The icons a plugin's page may name; any other is a plug. */
+const PLUGIN_ICONS: Record<string, ReactNode> = { bug: <Bug />, puzzle: <Puzzle />, scroll: <ScrollText />, users: <Users /> };
+
+/**
+ * The pages live plugins add to the navigation, those the viewer may see: under Plugins, below the
+ * panel's own, and gone as soon as the plugin is reloaded without them, turned off or taken away.
+ */
+const usePluginEntries = (): ShownEntry[] => {
+    const { data: plugins } = usePluginPages();
+
+    return (plugins ?? []).flatMap(plugin => plugin.pages.filter(page => page.nav).map((page) => {
+        const to = `/plugin/${plugin.key}/${page.id}`;
+        const icon = PLUGIN_ICONS[page.icon ?? ''] ?? <Plug />;
+
+        return { label: page.title, icon, pages: [], hint: `From the plugin ${plugin.name}`, path: `/plugin/${plugin.key}/`, to, shown: [ { to, label: page.title, icon, end: false } ] };
+    }));
+};
+
 /** The navigation's sections, with only the entries the signed-in player may open. */
 export const useNav = (): { label: string | null; entries: ShownEntry[] }[] => {
     const { data: me } = useMe();
+    const plugins = usePluginEntries();
 
-    return SECTIONS
+    return [ ...SECTIONS, { label: 'Plugins', entries: [] } ]
         .map(section => ({
             label: section.label,
             entries: section.entries
@@ -140,6 +162,7 @@ export const useNav = (): { label: string | null; entries: ShownEntry[] }[] => {
                 })
                 .filter(entry => entry.shown.length > 0),
         }))
+        .map(section => (section.label === 'Plugins' ? { ...section, entries: plugins } : section))
         .filter(section => section.entries.length > 0);
 };
 
@@ -176,7 +199,7 @@ export const useIsActive = () => {
     const { pathname } = useLocation();
     const page = pageAt(pathname);
 
-    return (entry: NavEntry) => !!page && entry.pages.some(name => PAGES[name] === page);
+    return (entry: NavEntry) => (entry.path ? pathname.startsWith(entry.path) : !!page && entry.pages.some(name => PAGES[name] === page));
 };
 
 /**

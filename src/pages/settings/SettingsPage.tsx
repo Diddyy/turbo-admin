@@ -240,8 +240,8 @@ const SettingsTab = () => {
                 <Panel
                     key={section}
                     title={section}
-                    description={settings[0].plugin ? <>From the plugin <Link to="/plugins" className="font-mono underline-offset-2 hover:underline">{settings[0].plugin}</Link>: listed while it is loaded, and applied as it reads them.</> : undefined}
-                    actions={settings[0].plugin ? <Badge>plugin</Badge> : undefined}
+                    description={settings[0]?.plugin ? <>From the plugin <Link to="/plugins" className="font-mono underline-offset-2 hover:underline">{settings[0]?.plugin}</Link>: listed while it is loaded, and applied as it reads them.</> : undefined}
+                    actions={settings[0]?.plugin ? <Badge>plugin</Badge> : undefined}
                     className="overflow-clip"
                 >
                     <ul className="divide-y divide-line">

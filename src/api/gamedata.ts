@@ -16,6 +16,16 @@ export const IMPORT_ACTIONS: Record<number, string> = { 0: 'add', 1: 'update', 2
 /** Which table a change touched: GamedataRecordType. */
 export const RECORD_TYPES: Record<number, string> = { 0: 'definition', 1: 'Habbo item', 2: 'text', 3: 'Habbo text', 4: 'product', 5: 'Habbo product', 6: 'figure', 7: 'Habbo figure', 8: 'variable' };
 
+/** Which records each history lists the change sets of; Habbo's updates every kind Habbo serves. */
+export const HISTORY_RECORDS = {
+    habbo: [ 0, 1, 2, 3, 4, 5, 6, 7 ],
+    products: [ 4, 5 ],
+    texts: [ 2, 3 ],
+    variables: [ 8 ],
+} as const;
+
+export type HistoryScope = keyof typeof HISTORY_RECORDS;
+
 export interface HabboRelease {
     id: number;
     domain: string;
@@ -446,9 +456,9 @@ export const useTakeHabboValues = () => {
     });
 };
 
-export const useHistory = (page: number) => useQuery({
-    queryKey: [ 'gamedata', 'history', page ],
-    queryFn: () => api<ChangeSet[]>(`/gamedata/history?page=${page}`),
+export const useHistory = (scope: HistoryScope, page: number) => useQuery({
+    queryKey: [ 'gamedata', 'history', scope, page ],
+    queryFn: () => api<ChangeSet[]>(`/gamedata/history?page=${page}${HISTORY_RECORDS[scope].map(x => `&type=${x}`).join('')}`),
     placeholderData: keepPreviousData,
 });
 

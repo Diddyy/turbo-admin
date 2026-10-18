@@ -15,7 +15,7 @@ import { HabboFigures } from './FiguresTab';
 import { Loaded } from './frame';
 import { HabboFurniture } from './FurnitureTab';
 import { HabboClientPanel } from './HabboClientPanel';
-import { HistoryTab } from './HistoryTab';
+import { HistoryPanel } from './HistoryPanel';
 import { HabboProducts } from './ProductsTab';
 import { useGamedata, useTab } from './state';
 import { HabboTexts } from './TextsTab';
@@ -287,8 +287,8 @@ const TABS = [ 'waiting', 'sources', 'history' ] as const;
 
 /**
  * Habbo updates: what Habbo has that the hotel hasn't taken in (each to review and take in, the
- * data rolled back from the history if need be), where it comes from, and the history of every
- * gamedata change.
+ * data rolled back from the history if need be), where it comes from, and the history of the
+ * gamedata Habbo serves (the variables keep theirs on their own tab).
  */
 const UpdatesPage = () => {
     const state = useGamedata();
@@ -320,7 +320,7 @@ const UpdatesPage = () => {
                         <>
                             {tab === 'waiting' && <WaitingTab categories={categories} assets={assets} canManage={state.canManage} />}
                             {tab === 'sources' && <SourcesTab status={status} assets={assets} canManage={state.canManage} waitingData={categories.filter(x => x.group === 'Gamedata' && x.count).length} />}
-                            {tab === 'history' && <HistoryTab canManage={status.canManage} />}
+                            {tab === 'history' && <HistoryPanel scope="habbo" canManage={status.canManage} />}
                         </>
                     )}
                 </Loaded>

@@ -549,6 +549,8 @@ export interface VariableEntry {
     setting?: string | null;
     /** The gamedata file whose address it follows by hash (`furnidata_json`); null or absent for one that doesn't. */
     file?: string | null;
+    /** Kept by the hotel itself (`renderer.petTypes`, which a publish writes from the pet bundles): an import never sets nor removes it. */
+    managed?: boolean;
 }
 
 export interface VariableSearchResult {
@@ -574,11 +576,11 @@ export interface VariableImportPreview {
     added: number;
     updated: number;
     unchanged: number;
-    /** Keys left out: the hotel's own gamedata addresses, and keys too long to keep. */
+    /** Keys left out: the hotel's own gamedata addresses, the ones it keeps itself (`renderer.petTypes`), and keys too long to keep. */
     skipped: string[];
     items: VariableImportItem[];
     truncated: boolean;
-    /** The hotel's variables the config lacks, removed when asked, up to the preview's limit; never one that follows a setting or a file, nor the reception's (landing.view.*). */
+    /** The hotel's variables the config lacks, removed when asked, up to the preview's limit; never one that follows a setting or a file, one the hotel keeps itself, nor the reception's (landing.view.*). */
     removed: string[];
     /** Every variable the import would remove, listed or not. */
     removedCount: number;

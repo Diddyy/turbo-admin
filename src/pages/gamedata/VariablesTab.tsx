@@ -1,4 +1,4 @@
-import { FileUp, Link2, Plus, Save, Search, Trash2, Unlink, Upload, X } from 'lucide-react';
+import { FileUp, Link2, Lock, Plus, Save, Search, Trash2, Unlink, Upload, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
@@ -46,6 +46,13 @@ const VariableLink = ({ variable, variableKey, linking, canManage, onDone }: { v
     const { data: settings } = useSettings();
     const linkable = settings?.settings.filter(x => !x.secret) ?? [];
     const follows = variable?.setting ?? variable?.file;
+
+    if (variable?.managed)
+        return (
+            <p className="rounded-lg border border-line bg-canvas p-3 text-sm">
+                Kept by the hotel: a publish writes it from the pet bundles, keeping the places set here. An import never changes or removes it.
+            </p>
+        );
 
     if (follows)
         return (
@@ -167,7 +174,7 @@ const VariableEditor = ({ variable, linking, canManage, onDone }: { variable: Va
 /**
  * A client config taken in whole: pasted or read from a file, looked at, then imported. Keys the
  * hotel lacks are added and those that differ changed; the hotel's other variables stay, or are
- * removed when asked. Variables that follow a setting or a file always stay.
+ * removed when asked. Variables that follow a setting or a file, or that the hotel keeps, always stay.
  */
 const ImportPanel = ({ initial, onDone }: { initial: string | null; onDone: () => void }) => {
     const [ json, setJson ] = useState(initial ?? '');
@@ -208,7 +215,7 @@ const ImportPanel = ({ initial, onDone }: { initial: string | null; onDone: () =
                 />
                 <Checkbox
                     label="Remove the hotel's variables the config doesn't have"
-                    hint="Variables that follow a setting or a file stay, and so do the Hotel view's (landing.view.*). A config with no keys can't remove anything."
+                    hint="Variables that follow a setting or a file stay, and so do the ones the hotel keeps (renderer.petTypes) and the Hotel view's (landing.view.*). A config with no keys can't remove anything."
                     checked={removeMissing}
                     onChange={(checked) => {
                         setRemoveMissing(checked);
@@ -354,7 +361,10 @@ export const VariablesTab = ({ status }: { status: GamedataStatus }) => {
                                     <div className="grid items-center gap-x-4 gap-y-0.5 sm:grid-cols-[minmax(12rem,22rem)_1fr_minmax(0,16rem)]">
                                         <span className="truncate font-mono text-[13px]">{item.key}</span>
                                         <Value value={item.value} />
-                                        <span className="min-w-0 max-sm:hidden sm:justify-self-end">{(item.setting ?? item.file) && <Badge tone="accent" className="max-w-64 truncate normal-case!"><Link2 className="size-3" /> {item.setting ?? item.file}</Badge>}</span>
+                                        <span className="min-w-0 max-sm:hidden sm:justify-self-end">
+                                            {(item.setting ?? item.file) && <Badge tone="accent" className="max-w-64 truncate normal-case!"><Link2 className="size-3" /> {item.setting ?? item.file}</Badge>}
+                                            {item.managed && <Badge tone="accent" className="normal-case!"><Lock className="size-3" /> kept by the hotel</Badge>}
+                                        </span>
                                     </div>
                                 )}
                             >

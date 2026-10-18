@@ -38,7 +38,7 @@ const blank = (type: EditableKind): CatalogProductInput => ({
 });
 
 /** Picking the item a product gives, by the start of its class name or its id. */
-const ItemPicker = ({ type, value, onPick, disabled }: { type: 'floor' | 'wall'; value: { id: number | null; name: string | null }; onPick: (item: CatalogFurniture) => void; disabled: boolean }) => {
+export const ItemPicker = ({ type, value, onPick, disabled }: { type: 'floor' | 'wall'; value: { id: number | null; name: string | null }; onPick: (item: CatalogFurniture) => void; disabled: boolean }) => {
     const [ text, setText ] = useState('');
     const search = useFurnitureSearch(text);
     const items = (search.data ?? []).filter(x => x.type === type);
@@ -86,7 +86,7 @@ const ItemPicker = ({ type, value, onPick, disabled }: { type: 'floor' | 'wall';
 const PET_TYPE_COUNT = 50;
 const PET_CODES = Array.from({ length: PET_TYPE_COUNT }, (_, i) => `a0 pet${i}`);
 
-const PetPicker = ({ value, onChange, disabled }: { value: string; onChange: (value: string) => void; disabled: boolean }) => {
+export const PetPicker = ({ value, onChange, disabled }: { value: string; onChange: (value: string) => void; disabled: boolean }) => {
     const { data } = useProductLookup(PET_CODES);
     const names = useMemo(() => new Map((data ?? []).map(x => [ Number(x.code.slice('a0 pet'.length)), x.name ])), [ data ]);
 

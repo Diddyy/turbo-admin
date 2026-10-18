@@ -3,7 +3,6 @@ import { type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, ty
 import { Link } from 'react-router';
 
 import { useClientAssets } from '#/api/assets';
-import { SearchButton } from '#/layout/CommandPalette';
 import { HotelStatusPill } from '#/layout/HotelStatus';
 import { useActiveNavItem } from '#/layout/nav';
 import { NotificationsBell } from '#/layout/NotificationsBell';
@@ -31,11 +30,11 @@ interface PageHeaderProps {
 
 /**
  * The top of every page, in the bar along the top of the window as nitro-studio has it: the title
- * and a line under it; the page's actions, the bell and the search to the right (actions that do
- * not fit go under "More"); and along its bottom edge the page's tabs (or, with none, the page's
- * name marked as a tab is, so every header is the same height). On a phone it stays at the top as
- * an app bar, with the hotel's state at a glance (the bottom bar holds the menu and the search);
- * from a laptop up it scrolls away with the page.
+ * and a line under it; the page's actions to the right (actions that do not fit go under "More");
+ * and along its bottom edge the page's tabs (or, with none, the page's name marked as a tab is, so
+ * every header is the same height). On a phone it stays at the top as an app bar, with the hotel's
+ * state at a glance and the bell (the bottom bar holds the menu and the search); from a laptop up
+ * it scrolls away with the page, and the search and the bell sit in the sidebar.
  */
 export const PageHeader = ({ title, description, back, tabs, children }: PageHeaderProps) => {
     return (
@@ -53,8 +52,9 @@ export const PageHeader = ({ title, description, back, tabs, children }: PageHea
                 </div>
                 {children && <HeaderActions>{children}</HeaderActions>}
                 <HotelStatusPill />
-                <NotificationsBell />
-                <SearchButton />
+                <div className="lg:hidden">
+                    <NotificationsBell />
+                </div>
             </div>
             {/* The tabs' row: its tabs' line sits on the header's own bottom rule. */}
             <div className={cx(PAGE_WIDTH, 'flex h-10 items-end px-2 sm:px-4 lg:px-6', !tabs && 'max-lg:hidden')}>

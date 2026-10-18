@@ -22,12 +22,13 @@ const KINDS: Record<string, { icon: ReactNode; tone: string; to: (item: Notifica
 const FALLBACK = KINDS.refusedCommand!;
 
 /**
- * The bell in every page's header: what staff should know of lately (maintenance or a shutdown,
- * the week's bans, commands refused), with how many this browser has not seen. The live stream
- * asks again the moment a ban or maintenance happens. Picking one opens what it is about; "Mark
- * all read" clears the count.
+ * The bell under the sidebar's logo (in a phone's header): what staff should know of lately
+ * (maintenance or a shutdown, the week's bans, commands refused), with how many this browser has
+ * not seen. The live stream asks again the moment a ban or maintenance happens. Picking one opens
+ * what it is about; "Mark all read" clears the count. `align` is the edge of the bell its list
+ * keeps to: "start" in the sidebar, so it opens over the page and not off the window's left.
  */
-export const NotificationsBell = () => {
+export const NotificationsBell = ({ align = 'end' }: { align?: 'start' | 'end' }) => {
     const navigate = useNavigate();
     const { data, error } = useNotifications();
     const seen = useSeenNotifications(state => state.seen);
@@ -83,7 +84,7 @@ export const NotificationsBell = () => {
                 )}
             </button>
             {open && (
-                <div className="fixed inset-x-2 top-16 z-40 animate-rise rounded-xl border border-line bg-surface shadow-xl sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-[24rem]">
+                <div className={cx('fixed inset-x-2 top-16 z-40 animate-rise rounded-xl border border-line bg-surface shadow-xl sm:absolute sm:inset-x-auto sm:top-full sm:mt-2 sm:w-[24rem]', align === 'start' ? 'sm:left-0' : 'sm:right-0')}>
                     <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-2.5">
                         <Label>Notifications</Label>
                         {unread > 0 && (

@@ -8,16 +8,18 @@ import { useLiveUpdates } from '#/api/live';
 import { useSession } from '#/auth/session';
 import { ConfirmHost } from '#/components/ConfirmHost';
 import { useModalDialog } from '#/components/dialog';
+import { Logo } from '#/components/Logo';
 import { PageErrorBoundary } from '#/components/PageErrorBoundary';
 import { Toasts } from '#/components/Toasts';
 import { Segmented } from '#/components/ui';
 import { cx } from '#/lib/cx';
 import { setTheme, type ThemeChoice, useTheme } from '#/lib/theme';
 
-import { CommandPalette } from './CommandPalette';
+import { CommandPalette, SearchButton } from './CommandPalette';
 import { useDrawer } from './drawer';
 import { HotelSheet, HotelStatusCard } from './HotelStatus';
 import { type ShownEntry, useIsActive, useNav } from './nav';
+import { NotificationsBell } from './NotificationsBell';
 import { usePalette, useShortcutsSheet } from './palette';
 import { Shortcuts } from './Shortcuts';
 
@@ -126,7 +128,7 @@ const RailLink = ({ entry, active }: { entry: ShownEntry; active: boolean }) => 
 );
 
 /**
- * From a laptop up: the hotel's state at the top, then the places in their sections down the left
+ * From a laptop up: the logo, the search and the bell under it, the hotel's state, then the places in their sections down the left
  * (pages alike share one entry and show as tabs on their pages), and at its foot your account, the
  * shortcuts, the theme and signing out.
  */
@@ -138,11 +140,14 @@ const Rail = () => {
     const showShortcuts = useShortcutsSheet(state => state.setOpen);
 
     return (
-        <nav aria-label="Main" className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r border-line bg-chrome lg:flex">
-            <Link to="/" className="flex h-16 shrink-0 items-center gap-3 px-4">
-                <span className="grid size-8 place-items-center rounded-lg bg-accent font-mono text-sm font-bold text-on-accent">T</span>
-                <span className="font-mono text-xs font-medium tracking-[0.08em] text-ink uppercase">Turbo Admin</span>
+        <nav aria-label="Main" className="sticky top-0 z-30 hidden h-dvh w-60 shrink-0 flex-col border-r border-line bg-chrome lg:flex">
+            <Link to="/" aria-label="Turbo Admin, overview" className="flex h-16 shrink-0 items-center px-4">
+                <Logo />
             </Link>
+            <div className="flex shrink-0 items-center gap-1.5 px-3 pb-3">
+                <SearchButton />
+                <NotificationsBell align="start" />
+            </div>
             <HotelStatusCard />
             <div className="no-scrollbar flex flex-1 flex-col gap-3 overflow-y-auto px-3 py-3">
                 {sections.map(section => (

@@ -267,21 +267,20 @@ export const CommandPalette = () => {
     return open ? <Palette onClose={() => setOpen(false)} /> : null;
 };
 
-/** The search's button in a page's header: a search box from a laptop up, an icon on a phone. */
+/** The search's box under the sidebar's logo (on a phone the bottom bar holds the search). */
 export const SearchButton = () => {
     const setOpen = usePalette(state => state.setOpen);
 
     return (
-        <>
-            <button
-                type="button"
-                onClick={() => setOpen(true)}
-                className="hidden h-9 w-64 shrink-0 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-left text-[13px] text-muted transition-colors hover:border-muted/50 lg:flex xl:w-72"
-            >
-                <Search className="size-4 shrink-0" />
-                <span className="min-w-0 flex-1 truncate">Search everything</span>
-                <kbd className="rounded border border-line px-1.5 font-mono text-[10px]">Ctrl K</kbd>
-            </button>
-        </>
+        <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label="Search everything"
+            className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-left text-[13px] text-muted transition-colors hover:border-muted/50"
+        >
+            <Search className="size-4 shrink-0" />
+            <span className="min-w-0 flex-1 truncate">Search</span>
+            <kbd className="rounded border border-line px-1.5 font-mono text-[10px]">Ctrl K</kbd>
+        </button>
     );
 };

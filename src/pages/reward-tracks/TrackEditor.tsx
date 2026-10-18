@@ -9,7 +9,8 @@ import { Badge, Button, ErrorNotice, Input, Labeled, Loading, PageBody, PageHead
 import { cx } from '#/lib/cx';
 import { inputToIso, isoToInput } from '#/pages/hotel-view/model';
 
-import { useTrackNames } from './hooks';
+import { GamePreview } from './GamePreview';
+import { useGamePreviewUrl, useTrackNames } from './hooks';
 import { blankTrack, css, problemsOf, STATUS, statusOf, THEME_NAMES, themeOf, trackPoints } from './model';
 import { PrizesEditor } from './PrizesEditor';
 import { StripPreview } from './StripPreview';
@@ -118,6 +119,7 @@ export const TrackEditor = ({ id, isNew, actionTypes, onBack }: { id: string; is
     // Furni picked here, before the server names them back.
     const [ picked, setPicked ] = useState<Map<string, string>>(new Map());
     const names = useTrackNames([ id ]);
+    const gamePreview = useGamePreviewUrl();
     const track = draft ?? saved;
     const dirty = !!draft && JSON.stringify(draft) !== JSON.stringify(saved);
     const furni = useMemo(() => new Map([ ...(data?.furni ?? []).map(x => [ x.prizeId, x.name ] as const), ...picked ]), [ data, picked ]);
@@ -188,8 +190,13 @@ export const TrackEditor = ({ id, isNew, actionTypes, onBack }: { id: string; is
                 {tab === 'settings' && <SettingsTab track={track} onChange={change} />}
                 {tab === 'tasks' && <TasksEditor track={track} actionTypes={actionTypes} onChange={change} />}
                 {tab === 'prizes' && <PrizesEditor track={track} furni={furni} onPickFurni={(prize, name) => setPicked(previous => new Map(previous).set(prize, name))} onChange={change} />}
-                {tab === 'preview' && (
-                    <Panel title="As a player sees it" description="The prize strip of the track's window, for a player with no points yet: the client's own positions and pages. Unsaved changes show here too.">
+                {tab === 'preview' && gamePreview && (
+                    <Panel title="As a player sees it" description="The track's window, drawn by the game client itself for a player with these points and nothing claimed yet. Unsaved changes show here too.">
+                        <div className="p-4"><GamePreview track={track} url={gamePreview} /></div>
+                    </Panel>
+                )}
+                {tab === 'preview' && !gamePreview && (
+                    <Panel title="As a player sees it" description="The prize strip of the track's window, for a player with no points yet: the client's own positions and pages. Unsaved changes show here too. Set Turbo:Admin:ClientPreviewUrl (or ClientLoginUrl) to see the game's own window here.">
                         <div className="p-4"><StripPreview track={track} furni={furni} title={names.get(id) ?? null} /></div>
                     </Panel>
                 )}

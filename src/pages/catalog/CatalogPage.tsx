@@ -18,7 +18,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Eye, PackagePlus, Settings2, Sparkles } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useSearchParams } from 'react-router';
+import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 
 import {
     catalogCalls,
@@ -74,6 +74,9 @@ type Dragging = { kind: 'page'; id: number } | { kind: 'offer'; id: number };
 type View = 'editor' | 'missing' | 'duplicates' | 'generate' | 'import' | 'backups';
 
 const VIEWS: View[] = [ 'editor', 'missing', 'duplicates', 'generate', 'import', 'backups' ];
+
+/** Where each view is under `/catalog/`: the audit's two by `audit/`. */
+const VIEW_PATHS: Record<View, string> = { editor: 'editor', missing: 'audit/missing', duplicates: 'audit/duplicates', generate: 'generate', import: 'import', backups: 'backups' };
 
 const idOf = (dragId: string | number) => Number(String(dragId).split(':')[1]);
 const kindOf = (dragId: string | number) => String(dragId).split(':')[0];
@@ -143,10 +146,9 @@ type PageTab = 'preview' | 'settings' | 'featured';
  * and redone (Ctrl+Z, Ctrl+Shift+Z) or thrown away together, and go in front of players when
  * published. The view, the open page and offer live in the address, so they can be linked to.
  */
-export const CatalogPage = () => {
+const CatalogEditor = ({ view }: { view: View }) => {
     const [ params, setParams ] = useSearchParams();
-    const viewParam = params.get('view') as View | null;
-    const view: View = viewParam && VIEWS.includes(viewParam) ? viewParam : 'editor';
+    const navigate = useNavigate();
     const selected = Number(params.get('page')) || null;
     const offerParam = params.get('offer');
     const selectedOffer: number | 'new' | null = offerParam === 'new' ? 'new' : Number(offerParam) || null;
@@ -201,16 +203,7 @@ export const CatalogPage = () => {
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates, keyboardCodes: { start: [ 'Space' ], cancel: [ 'Escape' ], end: [ 'Space', 'Enter' ] } }),
     );
 
-    const setView = (next: View) => {
-        const search = new URLSearchParams(params);
-
-        if (next === 'editor')
-            search.delete('view');
-        else
-            search.set('view', next);
-
-        setParams(search);
-    };
+    const setView = (next: View) => void navigate({ pathname: `/catalog/${VIEW_PATHS[next]}`, search: params.toString() });
 
     // Opening a page opens the pages above it in the tree, so it is in sight.
     const openPage = (id: number | null, offer?: number | 'new') => {
@@ -222,7 +215,7 @@ export const CatalogPage = () => {
         if (offer)
             next.set('offer', String(offer));
 
-        setParams(next);
+        void navigate({ pathname: '/catalog/editor', search: next.toString() });
         setTab('preview');
         publish.reset();
 
@@ -685,4 +678,19 @@ export const CatalogPage = () => {
             )}
         </>
     );
+};
+
+/**
+ * The catalog at `/catalog/<view>`: a path that names no view goes to the editor, or the audit's
+ * first view for `audit`, keeping the page and offer it had open.
+ */
+export const CatalogPage = () => {
+    const path = useParams();
+    const { search } = useLocation();
+    const view = VIEWS.find(x => VIEW_PATHS[x] === [ path.view, path.sub ].filter(Boolean).join('/'));
+
+    if (!view)
+        return <Navigate to={{ pathname: `/catalog/${VIEW_PATHS[path.view === 'audit' ? 'missing' : 'editor']}`, search }} replace />;
+
+    return <CatalogEditor view={view} />;
 };

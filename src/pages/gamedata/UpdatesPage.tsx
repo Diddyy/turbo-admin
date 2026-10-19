@@ -7,6 +7,7 @@ import { type GamedataStatus, useCheckHabbo, useFigureImportPreview, useImportPr
 import { toast, toastError } from '#/components/toast';
 import { Badge, type BadgeTone, Button, ErrorNotice, Label, PageBody, PageHeader, Panel } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import { usePathTab } from '#/lib/tabs';
 import { fromNow } from '#/lib/time';
 import { BundleUpdate, SyncButton } from '#/pages/assets/BundleUpdate';
 import { JobPanel } from '#/pages/assets/JobPanel';
@@ -17,7 +18,7 @@ import { HabboFurniture } from './FurnitureTab';
 import { HabboClientPanel } from './HabboClientPanel';
 import { HistoryPanel } from './HistoryPanel';
 import { HabboProducts } from './ProductsTab';
-import { useGamedata, useTab } from './state';
+import { useGamedata } from './state';
 import { HabboTexts } from './TextsTab';
 
 /** Something Habbo has that the hotel may take in: its count waiting, and its list to review and take in. */
@@ -292,8 +293,12 @@ const TABS = [ 'waiting', 'sources', 'history' ] as const;
  */
 export const UpdatesPage = () => {
     const state = useGamedata();
-    const tab = useTab(TABS);
+    const [ tab, toTab ] = usePathTab(TABS);
     const categories = useCategories(state.status, state.canManage);
+
+    if (toTab)
+        return toTab;
+
     const total = categories.reduce((sum, x) => sum + (x.count ?? 0), 0);
     const release = state.status?.latestRelease;
 

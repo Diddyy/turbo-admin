@@ -4,6 +4,7 @@ import { Navigate, Route, Routes } from 'react-router';
 import { LoginPage } from '#/auth/LoginPage';
 import { RequireSession } from '#/auth/RequireSession';
 import { SetupPage } from '#/auth/SetupPage';
+import { ToTab } from '#/components/ToTab';
 import { Loading } from '#/components/ui';
 import { Shell } from '#/layout/Shell';
 import { AccountPage } from '#/pages/AccountPage';
@@ -51,17 +52,20 @@ export const App = () => (
             <Route index element={<DashboardPage />} />
             <Route path="performance" element={<Suspense fallback={<Loading />}><PerformancePage /></Suspense>} />
             <Route path="rooms" element={<RoomsPage />} />
-            <Route path="rooms/:id" element={<RoomPage />} />
+            <Route path="rooms/:id" element={<ToTab to="overview" />} />
+            <Route path="rooms/:id/overview" element={<RoomPage />} />
             <Route path="rooms/:id/settings" element={<RoomSettingsPage />} />
             <Route path="players" element={<PlayerListPage />} />
-            <Route path="players/:id" element={<PlayerProfilePage />} />
+            <Route path="players/:id/:tab?/:sub?" element={<PlayerProfilePage />} />
             <Route path="groups" element={<GuildsPage />} />
             <Route path="groups/badge-parts" element={<BadgePartsPage />} />
             <Route path="groups/:id" element={<GuildPage />} />
-            <Route path="catalog" element={<CatalogPage />} />
+            <Route path="catalog" element={<ToTab to="editor" />} />
+            <Route path="catalog/:view/:sub?" element={<CatalogPage />} />
+            <Route path="catalog/vouchers" element={<VouchersPage />} />
             <Route path="catalog/songs" element={<SongsPage />} />
             <Route path="catalog/discounts" element={<DiscountsPage />} />
-            <Route path="vouchers" element={<VouchersPage />} />
+            <Route path="gamedata" element={<ToTab to="updates/waiting" />} />
             <Route path="gamedata/updates/:tab?" element={<UpdatesPage />} />
             <Route path="gamedata/library/:tab?" element={<LibraryPage />} />
             <Route path="gamedata/publish/:tab?" element={<PublishPage />} />
@@ -80,7 +84,7 @@ export const App = () => (
             <Route path="chatlog" element={<ChatlogPage />} />
             <Route path="permission-log" element={<LogPage />} />
             <Route path="console" element={<ConsolePage />} />
-            <Route path="permissions" element={<Navigate to="/permissions/groups" replace />} />
+            <Route path="permissions" element={<ToTab to="groups" />} />
             <Route path="permissions/groups" element={<GroupsPage />} />
             <Route path="permissions/groups/:name" element={<GroupPage />} />
             <Route path="permissions/players" element={<PlayersPage />} />

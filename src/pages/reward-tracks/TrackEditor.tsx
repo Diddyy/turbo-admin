@@ -1,12 +1,12 @@
 import { RotateCcw, Save, Trash2, TriangleAlert } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router';
 
 import { type RewardTrack, useDeleteRewardTrack, useRewardTrack, useSaveRewardTrack } from '#/api/rewardTracks';
 import { ask } from '#/components/confirm';
 import { celebrate, toast, toastError } from '#/components/toast';
 import { Badge, Button, ErrorNotice, Input, Labeled, Loading, PageBody, PageHeader, Panel, Switch } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import { usePathTab } from '#/lib/tabs';
 import { inputToIso, isoToInput } from '#/pages/hotel-view/model';
 
 import { GamePreview } from './GamePreview';
@@ -109,8 +109,7 @@ const SettingsTab = ({ track, onChange }: { track: RewardTrack; onChange: (track
  * tracks again to everyone online (the client rebuilds the window and says "Reward Track updated").
  */
 export const TrackEditor = ({ id, isNew, actionTypes, onBack }: { id: string; isNew: boolean; actionTypes: string[]; onBack: () => void }) => {
-    const { tab: asked } = useParams();
-    const tab = TABS.find(x => x.value === asked)?.value ?? 'settings';
+    const [ tab, toTab ] = usePathTab(TABS.map(x => x.value));
     const { data, error } = useRewardTrack(isNew ? null : id);
     const save = useSaveRewardTrack();
     const remove = useDeleteRewardTrack();
@@ -133,6 +132,9 @@ export const TrackEditor = ({ id, isNew, actionTypes, onBack }: { id: string; is
 
         return () => window.removeEventListener('beforeunload', warn);
     }, [ dirty ]);
+
+    if (toTab)
+        return toTab;
 
     const header = (
         <PageHeader

@@ -3,11 +3,12 @@ import { useState } from 'react';
 
 import type { HistoryScope } from '#/api/gamedata';
 import { Button, PageBody, PageHeader } from '#/components/ui';
+import { usePathTab } from '#/lib/tabs';
 
 import { Loaded } from './frame';
 import { HistoryModal } from './HistoryPanel';
 import { ProductsTab } from './ProductsTab';
-import { useFoundKey, useGamedata, useTab } from './state';
+import { useFoundKey, useGamedata } from './state';
 import { TextsTab } from './TextsTab';
 import { VariablesTab } from './VariablesTab';
 
@@ -24,9 +25,12 @@ const TEXT_TABS = [
  */
 export const TextsPage = () => {
     const state = useGamedata();
-    const tab = useTab(TEXT_TABS.map(x => x.value));
+    const [ tab, toTab ] = usePathTab(TEXT_TABS.map(x => x.value));
     const found = useFoundKey();
     const [ history, setHistory ] = useState(false);
+
+    if (toTab)
+        return toTab;
     // The tab whose new entry is being written, in a dialog over the list.
     const [ adding, setAdding ] = useState<string | null>(null);
     const noun = { products: 'product', texts: 'text', variables: 'variable' }[tab];

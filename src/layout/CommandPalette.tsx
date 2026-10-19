@@ -35,7 +35,7 @@ const params = (values: Record<string, string>) => new URLSearchParams(values).t
 const KINDS: Record<SearchKind, { label: string; many: string; icon: ReactNode; open: (hit: SearchHit) => string; all?: (q: string) => string }> = {
     player: { label: 'Players', many: 'players', icon: <UserRound />, open: hit => `/players/${hit.id}`, all: q => `/players?${params({ q, by: 'name', page: '1' })}` },
     room: { label: 'Rooms', many: 'rooms', icon: <House />, open: hit => `/rooms/${hit.id}`, all: q => `/rooms?${params({ q, by: 'name', page: '1' })}` },
-    catalogPage: { label: 'Catalog pages', many: 'pages', icon: <Store />, open: hit => `/catalog?${params({ page: hit.id })}` },
+    catalogPage: { label: 'Catalog pages', many: 'pages', icon: <Store />, open: hit => `/catalog/editor?${params({ page: hit.id })}` },
     furniture: { label: 'Furniture', many: 'furniture', icon: <Armchair />, open: hit => `/gamedata/library/furniture?${params({ q: hit.title, id: hit.id })}`, all: q => `/gamedata/library/furniture?${params({ q })}` },
     text: { label: 'Texts', many: 'texts', icon: <Languages />, open: hit => `/gamedata/texts?${params({ q: hit.id, open: hit.id })}`, all: q => `/gamedata/texts?${params({ q })}` },
     product: { label: 'Product data', many: 'products', icon: <Package />, open: hit => `/gamedata/products?${params({ q: hit.id, open: hit.id })}`, all: q => `/gamedata/products?${params({ q })}` },

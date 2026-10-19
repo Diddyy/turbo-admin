@@ -16,7 +16,7 @@ export const RoomHeader = ({ id, room, tab, children }: { id: number; room: Room
     useRememberRecent('room', id, room?.name);
 
     const tabs: TabItem[] = [
-        { value: 'overview', label: 'Overview', icon: <House />, to: `/rooms/${id}` },
+        { value: 'overview', label: 'Overview', icon: <House />, to: `/rooms/${id}/overview` },
         ...(room?.can.editSettings ? [ { value: 'settings', label: 'Settings', icon: <Settings />, to: `/rooms/${id}/settings` } ] : []),
     ];
 

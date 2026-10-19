@@ -1,6 +1,6 @@
 import { Lock, RotateCcw, Save } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 
 import { type ServerSetting, SOURCE, useResetSetting, useSaveSetting, useSettingHistory, useSettings } from '#/api/settings';
 import { ask } from '#/components/confirm';
@@ -9,6 +9,7 @@ import { RestartServer } from '#/components/RestartServer';
 import { SearchInput } from '#/components/SearchInput';
 import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, PageBody, PageHeader, Panel, Segmented, Select, Switch, Textarea, WarningNotice } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import { usePathTab } from '#/lib/tabs';
 import { fromNow } from '#/lib/time';
 import { OpenRow } from '#/pages/gamedata/parts';
 
@@ -341,8 +342,10 @@ const HistoryTab = () => {
  * The environment always wins over the panel; secrets can be replaced but are never shown.
  */
 export const SettingsPage = () => {
-    const { tab: asked } = useParams();
-    const tab = TABS.find(x => x.value === asked)?.value ?? 'all';
+    const [ tab, toTab ] = usePathTab(TABS.map(x => x.value));
+
+    if (toTab)
+        return toTab;
 
     return (
         <>

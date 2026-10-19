@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Clock, CloudDownload, Eye, RotateCcw, Save, Zap } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
+import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 
 import type { VariableEntry } from '#/api/gamedata';
 import { useHotelView, useSaveHotelView } from '#/api/hotelView';
@@ -321,6 +321,13 @@ const HotelViewEditor = ({ variables, canManage }: { variables: VariableEntry[];
  */
 export const HotelViewPage = () => {
     const { data, error } = useHotelView();
+    const path = useParams();
+    const { pathname, search } = useLocation();
+    // With no group, or a group of several without its view, the path goes to the first of them.
+    const canonical = pathOf(resolveView(path.group, path.view).view.value);
+
+    if (pathname !== canonical)
+        return <Navigate to={{ pathname: canonical, search }} replace />;
 
     if (!data)
         return (

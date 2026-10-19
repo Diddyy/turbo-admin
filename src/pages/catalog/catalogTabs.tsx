@@ -2,16 +2,16 @@ import { DatabaseBackup, Disc3, FileUp, LayoutGrid, ListChecks, PackagePlus, Tic
 
 import type { TabItem } from '#/components/Tabs';
 
-/** The catalog editor's own views, switched in its address (`?view=`). */
+/** The catalog editor's own views, each at its own path (`/catalog/<view>`). */
 export type CatalogTab = 'editor' | 'audit' | 'generate' | 'import' | 'backups' | 'vouchers' | 'songs' | 'discounts';
 
 const VIEWS: { value: CatalogTab; label: string; icon: React.ReactNode; to: string }[] = [
-    { value: 'editor', label: 'Editor', icon: <LayoutGrid />, to: '/catalog' },
-    { value: 'audit', label: 'Audit', icon: <ListChecks />, to: '/catalog?view=missing' },
-    { value: 'generate', label: 'Generate', icon: <Wand2 />, to: '/catalog?view=generate' },
-    { value: 'import', label: 'Import', icon: <FileUp />, to: '/catalog?view=import' },
-    { value: 'backups', label: 'Backups', icon: <DatabaseBackup />, to: '/catalog?view=backups' },
-    { value: 'vouchers', label: 'Vouchers', icon: <Ticket />, to: '/vouchers' },
+    { value: 'editor', label: 'Editor', icon: <LayoutGrid />, to: '/catalog/editor' },
+    { value: 'audit', label: 'Audit', icon: <ListChecks />, to: '/catalog/audit/missing' },
+    { value: 'generate', label: 'Generate', icon: <Wand2 />, to: '/catalog/generate' },
+    { value: 'import', label: 'Import', icon: <FileUp />, to: '/catalog/import' },
+    { value: 'backups', label: 'Backups', icon: <DatabaseBackup />, to: '/catalog/backups' },
+    { value: 'vouchers', label: 'Vouchers', icon: <Ticket />, to: '/catalog/vouchers' },
     { value: 'songs', label: 'Songs', icon: <Disc3 />, to: '/catalog/songs' },
     { value: 'discounts', label: 'Discounts', icon: <PackagePlus />, to: '/catalog/discounts' },
 ];

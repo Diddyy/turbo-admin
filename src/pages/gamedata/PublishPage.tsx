@@ -1,5 +1,6 @@
 import { useAssetJob } from '#/api/bundles';
 import { PageBody, PageHeader } from '#/components/ui';
+import { usePathTab } from '#/lib/tabs';
 import { useFoundChecks } from '#/pages/assets/checkLists';
 import { Checks } from '#/pages/assets/Checks';
 import { JobPanel } from '#/pages/assets/JobPanel';
@@ -7,7 +8,7 @@ import { PublishTab } from '#/pages/assets/PublishTab';
 
 import { ClientFiles } from './ClientFiles';
 import { Loaded, RunningJob } from './frame';
-import { useGamedata, useTab } from './state';
+import { useGamedata } from './state';
 
 const TABS = [ 'targets', 'files', 'checks' ] as const;
 
@@ -17,10 +18,13 @@ const TABS = [ 'targets', 'files', 'checks' ] as const;
  */
 export const PublishPage = () => {
     const state = useGamedata();
-    const tab = useTab(TABS);
+    const [ tab, toTab ] = usePathTab(TABS);
     const { data: job } = useAssetJob();
     const { items: found } = useFoundChecks();
     const running = job?.status === 'running';
+
+    if (toTab)
+        return toTab;
 
     return (
         <>

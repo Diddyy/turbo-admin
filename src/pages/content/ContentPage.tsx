@@ -1,7 +1,6 @@
-import { useParams } from 'react-router';
-
 import { useCanManageContent } from '#/api/content';
 import { PageBody, PageHeader } from '#/components/ui';
+import { usePathTab } from '#/lib/tabs';
 
 import { AchievementsTab } from './AchievementsTab';
 import { BadgesTab } from './BadgesTab';
@@ -26,9 +25,11 @@ const TABS = [
  * navigator, pets, bots and the currencies wallets hold. Each change is made at once.
  */
 export const ContentPage = () => {
-    const { tab: asked } = useParams();
-    const tab = TABS.find(x => x.value === asked)?.value ?? 'achievements';
+    const [ tab, toTab ] = usePathTab(TABS.map(x => x.value));
     const canManage = useCanManageContent();
+
+    if (toTab)
+        return toTab;
 
     return (
         <>

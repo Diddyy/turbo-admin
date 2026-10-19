@@ -2,12 +2,13 @@ import { Upload } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button, PageBody, PageHeader } from '#/components/ui';
+import { usePathTab } from '#/lib/tabs';
 import { BundleKindTab } from '#/pages/assets/BundleKindTab';
 
 import { FiguresTab } from './FiguresTab';
 import { Loaded, RunningJob } from './frame';
 import { FurnitureTab } from './FurnitureTab';
-import { useFoundKey, useGamedata, useTab } from './state';
+import { useFoundKey, useGamedata } from './state';
 import { UploadDialog } from './UploadDialog';
 
 const TABS = [
@@ -25,9 +26,12 @@ const TABS = [
  */
 export const LibraryPage = () => {
     const state = useGamedata();
-    const tab = useTab(TABS.map(x => x.value));
+    const [ tab, toTab ] = usePathTab(TABS.map(x => x.value));
     const found = useFoundKey();
     const [ uploading, setUploading ] = useState(false);
+
+    if (toTab)
+        return toTab;
 
     return (
         <>

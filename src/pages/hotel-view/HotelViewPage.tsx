@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Clock, CloudDownload, Eye, RotateCcw, Save, Zap } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 
 import type { VariableEntry } from '#/api/gamedata';
 import { useHotelView, useSaveHotelView } from '#/api/hotelView';
@@ -37,10 +37,7 @@ interface View {
     timed: boolean;
 }
 
-/**
- * The page's tabs, each a group of views. A view's id is the tab id it had before the views were
- * grouped, so `?tab=<view>` still opens it; the page's own links say `?tab=<group>&view=<view>`.
- */
+/** The page's tabs, each a group of views: at `/hotel-view/<group>/<view>`, or `/hotel-view/<group>` for a group of one. */
 const GROUPS: { value: string; label: string; views: View[] }[] = [
     { value: 'preview', label: 'Preview', views: [ { value: 'preview', label: 'Preview', saves: 'shows', timed: true } ] },
     {
@@ -72,16 +69,19 @@ const GROUPS: { value: string; label: string; views: View[] }[] = [
     { value: 'advanced', label: 'Advanced', views: [ { value: 'all', label: 'All variables', saves: 'draft', timed: false } ] },
 ];
 
-/** The group and view a link asks for: `?tab=<group>&view=<view>`, or a view's id alone as `?tab=`. */
-const resolveView = (tab: string | null, view: string | null) => {
-    const group = GROUPS.find(x => x.value === tab) ?? GROUPS.find(x => x.views.some(v => v.value === tab)) ?? GROUPS[0]!;
-    const wanted = group.value === tab ? view : tab;
+/** The group and view a path asks for, each its first when not given or not known. */
+const resolveView = (group: string | undefined, view: string | undefined) => {
+    const found = GROUPS.find(x => x.value === group) ?? GROUPS[0]!;
 
-    return { group, view: group.views.find(x => x.value === wanted) ?? group.views[0]! };
+    return { group: found, view: found.views.find(x => x.value === view) ?? found.views[0]! };
 };
 
-/** Where to go for a view, with what else the link carries. */
-const linkTo = (view: string, extra: Record<string, string> = {}) => ({ tab: resolveView(view, null).group.value, view, ...extra });
+/** Where a view is: its group's path, and the view's own after it when the group holds more than one. */
+const pathOf = (view: string) => {
+    const group = GROUPS.find(x => x.views.some(v => v.value === view)) ?? GROUPS[0]!;
+
+    return group.views.length > 1 ? `/hotel-view/${group.value}/${view}` : `/hotel-view/${group.value}`;
+};
 
 const SAVE_MODELS: Record<SaveModel, { icon: ReactNode; text: string }> = {
     draft: { icon: <Save />, text: 'Saved when you press Save, with every other change on this page' },
@@ -165,8 +165,10 @@ const ShowingNow = ({ draft, now, onSlot }: { draft: ReturnType<typeof useHotelV
 
 /** The editor, once the variables are in. */
 const HotelViewEditor = ({ variables, canManage }: { variables: VariableEntry[]; canManage: boolean }) => {
-    const [ params, setParams ] = useSearchParams();
-    const { group, view } = resolveView(params.get('tab'), params.get('view'));
+    const [ params ] = useSearchParams();
+    const navigate = useNavigate();
+    const path = useParams();
+    const { group, view } = resolveView(path.group, path.view);
     const slotParam = Number(params.get('slot'));
     const focus = SLOTS.includes(slotParam as 1) || slotParam === BOTTOM_SLOT ? slotParam : null;
     const promo = params.get('promo');
@@ -188,8 +190,7 @@ const HotelViewEditor = ({ variables, canManage }: { variables: VariableEntry[];
     const promos = promoCodes(draft.keys, scheduledPromos);
     const backgrounds = backgroundCodes(draft.keys, parseSchedule(draft.text(BG_TIMING)).map(x => x.code));
 
-    const go = (next: Record<string, string>) => setParams(next, { replace: true });
-    const goView = (target: string, extra?: Record<string, string>) => go(linkTo(target, extra));
+    const goView = (target: string, extra: Record<string, string> = {}) => void navigate({ pathname: pathOf(target), search: new URLSearchParams(extra).toString() }, { replace: true });
     const openSlot = (slot: number) => goView('slots', { slot: String(slot) });
 
     // Unsaved changes are lost with the page: say so before it closes. The draft lives here, above
@@ -212,7 +213,7 @@ const HotelViewEditor = ({ variables, canManage }: { variables: VariableEntry[];
                 tabs={{
                     items: GROUPS.map(x => ({ value: x.value, label: x.label })),
                     value: group.value,
-                    onChange: value => goView(lastViews.current[value] ?? resolveView(value, null).view.value),
+                    onChange: value => goView(lastViews.current[value] ?? resolveView(value, undefined).view.value),
                 }}
             >
                 {canManage && <Button variant="secondary" icon={<CloudDownload />} onClick={() => setPulling(true)}>Pull from Habbo</Button>}
@@ -232,7 +233,7 @@ const HotelViewEditor = ({ variables, canManage }: { variables: VariableEntry[];
                 </div>
                 {save.isSuccess && draft.count === 0 && (
                     <SuccessNotice>
-                        {save.data.changeSet ? <>Saved: {save.data.changeSet.summary}. Players see it when they next load the client. It can be rolled back from <Link to="/gamedata?tab=history" className="underline">the gamedata history</Link>.</> : 'Nothing had changed.'}
+                        {save.data.changeSet ? <>Saved: {save.data.changeSet.summary}. Players see it when they next load the client. It can be rolled back from <Link to="/gamedata/updates/history" className="underline">the gamedata history</Link>.</> : 'Nothing had changed.'}
                     </SuccessNotice>
                 )}
                 {view.value === 'preview' && (

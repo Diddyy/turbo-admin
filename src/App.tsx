@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes, useLocation } from 'react-router';
+import { Navigate, Route, Routes } from 'react-router';
 
 import { LoginPage } from '#/auth/LoginPage';
 import { RequireSession } from '#/auth/RequireSession';
@@ -19,7 +19,7 @@ import { DashboardPage } from '#/pages/DashboardPage';
 import { LibraryPage } from '#/pages/gamedata/LibraryPage';
 import { PublishPage } from '#/pages/gamedata/PublishPage';
 import { TextsPage } from '#/pages/gamedata/TextsPage';
-import { AssetsRedirect, GamedataRoute } from '#/pages/gamedata/UpdatesPage';
+import { UpdatesPage } from '#/pages/gamedata/UpdatesPage';
 import { BadgePartsPage } from '#/pages/groups/BadgePartsPage';
 import { GroupPage as GuildPage } from '#/pages/groups/GroupPage';
 import { GroupsPage as GuildsPage } from '#/pages/groups/GroupsPage';
@@ -43,9 +43,6 @@ import { StaffPage } from '#/pages/StaffPage';
 // Its charts are a large library that no other page needs, so it loads when opened.
 const PerformancePage = lazy(() => import('#/pages/PerformancePage').then(x => ({ default: x.PerformancePage })));
 
-/** The permission log's old address, from before it moved under Logs: its search kept. */
-const ToPermissionLog = () => <Navigate to={{ pathname: '/permission-log', search: useLocation().search }} replace />;
-
 export const App = () => (
     <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -65,15 +62,17 @@ export const App = () => (
             <Route path="catalog/songs" element={<SongsPage />} />
             <Route path="catalog/discounts" element={<DiscountsPage />} />
             <Route path="vouchers" element={<VouchersPage />} />
-            <Route path="gamedata" element={<GamedataRoute />} />
-            <Route path="gamedata/library" element={<LibraryPage />} />
-            <Route path="gamedata/texts" element={<TextsPage />} />
-            <Route path="gamedata/publish" element={<PublishPage />} />
-            <Route path="assets" element={<AssetsRedirect />} />
-            <Route path="hotel-view" element={<HotelViewPage />} />
+            <Route path="gamedata/updates/:tab?" element={<UpdatesPage />} />
+            <Route path="gamedata/library/:tab?" element={<LibraryPage />} />
+            <Route path="gamedata/publish/:tab?" element={<PublishPage />} />
+            {/* Products, texts and variables: the files the client reads, each by its name. */}
+            <Route path="gamedata/:tab" element={<TextsPage />} />
+            <Route path="hotel-view/:group?/:view?" element={<HotelViewPage />} />
             <Route path="reward-tracks" element={<RewardTracksPage />} />
-            <Route path="content" element={<ContentPage />} />
-            <Route path="settings" element={<SettingsPage />} />
+            <Route path="reward-tracks/import" element={<RewardTracksPage importing />} />
+            <Route path="reward-tracks/:id/:tab?" element={<RewardTracksPage />} />
+            <Route path="content/:tab?" element={<ContentPage />} />
+            <Route path="settings/:tab?" element={<SettingsPage />} />
             <Route path="plugins" element={<PluginsPage />} />
             <Route path="plugin/:key/:page" element={<PluginPage />} />
             <Route path="plugin/:key/:page/:id" element={<PluginPage />} />
@@ -87,7 +86,6 @@ export const App = () => (
             <Route path="permissions/players" element={<PlayersPage />} />
             <Route path="permissions/players/:id" element={<PlayerPage />} />
             <Route path="permissions/search" element={<SearchPage />} />
-            <Route path="permissions/log" element={<ToPermissionLog />} />
             <Route path="permissions/nodes" element={<NodesPage />} />
             <Route path="staff" element={<StaffPage />} />
             <Route path="account" element={<AccountPage />} />

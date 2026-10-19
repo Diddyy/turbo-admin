@@ -1,6 +1,6 @@
 import { CloudDownload, Plus, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
-import { useSearchParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 
 import { type RewardTrackListItem, useReloadRewardTracks, useRewardTracks } from '#/api/rewardTracks';
 import { toast, toastError } from '#/components/toast';
@@ -101,17 +101,16 @@ const NewTrack = ({ taken, onMake }: { taken: string[]; onMake: (id: string) => 
  * as the client draws it), and taking Habbo's tracks in from a capture of what its client was sent
  * at login, planned before anything changes. Every change is sent to the players online at once.
  */
-export const RewardTracksPage = () => {
-    const [ params, setParams ] = useSearchParams();
+export const RewardTracksPage = ({ importing = false }: { importing?: boolean }) => {
+    const { id: trackId } = useParams();
+    const navigate = useNavigate();
     const { data, error } = useRewardTracks();
     const reload = useReloadRewardTracks();
     const [ making, setMaking ] = useState(false);
-    const trackId = params.get('track');
-    const importing = params.get('view') === 'import';
-    const go = (next: Record<string, string>) => setParams(next);
+    const open = (id: string) => void navigate(`/reward-tracks/${encodeURIComponent(id)}`);
 
     if (trackId && data)
-        return <TrackEditor key={trackId} id={trackId} isNew={!data.tracks.some(x => x.id === trackId)} actionTypes={data.actionTypes} onBack={() => go({})} />;
+        return <TrackEditor key={trackId} id={trackId} isNew={!data.tracks.some(x => x.id === trackId)} actionTypes={data.actionTypes} onBack={() => void navigate('/reward-tracks')} />;
 
     return (
         <>
@@ -125,7 +124,7 @@ export const RewardTracksPage = () => {
                         <Button variant="secondary" icon={<RefreshCw />} disabled={reload.isPending} onClick={() => reload.mutate(undefined, { onSuccess: () => toast('Read the tracks again and sent them to everyone online.'), onError: toastError })}>
                             Reload
                         </Button>
-                        <Button variant="secondary" icon={<CloudDownload />} onClick={() => go({ view: 'import' })}>Import from Habbo</Button>
+                        <Button variant="secondary" icon={<CloudDownload />} onClick={() => void navigate('/reward-tracks/import')}>Import from Habbo</Button>
                         <Button icon={<Plus />} onClick={() => setMaking(x => !x)}>New track</Button>
                     </>
                 )}
@@ -133,11 +132,11 @@ export const RewardTracksPage = () => {
             <PageBody className="flex flex-col gap-4 lg:gap-5">
                 {error && <ErrorNotice error={error} />}
                 {!data && !error && <Loading />}
-                {data && importing && <ImportTracks onOpen={id => go({ track: id })} />}
+                {data && importing && <ImportTracks onOpen={open} />}
                 {data && !importing && (
                     <Panel title="Tracks" description="Players get the live ones at login, in this order. A change here is sent to everyone online at once.">
-                        {making && <NewTrack taken={data.tracks.map(x => x.id)} onMake={id => go({ track: id })} />}
-                        <TrackList tracks={data.tracks} onOpen={id => go({ track: id })} />
+                        {making && <NewTrack taken={data.tracks.map(x => x.id)} onMake={open} />}
+                        <TrackList tracks={data.tracks} onOpen={open} />
                     </Panel>
                 )}
             </PageBody>

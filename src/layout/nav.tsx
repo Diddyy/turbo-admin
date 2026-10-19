@@ -16,6 +16,8 @@ export interface NavItem {
     icon: ReactNode;
     /** Only this path, not the paths under it. */
     end: boolean;
+    /** The page's other paths, for a page whose tabs are not under its own (Texts & variables). */
+    also?: string[];
     /** The letter after `g` that goes to it (`Shortcuts`); none for a page reached from its hub. */
     key?: string;
     needs?: Need;
@@ -35,9 +37,9 @@ const PAGES = {
     hotelView: { to: '/hotel-view', label: 'Hotel view', icon: <Landmark />, end: false, key: 'v', needs: 'canViewGamedata' },
     rewardTracks: { to: '/reward-tracks', label: 'Reward tracks', icon: <Milestone />, end: false, key: 'w', needs: 'canManageRewardTracks' },
     content: { to: '/content', label: 'Content', icon: <Puzzle />, end: false, key: 't', needs: 'canViewContent' },
-    updates: { to: '/gamedata', label: 'Habbo updates', icon: <CloudDownload />, end: true, key: 'g', needs: 'canViewGamedata' },
+    updates: { to: '/gamedata/updates', label: 'Habbo updates', icon: <CloudDownload />, end: false, key: 'g', needs: 'canViewGamedata' },
     library: { to: '/gamedata/library', label: 'Library', icon: <Armchair />, end: false, key: 'f', needs: 'canViewGamedata' },
-    texts: { to: '/gamedata/texts', label: 'Texts & variables', icon: <Languages />, end: false, key: 'x', needs: 'canViewGamedata' },
+    texts: { to: '/gamedata/products', also: [ '/gamedata/texts', '/gamedata/variables' ], label: 'Texts & variables', icon: <Languages />, end: false, key: 'x', needs: 'canViewGamedata' },
     publish: { to: '/gamedata/publish', label: 'Publish', icon: <Send />, end: false, key: 'n', needs: 'canViewGamedata' },
     permissions: { to: '/permissions', label: 'Permissions', icon: <KeyRound />, end: false, key: 'k', needs: 'canViewPermissions' },
     staff: { to: '/staff', label: 'Staff passkeys', icon: <ShieldCheck />, end: false, key: 's', needs: 'canResetPasskeys' },
@@ -122,7 +124,7 @@ const SECTIONS: NavSection[] = [
 
 /** Whether a path is a page's or under it. */
 const isAt = (pathname: string, page: NavItem) =>
-    page.end ? pathname === page.to : pathname === page.to || pathname.startsWith(`${page.to}/`);
+    [ page.to, ...(page.also ?? []) ].some(to => (page.end ? pathname === to : pathname === to || pathname.startsWith(`${to}/`)));
 
 const allowed = (me: MeResponse | undefined, page: NavItem) => !page.needs || !!me?.[page.needs];
 

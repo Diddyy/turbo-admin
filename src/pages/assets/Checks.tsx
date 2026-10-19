@@ -10,9 +10,14 @@ import { KIND_TABS, useFoundChecks } from './checkLists';
 /** Where a check's findings are listed: furniture without a bundle by their tag, others in their kind's bundles. */
 const listOf = (check: AssetCheck) => {
     if (check.id === 'furniture-missing')
-        return '/gamedata/library?tab=furniture&tag=no-bundle';
+        return '/gamedata/library/furniture?tag=no-bundle';
 
-    return check.kind && check.status && KIND_TABS[check.kind] ? `/gamedata/library?tab=${KIND_TABS[check.kind]}&status=${check.status}` : null;
+    const tab = check.kind && KIND_TABS[check.kind];
+
+    if (!tab || !check.status)
+        return null;
+
+    return `/gamedata/library/${tab}?${new URLSearchParams({ ...(check.kind === 'figure' ? { view: 'bundles' } : {}), status: check.status })}`;
 };
 
 /** One check: how many it found, what that means, and some of them; a link to the list it is about. */

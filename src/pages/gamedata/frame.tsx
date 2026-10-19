@@ -63,7 +63,7 @@ export const WaitingFromHabbo = ({ status, data, bundles }: { status: GamedataSt
             <p className="min-w-0 flex-1 text-sm">
                 Habbo has <span className="font-semibold">{parts.join(' and ')}</span> the hotel hasn't taken in.
             </p>
-            <Link to={`/gamedata?pick=${pick}`} className="inline-flex min-h-9 items-center gap-1 text-sm font-medium text-accent hover:underline [&>svg]:size-4">
+            <Link to={`/gamedata/updates/waiting?pick=${pick}`} className="inline-flex min-h-9 items-center gap-1 text-sm font-medium text-accent hover:underline [&>svg]:size-4">
                 Review <ArrowRight />
             </Link>
         </div>

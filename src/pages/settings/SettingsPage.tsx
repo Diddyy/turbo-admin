@@ -1,6 +1,6 @@
 import { Lock, RotateCcw, Save } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link, useParams, useSearchParams } from 'react-router';
 
 import { type ServerSetting, SOURCE, useResetSetting, useSaveSetting, useSettingHistory, useSettings } from '#/api/settings';
 import { ask } from '#/components/confirm';
@@ -13,8 +13,8 @@ import { fromNow } from '#/lib/time';
 import { OpenRow } from '#/pages/gamedata/parts';
 
 const TABS = [
-    { value: 'settings', label: 'Settings' },
-    { value: 'history', label: 'History' },
+    { value: 'all', label: 'Settings', to: '/settings/all' },
+    { value: 'history', label: 'History', to: '/settings/history' },
 ];
 
 const FILTERS = [
@@ -341,18 +341,18 @@ const HistoryTab = () => {
  * The environment always wins over the panel; secrets can be replaced but are never shown.
  */
 export const SettingsPage = () => {
-    const [ params, setParams ] = useSearchParams();
-    const tab = TABS.some(x => x.value === params.get('tab')) ? params.get('tab')! : 'settings';
+    const { tab: asked } = useParams();
+    const tab = TABS.find(x => x.value === asked)?.value ?? 'all';
 
     return (
         <>
             <PageHeader
                 title="Settings"
                 description="The server's settings: appsettings.json, overridden here, the environment over both"
-                tabs={{ items: TABS, value: tab, onChange: value => setParams({ tab: value }, { replace: true }) }}
+                tabs={{ items: TABS, value: tab }}
             />
             <PageBody className="flex flex-col gap-4 lg:gap-5">
-                {tab === 'settings' && <SettingsTab />}
+                {tab === 'all' && <SettingsTab />}
                 {tab === 'history' && <HistoryTab />}
             </PageBody>
         </>

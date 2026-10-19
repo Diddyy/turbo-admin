@@ -128,7 +128,7 @@ export const UploadDialog = ({ open, onClose, name }: { open: boolean; onClose: 
             giveConfig(configJson(text));
             setEntries([]);
             onClose();
-            void navigate('/gamedata/texts?tab=variables');
+            void navigate('/gamedata/variables');
         });
     };
 

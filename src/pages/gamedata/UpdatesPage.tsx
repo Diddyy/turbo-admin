@@ -1,6 +1,6 @@
 import { CheckCircle2, ChevronDown, Hotel, Library, RefreshCw } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
-import { Navigate, useSearchParams } from 'react-router';
+import { useSearchParams } from 'react-router';
 
 import { type AssetsStatus, type BundleKind, useAssetJob, useRelist, useSyncPreview } from '#/api/bundles';
 import { type GamedataStatus, useCheckHabbo, useFigureImportPreview, useImportPreview, useProductImportPreview, useTextImportPreview } from '#/api/gamedata';
@@ -290,9 +290,9 @@ const TABS = [ 'waiting', 'sources', 'history' ] as const;
  * data rolled back from the history if need be), where it comes from, and the history of the
  * gamedata Habbo serves (the variables keep theirs on their own tab).
  */
-const UpdatesPage = () => {
+export const UpdatesPage = () => {
     const state = useGamedata();
-    const [ tab, setTab ] = useTab(TABS);
+    const tab = useTab(TABS);
     const categories = useCategories(state.status, state.canManage);
     const total = categories.reduce((sum, x) => sum + (x.count ?? 0), 0);
     const release = state.status?.latestRelease;
@@ -304,12 +304,11 @@ const UpdatesPage = () => {
                 description={release ? `Habbo ${release.revision.replace(/^PRODUCTION-/, '')}, checked ${fromNow(release.checkedAt)}` : 'What Habbo has that the hotel hasn\'t taken in'}
                 tabs={{
                     items: [
-                        { value: 'waiting', label: 'Waiting', ...(total > 0 ? { count: total } : {}) },
-                        { value: 'sources', label: 'Sources' },
-                        { value: 'history', label: 'History' },
+                        { value: 'waiting', label: 'Waiting', to: '/gamedata/updates/waiting', ...(total > 0 ? { count: total } : {}) },
+                        { value: 'sources', label: 'Sources', to: '/gamedata/updates/sources' },
+                        { value: 'history', label: 'History', to: '/gamedata/updates/history' },
                     ],
                     value: tab,
-                    onChange: setTab,
                 }}
             >
                 {state.canManage && <CheckButton />}
@@ -327,60 +326,4 @@ const UpdatesPage = () => {
             </PageBody>
         </>
     );
-};
-
-/** Where the tabs the one gamedata page had are now, by the names links still use. */
-const MOVED: Record<string, { page: string; tab?: string }> = {
-    furniture: { page: 'library', tab: 'furniture' },
-    clothing: { page: 'library', tab: 'clothing' },
-    figures: { page: 'library', tab: 'clothing' },
-    effects: { page: 'library', tab: 'effects' },
-    pets: { page: 'library', tab: 'pets' },
-    products: { page: 'texts', tab: 'products' },
-    texts: { page: 'texts', tab: 'texts' },
-    variables: { page: 'texts', tab: 'variables' },
-    publish: { page: 'publish' },
-};
-
-/** `/gamedata`: Habbo updates, or, for a link to a tab that has moved, where it went. */
-export const GamedataRoute = () => {
-    const [ params ] = useSearchParams();
-    const moved = MOVED[params.get('tab') ?? ''];
-
-    if (!moved)
-        return <UpdatesPage />;
-
-    const to = new URLSearchParams(params);
-
-    to.delete('tab');
-
-    if (moved.tab)
-        to.set('tab', moved.tab);
-
-    return <Navigate to={`/gamedata/${moved.page}${to.size ? `?${to}` : ''}`} replace />;
-};
-
-/** The Assets page's old addresses, to where its parts now are. */
-export const AssetsRedirect = () => {
-    const [ params ] = useSearchParams();
-    const kind = params.get('kind');
-    const status = params.get('status');
-    const tab = params.get('tab');
-    const to = new URLSearchParams();
-
-    if (tab === 'publish')
-        return <Navigate to="/gamedata/publish" replace />;
-
-    if (tab !== 'bundles')
-        return <Navigate to="/gamedata" replace />;
-
-    to.set('tab', kind === 'figure' ? 'clothing' : kind === 'effect' ? 'effects' : kind === 'pet' ? 'pets' : 'furniture');
-
-    if (kind === 'figure')
-        to.set('view', 'bundles');
-
-    if (status)
-        to.set('status', status);
-
-    return <Navigate to={`/gamedata/library?${to}`} replace />;
 };

@@ -1,6 +1,6 @@
 import { RotateCcw, Save, Trash2, TriangleAlert } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router';
+import { useParams } from 'react-router';
 
 import { type RewardTrack, useDeleteRewardTrack, useRewardTrack, useSaveRewardTrack } from '#/api/rewardTracks';
 import { ask } from '#/components/confirm';
@@ -109,8 +109,8 @@ const SettingsTab = ({ track, onChange }: { track: RewardTrack; onChange: (track
  * tracks again to everyone online (the client rebuilds the window and says "Reward Track updated").
  */
 export const TrackEditor = ({ id, isNew, actionTypes, onBack }: { id: string; isNew: boolean; actionTypes: string[]; onBack: () => void }) => {
-    const [ params, setParams ] = useSearchParams();
-    const tab = TABS.find(x => x.value === params.get('tab'))?.value ?? 'settings';
+    const { tab: asked } = useParams();
+    const tab = TABS.find(x => x.value === asked)?.value ?? 'settings';
     const { data, error } = useRewardTrack(isNew ? null : id);
     const save = useSaveRewardTrack();
     const remove = useDeleteRewardTrack();
@@ -139,7 +139,7 @@ export const TrackEditor = ({ id, isNew, actionTypes, onBack }: { id: string; is
             title={names.get(id) ?? id}
             description={isNew ? 'A new track: nothing is made until you save it' : <span className="font-mono">{id}</span>}
             back={{ to: '/reward-tracks', label: 'Reward tracks' }}
-            tabs={{ items: TABS, value: tab, onChange: value => setParams({ track: id, tab: value }, { replace: true }) }}
+            tabs={{ items: TABS.map(x => ({ ...x, to: `/reward-tracks/${encodeURIComponent(id)}/${x.value}` })), value: tab }}
         >
             {!isNew && (
                 <Button

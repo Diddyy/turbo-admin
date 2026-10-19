@@ -1,4 +1,4 @@
-import { useSearchParams } from 'react-router';
+import { useParams } from 'react-router';
 
 import { useCanManageContent } from '#/api/content';
 import { PageBody, PageHeader } from '#/components/ui';
@@ -19,15 +19,15 @@ const TABS = [
     { value: 'bots', label: 'Bots' },
     { value: 'currencies', label: 'Currencies' },
     { value: 'chat-styles', label: 'Chat styles' },
-];
+].map(x => ({ ...x, to: `/content/${x.value}` }));
 
 /**
  * The game's content: what players earn, wear, find and meet - achievements, badges, the
  * navigator, pets, bots and the currencies wallets hold. Each change is made at once.
  */
 export const ContentPage = () => {
-    const [ params, setParams ] = useSearchParams();
-    const tab = TABS.some(x => x.value === params.get('tab')) ? params.get('tab')! : 'achievements';
+    const { tab: asked } = useParams();
+    const tab = TABS.find(x => x.value === asked)?.value ?? 'achievements';
     const canManage = useCanManageContent();
 
     return (
@@ -35,7 +35,7 @@ export const ContentPage = () => {
             <PageHeader
                 title="Content"
                 description="Achievements, badges, the navigator, pets, bots and currencies"
-                tabs={{ items: TABS, value: tab, onChange: value => setParams({ tab: value }, { replace: true }) }}
+                tabs={{ items: TABS, value: tab }}
             />
             <PageBody className="flex flex-col gap-4 lg:gap-5">
                 {tab === 'achievements' && <AchievementsTab />}

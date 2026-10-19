@@ -17,7 +17,7 @@ const TABS = [ 'targets', 'files', 'checks' ] as const;
  */
 export const PublishPage = () => {
     const state = useGamedata();
-    const [ tab, setTab ] = useTab(TABS);
+    const tab = useTab(TABS);
     const { data: job } = useAssetJob();
     const { items: found } = useFoundChecks();
     const running = job?.status === 'running';
@@ -29,12 +29,11 @@ export const PublishPage = () => {
                 description="Where the bundles go, and the files the client loads"
                 tabs={{
                     items: [
-                        { value: 'targets', label: 'Targets' },
-                        { value: 'files', label: 'Client files' },
-                        { value: 'checks', label: 'Checks', ...(found.length > 0 ? { count: found.length } : {}) },
+                        { value: 'targets', label: 'Targets', to: '/gamedata/publish/targets' },
+                        { value: 'files', label: 'Client files', to: '/gamedata/publish/files' },
+                        { value: 'checks', label: 'Checks', to: '/gamedata/publish/checks', ...(found.length > 0 ? { count: found.length } : {}) },
                     ],
                     value: tab,
-                    onChange: setTab,
                 }}
             />
             <PageBody className="flex flex-col gap-4 lg:gap-5">

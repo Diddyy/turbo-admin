@@ -15,7 +15,7 @@ const TABS = [
     { value: 'clothing', label: 'Clothing' },
     { value: 'effects', label: 'Effects' },
     { value: 'pets', label: 'Pets' },
-];
+].map(x => ({ ...x, to: `/gamedata/library/${x.value}` }));
 
 /**
  * The library: what the hotel's rooms and avatars are drawn from, each kind in a tab with its data
@@ -25,7 +25,7 @@ const TABS = [
  */
 export const LibraryPage = () => {
     const state = useGamedata();
-    const [ tab, setTab ] = useTab(TABS.map(x => x.value));
+    const tab = useTab(TABS.map(x => x.value));
     const found = useFoundKey();
     const [ uploading, setUploading ] = useState(false);
 
@@ -34,7 +34,7 @@ export const LibraryPage = () => {
             <PageHeader
                 title="Library"
                 description="Furniture, clothing, effects and pets: their data and the bundles they're drawn from"
-                tabs={{ items: TABS, value: tab, onChange: setTab }}
+                tabs={{ items: TABS, value: tab }}
             >
                 {state.canManage && <Button icon={<Upload />} onClick={() => setUploading(true)}>Upload</Button>}
             </PageHeader>

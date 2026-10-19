@@ -1,4 +1,4 @@
-import { ChevronRight, DoorOpen, House, KeyRound, Mail, MessagesSquare, ScrollText } from 'lucide-react';
+import { ChevronRight, Coins, DoorOpen, House, KeyRound, Mail, MessagesSquare, ScrollText } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, useParams } from 'react-router';
 
@@ -159,6 +159,9 @@ const Links = ({ player }: { player: PlayerDetailResponse }) => {
                         label={`Rooms (${player.roomsOwned.toLocaleString()})`}
                         detail="The rooms they own"
                     />
+                )}
+                {me.canViewPlayers && (
+                    <LinkRow to={`/currency-log?${new URLSearchParams({ player: who })}`} icon={<Coins />} label="Currency log" detail="Every change to their wallet, and why" />
                 )}
                 {me.canViewPlayers && (
                     <LinkRow to={`/room-visits?${new URLSearchParams({ player: who })}`} icon={<DoorOpen />} label="Room visits" detail="The rooms they went into" />

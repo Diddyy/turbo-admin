@@ -1,4 +1,4 @@
-import { Activity, Armchair, Bug, CloudDownload, Disc3, DoorOpen, Flag, FunnelX, Gauge, History, House, KeyRound, Landmark, Languages, Mail, MessagesSquare, Milestone, PackagePlus, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
+import { Activity, Armchair, Bug, CloudDownload, Coins, Disc3, DoorOpen, Flag, FunnelX, Gauge, History, House, KeyRound, Landmark, Languages, Mail, MessagesSquare, Milestone, PackagePlus, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router';
 
@@ -48,6 +48,7 @@ const PAGES = {
     commandLog: { to: '/command-log', label: 'Command log', icon: <ScrollText />, end: false, key: 'l', needs: 'canViewCommandLog' },
     chatlog: { to: '/chatlog', label: 'Chat log', icon: <MessagesSquare />, end: false, key: 'h', needs: 'canViewChatlog' },
     messages: { to: '/messages', label: 'Messages', icon: <Mail />, end: false, needs: 'canViewMessages' },
+    currencyLog: { to: '/currency-log', label: 'Currency', icon: <Coins />, end: false, needs: 'canViewPlayers' },
     roomVisits: { to: '/room-visits', label: 'Room visits', icon: <DoorOpen />, end: false, needs: 'canViewPlayers' },
     permissionLog: { to: '/permission-log', label: 'Permission log', icon: <History />, end: false, needs: 'canViewPermissions' },
     settings: { to: '/settings', label: 'Settings', icon: <SlidersHorizontal />, end: false, key: 'e', needs: 'canViewSettings' },
@@ -80,7 +81,7 @@ export interface NavSection {
 }
 
 const OVERVIEW: NavEntry = { label: 'Overview', icon: <Gauge />, pages: [ 'dashboard', 'performance' ], hint: 'The hotel now, and how the server runs' };
-const LOGS: NavEntry = { label: 'Logs', icon: <ScrollText />, pages: [ 'commandLog', 'chatlog', 'messages', 'roomVisits', 'permissionLog' ], hint: 'Commands run, chat in rooms, private messages, room visits, permission changes' };
+const LOGS: NavEntry = { label: 'Logs', icon: <ScrollText />, pages: [ 'commandLog', 'chatlog', 'messages', 'currencyLog', 'roomVisits', 'permissionLog' ], hint: 'Commands run, chat in rooms, private messages, wallet changes, room visits, permission changes' };
 const MODERATION: NavEntry = { label: 'Moderation', icon: <Flag />, pages: [ 'reports', 'wordFilter' ], hint: 'Calls for help players send, and the word filter' };
 const GROUPS: NavEntry = { label: 'Groups', icon: <Shield />, pages: [ 'groups', 'badgeParts' ], hint: 'Groups, their members, and badge parts' };
 const ACCESS: NavEntry = { label: 'Access', icon: <KeyRound />, pages: [ 'permissions', 'staff' ], hint: 'Groups, nodes and staff passkeys' };

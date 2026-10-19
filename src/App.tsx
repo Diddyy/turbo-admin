@@ -16,6 +16,7 @@ import { ChatlogPage } from '#/pages/ChatlogPage';
 import { CommandLogPage } from '#/pages/CommandLogPage';
 import { ConsolePage } from '#/pages/ConsolePage';
 import { ContentPage } from '#/pages/content/ContentPage';
+import { CurrencyLogPage } from '#/pages/CurrencyLogPage';
 import { DashboardPage } from '#/pages/DashboardPage';
 import { LibraryPage } from '#/pages/gamedata/LibraryPage';
 import { PublishPage } from '#/pages/gamedata/PublishPage';
@@ -91,6 +92,7 @@ export const App = () => (
             <Route path="command-log" element={<CommandLogPage />} />
             <Route path="chatlog" element={<ChatlogPage />} />
             <Route path="messages" element={<MessagesPage />} />
+            <Route path="currency-log" element={<CurrencyLogPage />} />
             <Route path="room-visits" element={<RoomVisitsPage />} />
             <Route path="permission-log" element={<LogPage />} />
             <Route path="console" element={<ConsolePage />} />

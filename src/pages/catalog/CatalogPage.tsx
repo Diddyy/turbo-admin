@@ -45,6 +45,7 @@ import { useFillHeight } from '#/lib/fillHeight';
 
 import { Backups } from './Backups';
 import { CatalogHome } from './CatalogHome';
+import { CatalogImages } from './CatalogImages';
 import { catalogTabs } from './catalogTabs';
 import { ChangesBar } from './ChangesBar';
 import { Duplicates } from './Duplicates';
@@ -74,12 +75,12 @@ const startOf = (layout: string): OfferStart => (layout === CLUB_BUY ? 'membersh
 type Dragging = { kind: 'page'; id: number } | { kind: 'offer'; id: number };
 
 /** The editor's views, along the header. */
-type View = 'editor' | 'missing' | 'duplicates' | 'generate' | 'import' | 'backups';
+type View = 'editor' | 'images' | 'missing' | 'duplicates' | 'generate' | 'import' | 'backups';
 
-const VIEWS: View[] = [ 'editor', 'missing', 'duplicates', 'generate', 'import', 'backups' ];
+const VIEWS: View[] = [ 'editor', 'images', 'missing', 'duplicates', 'generate', 'import', 'backups' ];
 
 /** Where each view is under `/catalog/`: the audit's two by `audit/`. */
-const VIEW_PATHS: Record<View, string> = { editor: 'editor', missing: 'audit/missing', duplicates: 'audit/duplicates', generate: 'generate', import: 'import', backups: 'backups' };
+const VIEW_PATHS: Record<View, string> = { editor: 'editor', images: 'images', missing: 'audit/missing', duplicates: 'audit/duplicates', generate: 'generate', import: 'import', backups: 'backups' };
 
 const idOf = (dragId: string | number) => Number(String(dragId).split(':')[1]);
 const kindOf = (dragId: string | number) => String(dragId).split(':')[0];
@@ -143,8 +144,9 @@ type PageTab = 'preview' | 'settings' | 'featured';
 /**
  * The catalog editor. Its views: the editor itself - the page tree on the left, the picked page in
  * the middle drawn as the client draws it, and on the right what is being edited (the page, an
- * offer, or the front page's featured items); the audit, of the furni the catalog doesn't sell and
- * the furni it sells twice; generating a whole catalog; and backups to roll back to. Vouchers and
+ * offer, or the front page's featured items); the pictures its pages show, to find and upload;
+ * the audit, of the furni the catalog doesn't sell and the furni it sells twice; generating a
+ * whole catalog; and backups to roll back to. Vouchers and
  * songs are pages of their own under the same tabs. Edits are saved as they are made, can be undone
  * and redone (Ctrl+Z, Ctrl+Shift+Z) or thrown away together, and go in front of players when
  * published. The view, the open page and offer live in the address, so they can be linked to.
@@ -487,6 +489,7 @@ const CatalogEditor = ({ view }: { view: View }) => {
                 {data && view === 'generate' && <GenerateCatalog tree={data} onDone={() => openPage(null)} />}
                 {data && view === 'import' && <ImportCapture tree={data} />}
                 {data && view === 'backups' && <Backups tree={data} />}
+                {data && view === 'images' && <CatalogImages tree={data} onOpenPage={id => openPage(id)} />}
 
                 {data && view === 'editor' && (
                     data.rootId === 0

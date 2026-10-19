@@ -3,12 +3,15 @@ import { type FormEvent, type ReactNode, useEffect, useId, useState } from 'reac
 
 import { catalogImageUrl, useClientAssets } from '#/api/assets';
 import { catalogCalls, type CatalogPageDetail, type CatalogTree, type PageDisplay, useCatalogEdit } from '#/api/catalog';
+import { findImage, useAllCatalogImages } from '#/api/catalogImages';
 import { ask } from '#/components/confirm';
 import { toast } from '#/components/toast';
 import { Button, ErrorNotice, Field, IconButton, Input, Label, Labeled, Textarea } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
+import { CatalogImageThumb, CHECKS } from './CatalogImageThumb';
 import { IconPicker } from './IconPicker';
+import { ImagePicker } from './ImagePicker';
 import { DISPLAY_LABELS, inBuildersClub } from './labels';
 import { LayoutPicker } from './LayoutPicker';
 import { isKnownLayout, layoutOf } from './layouts';
@@ -34,20 +37,28 @@ const Section = ({ title, children, action }: { title: string; children: ReactNo
     </section>
 );
 
-/** One picture's place: the image's name, and the picture beside it. */
+/**
+ * One picture's place: the picture, found by name among those the server keeps, and the picture
+ * beside it - the server's own file, or else the client's host's, for one the server lacks.
+ */
 const ImageField = ({ id, label, hint, value, onChange, disabled, highlight }: { id: string; label: string; hint?: string; value: string; onChange: (value: string) => void; disabled: boolean; highlight: boolean }) => {
     const url = catalogImageUrl(useClientAssets(), value);
+    const image = findImage(useAllCatalogImages().data?.items, value);
 
     return (
         <div className={cx('flex gap-3 rounded-lg p-1 transition-colors', highlight && 'bg-accent-soft ring-2 ring-accent')}>
-            <span className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-lg border border-line bg-[repeating-conic-gradient(var(--color-subtle)_0_25%,transparent_0_50%)] bg-[length:12px_12px]">
-                {url && <img src={url} alt="" className="max-h-full max-w-full object-contain" onError={event => (event.currentTarget.style.display = 'none')} />}
-            </span>
-            <label className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="text-xs font-medium text-muted">{label}</span>
-                <Input id={id} value={value} onChange={event => onChange(event.target.value.trim())} placeholder="Image name, without .gif" spellCheck={false} disabled={disabled} className="w-full font-mono text-xs" />
+            {image?.hasFile
+                ? <CatalogImageThumb image={image} className="size-16" />
+                : (
+                        <span className={cx('grid size-16 shrink-0 place-items-center overflow-hidden rounded-lg border border-line', CHECKS)}>
+                            {url && <img key={url} src={url} alt="" className="max-h-full max-w-full object-contain" onError={event => (event.currentTarget.style.display = 'none')} />}
+                        </span>
+                    )}
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <label htmlFor={id} className="text-xs font-medium text-muted">{label}</label>
+                <ImagePicker id={id} value={value} onChange={onChange} disabled={disabled} canUpload={!disabled} />
                 {hint && <span className="text-[11px] text-muted">{hint}</span>}
-            </label>
+            </div>
         </div>
     );
 };

@@ -1,12 +1,13 @@
-import { DatabaseBackup, Disc3, FileUp, LayoutGrid, ListChecks, PackagePlus, Ticket, Wand2 } from 'lucide-react';
+import { DatabaseBackup, Disc3, FileUp, Images, LayoutGrid, ListChecks, PackagePlus, Ticket, Wand2 } from 'lucide-react';
 
 import type { TabItem } from '#/components/Tabs';
 
 /** The catalog editor's own views, each at its own path (`/catalog/<view>`). */
-export type CatalogTab = 'editor' | 'audit' | 'generate' | 'import' | 'backups' | 'vouchers' | 'songs' | 'discounts';
+export type CatalogTab = 'editor' | 'images' | 'audit' | 'generate' | 'import' | 'backups' | 'vouchers' | 'songs' | 'discounts';
 
 const VIEWS: { value: CatalogTab; label: string; icon: React.ReactNode; to: string }[] = [
     { value: 'editor', label: 'Editor', icon: <LayoutGrid />, to: '/catalog/editor' },
+    { value: 'images', label: 'Images', icon: <Images />, to: '/catalog/images' },
     { value: 'audit', label: 'Audit', icon: <ListChecks />, to: '/catalog/audit/missing' },
     { value: 'generate', label: 'Generate', icon: <Wand2 />, to: '/catalog/generate' },
     { value: 'import', label: 'Import', icon: <FileUp />, to: '/catalog/import' },

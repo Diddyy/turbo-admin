@@ -261,9 +261,12 @@ export const useFurnitureList = (text: string, type: 'floor' | 'wall' | '', tag:
  */
 const PREVIEW_FRESHNESS = { staleTime: 5 * 60_000, refetchOnWindowFocus: false } as const;
 
-export const useGamedataStatus = () => useQuery({
+export const useGamedataStatus = (enabled = true) => useQuery({
     queryKey: [ 'gamedata' ],
     queryFn: () => api<GamedataStatus>('/gamedata'),
+    enabled,
+    // Not asked again on every page or window focus; a change made here asks for it at once.
+    staleTime: 30_000,
 });
 
 /** Everything gamedata shows, asked again after a change. */

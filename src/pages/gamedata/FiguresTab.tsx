@@ -1,9 +1,8 @@
-import { Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 
-import { FILES, type GamedataStatus, useFigureImport, useFigureImportPreview, useGrantClothing, useOwnedClothing } from '#/api/gamedata';
-import { Badge, Button, ErrorNotice, Input, Labeled, Panel, Segmented, SuccessNotice } from '#/components/ui';
+import { FILES, type GamedataStatus, useFigureImport, useFigureImportPreview } from '#/api/gamedata';
+import { Segmented } from '#/components/ui';
 import { BundleList } from '#/pages/assets/BundleList';
 
 import { ClothingEditor } from './ClothingEditor';
@@ -49,46 +48,11 @@ export const HabboFigures = ({ status, defaultOpen }: { status: GamedataStatus; 
     );
 };
 
-/** The sold pieces a player owns: what lets them wear a piece marked as sold. */
-const PlayerClothing = () => {
-    const [ player, setPlayer ] = useState('');
-    const [ sets, setSets ] = useState('');
-    const playerId = Number(player) > 0 ? Number(player) : null;
-    const { data: owned, error } = useOwnedClothing(playerId);
-    const grant = useGrantClothing();
-    const setIds = sets.trim() === '' ? [] : sets.split(/[\s,]+/).map(Number).filter(x => Number.isInteger(x) && x >= 0);
-    const change = (revoke: boolean) => playerId && grant.mutate({ playerId, setIds, revoke });
-
-    return (
-        <Panel title="Clothing for sale" description="A piece marked as sold is worn only by players who own it. Taking one takes it off them at once.">
-            <div className="flex flex-col gap-3 p-4">
-                <div className="grid gap-3 sm:grid-cols-[10rem_1fr_auto] sm:items-end">
-                    <Labeled label="Player id"><Input value={player} onChange={event => setPlayer(event.target.value)} inputMode="numeric" className="w-full font-mono" /></Labeled>
-                    <Labeled label="Piece ids"><Input value={sets} onChange={event => setSets(event.target.value)} placeholder="3030, 3031" className="w-full font-mono" /></Labeled>
-                    <div className="flex gap-2">
-                        <Button variant="secondary" icon={<Plus />} disabled={!playerId || setIds.length === 0 || grant.isPending} onClick={() => change(false)}>Give</Button>
-                        <Button variant="ghost" icon={<Trash2 />} disabled={!playerId || setIds.length === 0 || grant.isPending} onClick={() => change(true)}>Take</Button>
-                    </div>
-                </div>
-                {error && <ErrorNotice error={error} />}
-                {grant.error && <ErrorNotice error={grant.error} />}
-                {grant.data && <SuccessNotice>{grant.data.changed} changed.</SuccessNotice>}
-                {owned && (
-                    <div className="flex flex-wrap items-center gap-1.5 text-sm">
-                        <span className="text-muted">Owns</span>
-                        {owned.setIds.length ? owned.setIds.map(id => <Badge key={id}>{id}</Badge>) : <span className="text-muted">no pieces for sale.</span>}
-                    </div>
-                )}
-            </div>
-        </Panel>
-    );
-};
-
 /**
  * The hotel's clothing: the pieces avatars are drawn from and who may wear each - everyone, club
- * members, or (for a piece sold) its owners - the palettes their colours are picked from, or the
- * bundles they are drawn from. Every figure a player puts on is fitted to these rules; what they
- * may not wear comes off.
+ * members, or (for a piece sold) its owners, given on a player's inventory - the palettes their
+ * colours are picked from, or the bundles they are drawn from. Every figure a player puts on is
+ * fitted to these rules; what they may not wear comes off.
  */
 export const FiguresTab = ({ status }: { status: GamedataStatus }) => {
     const [ params ] = useSearchParams();
@@ -103,7 +67,6 @@ export const FiguresTab = ({ status }: { status: GamedataStatus }) => {
             {view === 'clothing' && <ClothingEditor canManage={status.canManage} />}
             {view === 'colours' && <PaletteEditor canManage={status.canManage} />}
             {view === 'bundles' && <BundleList kind="figure" canManage={status.canManage} />}
-            {status.canManage && view === 'clothing' && <PlayerClothing />}
         </>
     );
 };

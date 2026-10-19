@@ -184,6 +184,8 @@ export const useAssetsStatus = () => {
 
             return status;
         },
+        // Not asked again on every page or window focus; a sync, an upload or a job's end asks for it at once.
+        staleTime: 30_000,
     });
 };
 

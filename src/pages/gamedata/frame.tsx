@@ -21,6 +21,20 @@ export const Loaded = ({ state, children }: { state: ReturnType<typeof useGameda
     return children(state.status, state.assets);
 };
 
+/**
+ * A page's body once the gamedata is read, for a page that asks the assets no more than whether
+ * you may change them: it doesn't wait on them, which are slower to answer.
+ */
+export const GamedataLoaded = ({ state, children }: { state: ReturnType<typeof useGamedata>; children: (status: GamedataStatus) => ReactNode }) => {
+    if (state.error)
+        return <ErrorNotice error={state.error} />;
+
+    if (!state.status)
+        return <Loading />;
+
+    return children(state.status);
+};
+
 /** A sync, a publish or a build running, folded small, above a page that isn't about it. */
 export const RunningJob = ({ canManage }: { canManage: boolean }) => {
     const { data: job } = useAssetJob();

@@ -6,7 +6,7 @@ import { usePathTab } from '#/lib/tabs';
 import { BundleKindTab } from '#/pages/assets/BundleKindTab';
 
 import { FiguresTab } from './FiguresTab';
-import { Loaded, RunningJob } from './frame';
+import { GamedataLoaded, RunningJob } from './frame';
 import { FurnitureTab } from './FurnitureTab';
 import { useFoundKey, useGamedata } from './state';
 import { UploadDialog } from './UploadDialog';
@@ -29,6 +29,8 @@ export const LibraryPage = () => {
     const [ tab, toTab ] = usePathTab(TABS.map(x => x.value));
     const found = useFoundKey();
     const [ uploading, setUploading ] = useState(false);
+    // Until the assets answer, their bundles are shown as to someone who may not change them.
+    const canManageAssets = !!state.assets?.canManage;
 
     if (toTab)
         return toTab;
@@ -43,17 +45,17 @@ export const LibraryPage = () => {
                 {state.canManage && <Button icon={<Upload />} onClick={() => setUploading(true)}>Upload</Button>}
             </PageHeader>
             <PageBody className="flex flex-col gap-4 lg:gap-5">
-                <Loaded state={state}>
-                    {(status, assets) => (
+                <GamedataLoaded state={state}>
+                    {status => (
                         <>
-                            <RunningJob canManage={assets.canManage} />
+                            <RunningJob canManage={canManageAssets} />
                             {tab === 'furniture' && <FurnitureTab key={found} status={status} />}
                             {tab === 'clothing' && <FiguresTab key={found} status={status} />}
-                            {tab === 'effects' && <BundleKindTab key={found} kind="effect" status={status} canManage={assets.canManage} />}
-                            {tab === 'pets' && <BundleKindTab key={found} kind="pet" status={status} canManage={assets.canManage} />}
+                            {tab === 'effects' && <BundleKindTab key={found} kind="effect" status={status} canManage={canManageAssets} />}
+                            {tab === 'pets' && <BundleKindTab key={found} kind="pet" status={status} canManage={canManageAssets} />}
                         </>
                     )}
-                </Loaded>
+                </GamedataLoaded>
             </PageBody>
             <UploadDialog open={uploading} onClose={() => setUploading(false)} />
         </>

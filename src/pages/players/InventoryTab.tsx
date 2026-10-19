@@ -2,13 +2,16 @@ import { Plus, X } from 'lucide-react';
 import { useState } from 'react';
 
 import type { ProductKind } from '#/api/catalog';
+import { useGamedataStatus, useGrantClothing, useOwnedClothing } from '#/api/gamedata';
 import { type PlayerDetailResponse, usePlayerAbilities, usePlayerInventory } from '#/api/players';
+import { useMe } from '#/api/queries';
+import { ask } from '#/components/confirm';
 import { SearchInput } from '#/components/SearchInput';
 import { Badge, Button, EmptyState, ErrorNotice, IconButton, Loading, Panel, Stat } from '#/components/ui';
 import { ProductIcon } from '#/pages/catalog/ProductIcon';
 
 import { ActionAnswer } from './ActionAnswer';
-import { BadgeSheet, FurnitureSheet } from './GrantSheets';
+import { BadgeSheet, ClothingSheet, FurnitureSheet } from './GrantSheets';
 import { usePlayerAction } from './usePlayerAction';
 
 const ROW = 'flex min-h-12 items-center gap-3 border-t border-line px-4 py-2 first:border-t-0';
@@ -19,9 +22,10 @@ const matches = (name: string, filter: string) => name.toLowerCase().includes(fi
 /**
  * What a player owns: how much at a glance, their furniture by kind with how many are in their
  * inventory and how many placed in rooms, and their badges (worn ones first, with their slot),
- * each list narrowed by name. Each list has its Add (furniture in their inventory or as a gift, a
- * badge by its code), and each badge a way to take it, where you may: the hotel's own commands,
- * run as you.
+ * each list narrowed by name, and the clothing for sale they own (where you may see the gamedata).
+ * Each list has its Add (furniture in their inventory or as a gift, a badge by its code, clothing
+ * by its set ids), and each badge and piece a way to take it, where you may: the hotel's own
+ * commands, run as you, and the gamedata's clothing grants.
  */
 export const InventoryTab = ({ player }: { player: PlayerDetailResponse }) => {
     const { data: inventory, error, isPending } = usePlayerInventory(player.id);
@@ -29,8 +33,12 @@ export const InventoryTab = ({ player }: { player: PlayerDetailResponse }) => {
     const action = usePlayerAction(player);
     const [ furniFilter, setFurniFilter ] = useState('');
     const [ badgeFilter, setBadgeFilter ] = useState('');
-    const [ adding, setAdding ] = useState<'furniture' | 'badge' | null>(null);
+    const [ adding, setAdding ] = useState<'furniture' | 'badge' | 'clothing' | null>(null);
     const addsFurniture = !!can && (can.giveItem || can.gift);
+    const seesClothing = useMe().data?.canViewGamedata ?? false;
+    const { data: owned, error: clothingError } = useOwnedClothing(seesClothing ? player.id : null);
+    const grantsClothing = useGamedataStatus(seesClothing).data?.canManage ?? false;
+    const grant = useGrantClothing();
 
     if (isPending)
         return <Loading />;
@@ -80,52 +88,91 @@ export const InventoryTab = ({ player }: { player: PlayerDetailResponse }) => {
                             )}
                 </Panel>
 
-                <Panel
-                    title={`Badges (${inventory.badges.length.toLocaleString()})`}
-                    actions={(
-                        <>
-                            {inventory.badges.length > 0 && (
-                                <SearchInput value={badgeFilter} onValueChange={setBadgeFilter} placeholder="Code" aria-label="Filter badges" className="w-36" />
-                            )}
-                            {can?.giveBadge && <Button variant="secondary" icon={<Plus />} onClick={() => setAdding('badge')}>Add</Button>}
-                        </>
-                    )}
-                >
-                    {badges.length === 0
-                        ? <EmptyState>{inventory.badges.length === 0 ? 'No badges.' : 'No badge matches.'}</EmptyState>
-                        : (
+                <div className="flex flex-col gap-4 lg:gap-5">
+                    <Panel
+                        title={`Badges (${inventory.badges.length.toLocaleString()})`}
+                        actions={(
+                            <>
+                                {inventory.badges.length > 0 && (
+                                    <SearchInput value={badgeFilter} onValueChange={setBadgeFilter} placeholder="Code" aria-label="Filter badges" className="w-36" />
+                                )}
+                                {can?.giveBadge && <Button variant="secondary" icon={<Plus />} onClick={() => setAdding('badge')}>Add</Button>}
+                            </>
+                        )}
+                    >
+                        {badges.length === 0
+                            ? <EmptyState>{inventory.badges.length === 0 ? 'No badges.' : 'No badge matches.'}</EmptyState>
+                            : (
                                 // Each tile ruled on its right and bottom, the outer edges clipped: a short last row ends clean.
-                                <div className="max-h-[36rem] overflow-hidden overflow-y-auto rounded-b-xl">
-                                    <ul className="-mr-px -mb-px grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))]">
-                                        {badges.map(badge => (
-                                            <li key={badge.code} className="group flex min-h-12 items-center gap-2 border-r border-b border-line px-3 py-2">
-                                                <ProductIcon type="badge" name={badge.code} />
-                                                <span className="min-w-0 flex-1 truncate font-mono text-xs" title={badge.code}>{badge.code}</span>
-                                                {badge.slot !== null && <Badge tone="accent">#{badge.slot}</Badge>}
-                                                {can?.takeBadge && (
+                                    <div className="max-h-[36rem] overflow-hidden overflow-y-auto rounded-b-xl">
+                                        <ul className="-mr-px -mb-px grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))]">
+                                            {badges.map(badge => (
+                                                <li key={badge.code} className="group flex min-h-12 items-center gap-2 border-r border-b border-line px-3 py-2">
+                                                    <ProductIcon type="badge" name={badge.code} />
+                                                    <span className="min-w-0 flex-1 truncate font-mono text-xs" title={badge.code}>{badge.code}</span>
+                                                    {badge.slot !== null && <Badge tone="accent">#{badge.slot}</Badge>}
+                                                    {can?.takeBadge && (
                                                     // Shown on hover from a tablet up; always on a phone, which has none.
-                                                    <IconButton
-                                                        small
-                                                        tone="bad"
-                                                        icon={<X />}
-                                                        label={`Take ${badge.code}`}
-                                                        disabled={action.busy}
-                                                        onClick={() => action.run({ action: 'takebadge', badge: badge.code }, { title: `Take the badge ${badge.code} from ${player.name}?`, confirm: 'Take badge' })}
-                                                        className="-mr-1.5 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
-                                                    />
-                                                )}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
+                                                        <IconButton
+                                                            small
+                                                            tone="bad"
+                                                            icon={<X />}
+                                                            label={`Take ${badge.code}`}
+                                                            disabled={action.busy}
+                                                            onClick={() => action.run({ action: 'takebadge', badge: badge.code }, { title: `Take the badge ${badge.code} from ${player.name}?`, confirm: 'Take badge' })}
+                                                            className="-mr-1.5 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                                                        />
+                                                    )}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+                    </Panel>
+
+                    {seesClothing && (
+                        <Panel
+                            title={`Clothing for sale${owned ? ` (${owned.setIds.length.toLocaleString()})` : ''}`}
+                            description="Pieces marked as sold are worn only by their owners; taking one takes it off them at once."
+                            actions={grantsClothing && <Button variant="secondary" icon={<Plus />} onClick={() => setAdding('clothing')}>Add</Button>}
+                        >
+                            {clothingError && <div className="p-4"><ErrorNotice error={clothingError} /></div>}
+                            {grant.error && <div className="p-4"><ErrorNotice error={grant.error} /></div>}
+                            {!owned && !clothingError && <Loading />}
+                            {owned?.setIds.length === 0 && <EmptyState>No clothing for sale.</EmptyState>}
+                            {owned && owned.setIds.length > 0 && (
+                                <ul className="flex flex-wrap gap-1.5 p-4">
+                                    {owned.setIds.map(id => (
+                                        <li key={id} className="group inline-flex items-center gap-1 rounded-md border border-line py-0.5 pr-1 pl-2 font-mono text-xs">
+                                            {id}
+                                            {grantsClothing && (
+                                                <IconButton
+                                                    small
+                                                    tone="bad"
+                                                    icon={<X />}
+                                                    label={`Take piece ${id}`}
+                                                    disabled={grant.isPending}
+                                                    onClick={() => ask(
+                                                        { title: `Take piece ${id} from ${player.name}?`, body: 'It comes off them at once if they are wearing it.', confirm: 'Take piece' },
+                                                        () => grant.mutate({ playerId: player.id, setIds: [ id ], revoke: true }),
+                                                    )}
+                                                    className="sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                                                />
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
                             )}
-                </Panel>
+                        </Panel>
+                    )}
+                </div>
             </div>
 
             {addsFurniture && (
                 <FurnitureSheet player={player} action={action} open={adding === 'furniture'} onClose={() => setAdding(null)} canGive={can.giveItem} canGift={can.gift} />
             )}
             {can?.giveBadge && <BadgeSheet player={player} action={action} open={adding === 'badge'} onClose={() => setAdding(null)} />}
+            {grantsClothing && <ClothingSheet player={player} open={adding === 'clothing'} onClose={() => setAdding(null)} />}
         </div>
     );
 };

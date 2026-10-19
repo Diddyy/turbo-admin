@@ -1,11 +1,11 @@
-import { Award, Gift, PackagePlus } from 'lucide-react';
+import { Award, Gift, PackagePlus, Shirt } from 'lucide-react';
 import { type FormEvent, useDeferredValue, useId, useState } from 'react';
 
-import { useProductSuggestions } from '#/api/gamedata';
+import { useGrantClothing, useProductSuggestions } from '#/api/gamedata';
 import type { PlayerDetailResponse } from '#/api/players';
 import { useMe } from '#/api/queries';
 import { Sheet } from '#/components/Sheet';
-import { Button, Input, Labeled, Switch, Textarea } from '#/components/ui';
+import { Button, ErrorNotice, Input, Labeled, Switch, Textarea } from '#/components/ui';
 import { cx } from '#/lib/cx';
 import { ProductIcon } from '#/pages/catalog/ProductIcon';
 
@@ -125,6 +125,41 @@ export const BadgeSheet = ({ player, action, open, onClose }: GrantSheetProps) =
                     </Labeled>
                 </div>
                 <Button type="submit" icon={<Award />} disabled={action.busy || code === ''}>Give the badge</Button>
+            </form>
+        </Sheet>
+    );
+};
+
+/** The ids typed, each a piece's set id. */
+const setIdsOf = (text: string) => (text.trim() === '' ? [] : text.split(/[\s,]+/).map(Number).filter(x => Number.isInteger(x) && x >= 0));
+
+/** Giving pieces of clothing for sale by their set ids: a piece marked as sold is worn only by its owners. */
+export const ClothingSheet = ({ player, open, onClose }: Omit<GrantSheetProps, 'action'>) => {
+    const [ sets, setSets ] = useState('');
+    const grant = useGrantClothing();
+    const setIds = setIdsOf(sets);
+
+    return (
+        <Sheet title={`Give ${player.name} clothing`} open={open} onClose={onClose}>
+            <form
+                onSubmit={(event) => {
+                    event.preventDefault();
+
+                    if (setIds.length > 0)
+                        grant.mutate({ playerId: player.id, setIds, revoke: false }, {
+                            onSuccess: () => {
+                                setSets('');
+                                onClose();
+                            },
+                        });
+                }}
+                className="flex flex-col gap-3 px-3 py-3"
+            >
+                <Labeled label="Piece ids" hint="The set ids of pieces marked as sold, separated by commas or spaces.">
+                    <Input value={sets} onChange={event => setSets(event.target.value)} placeholder="3030, 3031" spellCheck={false} autoComplete="off" className="font-mono" autoFocus />
+                </Labeled>
+                {grant.error && <ErrorNotice error={grant.error} />}
+                <Button type="submit" icon={<Shirt />} disabled={grant.isPending || setIds.length === 0}>Give the clothing</Button>
             </form>
         </Sheet>
     );

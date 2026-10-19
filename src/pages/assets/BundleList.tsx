@@ -32,7 +32,10 @@ const idsOf = (bundle: AssetBundle) => {
     return `${bundle.ids.length === 1 ? 'id' : 'ids'} ${shown}${bundle.ids.length > 6 ? ` +${bundle.ids.length - 6}` : ''}`;
 };
 
-const BundleRow = ({ bundle, pending, onOpen }: { bundle: AssetBundle; pending: AssetSyncPending | undefined; onOpen: () => void }) => {
+/** The kinds whose list shows each bundle's revision and size; effects and pets are told apart by their ids alone. */
+const SHOWS_FILE = new Set<BundleKind>([ 'furniture', 'figure' ]);
+
+const BundleRow = ({ bundle, pending, showsFile, onOpen }: { bundle: AssetBundle; pending: AssetSyncPending | undefined; showsFile: boolean; onOpen: () => void }) => {
     const ids = idsOf(bundle);
 
     return (
@@ -55,13 +58,17 @@ const BundleRow = ({ bundle, pending, onOpen }: { bundle: AssetBundle; pending: 
                         ? <span className="truncate text-xs text-bad" title={bundle.error}>{bundle.error}</span>
                         : (
                                 <span className="truncate font-mono text-[11px] text-muted">
-                                    <span className="md:hidden">{[ bundle.revision !== null ? `rev ${bundle.revision}` : null, ids, formatBytes(bundle.size) ].filter(Boolean).join(' · ')}</span>
+                                    <span className="md:hidden">{(showsFile ? [ bundle.revision !== null ? `rev ${bundle.revision}` : null, ids, formatBytes(bundle.size) ] : [ ids ]).filter(Boolean).join(' · ')}</span>
                                     <span className="max-md:hidden">{ids ?? (bundle.source === 'upload' ? 'uploaded' : 'from Habbo')}</span>
                                 </span>
                             )}
                 </span>
-                <span className="hidden w-24 shrink-0 text-right font-mono text-xs text-muted tabular-nums md:block">{bundle.revision ?? '-'}</span>
-                <span className="hidden w-20 shrink-0 text-right font-mono text-xs text-muted tabular-nums md:block">{bundle.error ? '-' : formatBytes(bundle.size)}</span>
+                {showsFile && (
+                    <>
+                        <span className="hidden w-24 shrink-0 text-right font-mono text-xs text-muted tabular-nums md:block">{bundle.revision ?? '-'}</span>
+                        <span className="hidden w-20 shrink-0 text-right font-mono text-xs text-muted tabular-nums md:block">{bundle.error ? '-' : formatBytes(bundle.size)}</span>
+                    </>
+                )}
                 <ChevronRight className="size-4 shrink-0 text-muted" aria-hidden />
             </button>
         </li>
@@ -85,6 +92,7 @@ export const BundleList = ({ kind, canManage }: { kind: BundleKind; canManage: b
     const pending = new Map((preview?.kinds.find(x => x.kind === kind)?.items ?? []).map(x => [ x.name, x ]));
     const pageSize = data?.pageSize ?? 60;
     const one = BUNDLE_KINDS.find(x => x.value === kind)!.one;
+    const showsFile = SHOWS_FILE.has(kind);
 
     return (
         <section className="overflow-clip rounded-xl border border-line bg-surface">
@@ -126,13 +134,17 @@ export const BundleList = ({ kind, canManage }: { kind: BundleKind; canManage: b
                     <div className="hidden items-center gap-3 border-b border-line px-4 py-2 font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase md:flex">
                         <span className="w-10 shrink-0" />
                         <span className="flex-1">Bundle</span>
-                        <span className="w-24 shrink-0 text-right">Revision</span>
-                        <span className="w-20 shrink-0 text-right">Size</span>
+                        {showsFile && (
+                            <>
+                                <span className="w-24 shrink-0 text-right">Revision</span>
+                                <span className="w-20 shrink-0 text-right">Size</span>
+                            </>
+                        )}
                         <span className="w-4 shrink-0" />
                     </div>
                     <ul className={cx('divide-y divide-line transition-opacity', isFetching && 'opacity-70')}>
                         {data.items.map(bundle => (
-                            <BundleRow key={`${bundle.kind}/${bundle.name}`} bundle={bundle} pending={pending.get(bundle.name)} onOpen={() => setOpen({ kind: bundle.kind, name: bundle.name })} />
+                            <BundleRow key={`${bundle.kind}/${bundle.name}`} bundle={bundle} pending={pending.get(bundle.name)} showsFile={showsFile} onOpen={() => setOpen({ kind: bundle.kind, name: bundle.name })} />
                         ))}
                     </ul>
                 </>

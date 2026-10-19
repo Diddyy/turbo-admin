@@ -5,7 +5,7 @@ import type { HistoryScope } from '#/api/gamedata';
 import { Button, PageBody, PageHeader } from '#/components/ui';
 import { usePathTab } from '#/lib/tabs';
 
-import { Loaded } from './frame';
+import { GamedataLoaded } from './frame';
 import { HistoryModal } from './HistoryPanel';
 import { ProductsTab } from './ProductsTab';
 import { useFoundKey, useGamedata } from './state';
@@ -46,7 +46,7 @@ export const TextsPage = () => {
                 {state.canManage && <Button icon={<Plus />} onClick={() => setAdding(tab)}>New {noun}</Button>}
             </PageHeader>
             <PageBody className="flex flex-col gap-4 lg:gap-5">
-                <Loaded state={state}>
+                <GamedataLoaded state={state}>
                     {status => (
                         <>
                             {tab === 'products' && <ProductsTab key={found} status={status} adding={adding === tab} onAdded={() => setAdding(null)} />}
@@ -54,7 +54,7 @@ export const TextsPage = () => {
                             {tab === 'variables' && <VariablesTab key={found} status={status} adding={adding === tab} onAdded={() => setAdding(null)} />}
                         </>
                     )}
-                </Loaded>
+                </GamedataLoaded>
             </PageBody>
             <HistoryModal scope={tab as HistoryScope} canManage={state.canManage} open={history} onClose={() => setHistory(false)} />
         </>

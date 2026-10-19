@@ -34,6 +34,8 @@ import { PlayerPage as PlayerProfilePage } from '#/pages/players/PlayerPage';
 import { PlayersPage as PlayerListPage } from '#/pages/players/PlayersPage';
 import { PluginPage } from '#/pages/plugins/PluginPage';
 import { PluginsPage } from '#/pages/PluginsPage';
+import { ReportPage } from '#/pages/reports/ReportPage';
+import { ReportsPage } from '#/pages/reports/ReportsPage';
 import { RewardTracksPage } from '#/pages/reward-tracks/RewardTracksPage';
 import { RoomPage } from '#/pages/rooms/RoomPage';
 import { RoomSettingsPage } from '#/pages/rooms/RoomSettingsPage';
@@ -58,6 +60,8 @@ export const App = () => (
             <Route path="rooms/:id/settings" element={<RoomSettingsPage />} />
             <Route path="players" element={<PlayerListPage />} />
             <Route path="players/:id/:tab?" element={<PlayerProfilePage />} />
+            <Route path="reports" element={<ReportsPage />} />
+            <Route path="reports/:id" element={<ReportPage />} />
             <Route path="groups" element={<GuildsPage />} />
             <Route path="groups/badge-parts" element={<BadgePartsPage />} />
             <Route path="groups/:id" element={<GuildPage />} />

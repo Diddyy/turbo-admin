@@ -1,4 +1,4 @@
-import { Activity, Armchair, Bug, CloudDownload, Disc3, DoorOpen, Gauge, History, House, KeyRound, Landmark, Languages, MessagesSquare, Milestone, PackagePlus, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
+import { Activity, Armchair, Bug, CloudDownload, Disc3, DoorOpen, Flag, Gauge, History, House, KeyRound, Landmark, Languages, MessagesSquare, Milestone, PackagePlus, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router';
 
@@ -7,7 +7,7 @@ import { useMe } from '#/api/queries';
 import type { MeResponse } from '#/api/types';
 import type { TabItem } from '#/components/Tabs';
 
-type Need = keyof Pick<MeResponse, 'canViewRooms' | 'canViewPlayers' | 'canViewPermissions' | 'canViewCommandLog' | 'canViewChatlog' | 'canViewCatalog' | 'canViewGamedata' | 'canViewSettings' | 'canViewContent' | 'canViewPlugins' | 'canResetPasskeys' | 'canManageRewardTracks'>;
+type Need = keyof Pick<MeResponse, 'canViewRooms' | 'canViewPlayers' | 'canViewPermissions' | 'canViewCommandLog' | 'canViewChatlog' | 'canViewCatalog' | 'canViewGamedata' | 'canViewSettings' | 'canViewContent' | 'canViewPlugins' | 'canResetPasskeys' | 'canManageRewardTracks' | 'canHandleReports'>;
 
 /** One page of the panel: where `g` and its letter go, and what the search offers by name. */
 export interface NavItem {
@@ -27,6 +27,7 @@ const PAGES = {
     dashboard: { to: '/', label: 'Overview', icon: <Gauge />, end: true, key: 'd' },
     performance: { to: '/performance', label: 'Performance', icon: <Activity />, end: false, key: 'm' },
     players: { to: '/players', label: 'Players', icon: <Users />, end: false, key: 'p', needs: 'canViewPlayers' },
+    reports: { to: '/reports', label: 'Reports', icon: <Flag />, end: false, key: 'q', needs: 'canHandleReports' },
     rooms: { to: '/rooms', label: 'Rooms', icon: <House />, end: false, key: 'r', needs: 'canViewRooms' },
     groups: { to: '/groups', label: 'Groups', icon: <Shield />, end: false, key: 'b', needs: 'canViewContent' },
     badgeParts: { to: '/groups/badge-parts', label: 'Badge parts', icon: <Puzzle />, end: false, needs: 'canViewContent' },
@@ -87,6 +88,7 @@ const SECTIONS: NavSection[] = [
         label: 'Community',
         entries: [
             { label: 'Players', icon: <Users />, pages: [ 'players' ], hint: 'Find a player, act on them' },
+            { label: 'Reports', icon: <Flag />, pages: [ 'reports' ], hint: 'Calls for help players send, to read and close' },
             { label: 'Rooms', icon: <House />, pages: [ 'rooms' ], hint: 'Rooms, who is in them, their settings' },
             GROUPS,
         ],

@@ -40,6 +40,8 @@ export interface MeResponse {
     canViewPlugins: boolean;
     /** Holds `admin.rewardtracks.manage`: may see and change the reward tracks. */
     canManageRewardTracks: boolean;
+    /** Holds `moderation.tool`, the mod tool's node: may read and close the calls for help. */
+    canHandleReports: boolean;
 }
 
 export interface DashboardRoom {

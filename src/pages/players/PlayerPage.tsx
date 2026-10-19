@@ -1,4 +1,4 @@
-import { ChevronRight, DoorOpen, House, KeyRound, MessagesSquare, ScrollText } from 'lucide-react';
+import { ChevronRight, DoorOpen, House, KeyRound, Mail, MessagesSquare, ScrollText } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, useParams } from 'react-router';
 
@@ -165,6 +165,9 @@ const Links = ({ player }: { player: PlayerDetailResponse }) => {
                 )}
                 {me.canViewChatlog && (
                     <LinkRow to={`/chatlog?${new URLSearchParams({ player: who })}`} icon={<MessagesSquare />} label="Chat log" detail="What they said, and what was whispered to them" />
+                )}
+                {me.canViewMessages && (
+                    <LinkRow to={`/messages?${new URLSearchParams({ player: who })}`} icon={<Mail />} label="Messages" detail="What they sent friends, and what friends sent them" />
                 )}
                 {me.canViewCommandLog && (
                     <LinkRow to={`/command-log?${new URLSearchParams({ player: who })}`} icon={<ScrollText />} label="Command log" detail="The commands they ran" />

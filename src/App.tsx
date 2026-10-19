@@ -25,6 +25,7 @@ import { BadgePartsPage } from '#/pages/groups/BadgePartsPage';
 import { GroupPage as GuildPage } from '#/pages/groups/GroupPage';
 import { GroupsPage as GuildsPage } from '#/pages/groups/GroupsPage';
 import { HotelViewPage } from '#/pages/hotel-view/HotelViewPage';
+import { MessagesPage } from '#/pages/MessagesPage';
 import { GroupPage } from '#/pages/permissions/GroupPage';
 import { GroupsPage } from '#/pages/permissions/GroupsPage';
 import { LogPage, NodesPage, SearchPage } from '#/pages/permissions/LookupPages';
@@ -89,6 +90,7 @@ export const App = () => (
             <Route path="plugin/:key/:page/:id" element={<PluginPage />} />
             <Route path="command-log" element={<CommandLogPage />} />
             <Route path="chatlog" element={<ChatlogPage />} />
+            <Route path="messages" element={<MessagesPage />} />
             <Route path="room-visits" element={<RoomVisitsPage />} />
             <Route path="permission-log" element={<LogPage />} />
             <Route path="console" element={<ConsolePage />} />

@@ -42,6 +42,8 @@ export interface MeResponse {
     canManageRewardTracks: boolean;
     /** Holds `moderation.tool`, the mod tool's node: may read and close the calls for help. */
     canHandleReports: boolean;
+    /** Holds `admin.messages.view`: may read players' private messages. */
+    canViewMessages: boolean;
 }
 
 export interface DashboardRoom {

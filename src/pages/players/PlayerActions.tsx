@@ -1,14 +1,13 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Award, Ban, Coins, Gavel, MessageSquareWarning, MicOff, PackagePlus, Repeat2, Unplug } from 'lucide-react';
+import { Gavel, MessageSquareWarning, MicOff, Repeat2, Unplug } from 'lucide-react';
 import { type FormEvent, type ReactNode, useState } from 'react';
 
-import { post } from '#/api/client';
-import { actOnPlayer, type PlayerActionRequest, type PlayerDetailResponse, usePlayerAbilities } from '#/api/players';
-import type { RunCommandResponse } from '#/api/types';
-import { CommandAnswer } from '#/components/CommandAnswer';
-import { ask, type Question } from '#/components/confirm';
-import { type Tab, TabbedPanel } from '#/components/TabbedPanel';
-import { Button, ErrorNotice, Input, Label, Labeled, Segmented, Select, Textarea } from '#/components/ui';
+import { type PlayerDetailResponse, type PlayerRestriction, usePlayerAbilities } from '#/api/players';
+import { Sheet } from '#/components/Sheet';
+import { Badge, Button, Input, Label, Labeled, Segmented, Textarea } from '#/components/ui';
+import { formatDateTime } from '#/pages/rooms/labels';
+
+import { ActionAnswer } from './ActionAnswer';
+import { type PlayerAction, usePlayerAction } from './usePlayerAction';
 
 const BAN_DURATIONS = [
     { value: '1h', label: '1 hour' },
@@ -17,7 +16,7 @@ const BAN_DURATIONS = [
     { value: 'perm', label: 'For good' },
 ];
 
-const SILENCE_DURATIONS = [
+const MUTE_DURATIONS = [
     { value: '10m', label: '10 min' },
     { value: '1h', label: '1 hour' },
     { value: '1d', label: '1 day' },
@@ -31,256 +30,226 @@ const TRADELOCK_DURATIONS = [
     { value: 'perm', label: 'For good' },
 ];
 
-/** One action's block in a tab: its name, what it does, its controls. */
+type Open = 'alert' | 'sanction' | 'mute' | 'tradelock' | null;
+
+/** One part of a sheet: what it is, and its controls. */
 const Block = ({ title, children }: { title: string; children: ReactNode }) => (
-    <div className="flex flex-col gap-2.5 border-t border-line px-4 py-4 first:border-t-0">
+    <div className="flex flex-col gap-2.5 border-t border-line px-3 py-3 first:border-t-0">
         <Label>{title}</Label>
         {children}
     </div>
 );
 
+/** What holds now, at the top of its sheet: "Muted until 18 Oct 14:00". */
+const Holds = ({ what, restriction }: { what: string; restriction: PlayerRestriction }) => (
+    <p className="rounded-lg border border-warn-line bg-warn-soft px-3 py-2 text-sm text-warn">
+        {what} {restriction.untilUtc ? `until ${formatDateTime(restriction.untilUtc)}` : 'for good'}.
+    </p>
+);
+
+/** A message for them: a moderator's warning or a plain pop-up. */
+const AlertSheet = ({ player, action, open, onClose, warn, alert }: SheetProps & { warn: boolean; alert: boolean }) => {
+    const [ message, setMessage ] = useState('');
+    const [ kind, setKind ] = useState<'warn' | 'alert'>(warn ? 'warn' : 'alert');
+
+    const send = (event: FormEvent) => {
+        event.preventDefault();
+        action.run({ action: kind, reason: message.trim() }, undefined, () => {
+            setMessage('');
+            onClose();
+        });
+    };
+
+    return (
+        <Sheet title={`Alert ${player.name}`} open={open} onClose={onClose}>
+            <form onSubmit={send}>
+                <Block title="Message">
+                    {warn && alert && (
+                        <Segmented
+                            label="Kind of message"
+                            value={kind}
+                            onChange={value => setKind(value as 'warn' | 'alert')}
+                            options={[ { value: 'warn', label: 'Moderator warning' }, { value: 'alert', label: 'Pop-up' } ]}
+                        />
+                    )}
+                    <Textarea value={message} onChange={event => setMessage(event.target.value)} rows={4} placeholder={`What ${player.name} should read`} aria-label="Message" autoFocus />
+                    <p className="text-xs text-muted">
+                        {kind === 'warn' ? 'Shown as a message from the moderators, as the moderation tool sends one.' : 'Shown to them in a pop-up.'}
+                    </p>
+                    <Button type="submit" icon={<MessageSquareWarning />} disabled={action.busy || message.trim() === ''}>Send</Button>
+                </Block>
+            </form>
+        </Sheet>
+    );
+};
+
+/** Banning them from the hotel, or lifting the ban they have. */
+const SanctionSheet = ({ player, action, open, onClose, ban, unban }: SheetProps & { ban: boolean; unban: boolean }) => {
+    const [ duration, setDuration ] = useState('1d');
+    const [ reason, setReason ] = useState('');
+    const active = player.sanctions.find(x => x.isActive && x.kind === 'Ban');
+
+    return (
+        <Sheet title={`Sanction ${player.name}`} open={open} onClose={onClose}>
+            {active && (
+                <Block title="Banned now">
+                    <Holds what="Banned" restriction={{ untilUtc: active.expiresUtc }} />
+                    <p className="text-sm">{active.reason}</p>
+                    {unban && (
+                        <Button variant="secondary" disabled={action.busy} onClick={() => action.run({ action: 'unban' }, undefined, onClose)}>
+                            Lift the ban
+                        </Button>
+                    )}
+                </Block>
+            )}
+            {ban && (
+                <Block title={active ? 'Ban again' : 'Ban from the hotel'}>
+                    <Segmented label="How long to ban" value={duration} onChange={setDuration} options={BAN_DURATIONS} />
+                    <Labeled label="Reason">
+                        <Input value={reason} onChange={event => setReason(event.target.value)} placeholder="Shown to them, and kept with the ban" />
+                    </Labeled>
+                    <Button
+                        variant="danger"
+                        icon={<Gavel />}
+                        disabled={action.busy}
+                        onClick={() => action.run(
+                            { action: 'ban', duration, reason: reason.trim() || undefined },
+                            { title: `Ban ${player.name} from the hotel?`, body: player.isOnline ? 'They are disconnected at once.' : undefined, confirm: 'Ban' },
+                            () => {
+                                setReason('');
+                                onClose();
+                            },
+                        )}
+                    >
+                        Ban {player.name}
+                    </Button>
+                </Block>
+            )}
+            {!active && !ban && <p className="px-3 py-3 text-sm text-muted">Not banned.</p>}
+        </Sheet>
+    );
+};
+
+/** A silence or a trade lock: for how long, or lifting the one that holds. */
+const RestrictionSheet = ({ action, open, onClose, title, holds, restriction, durations, initial, start, startLabel, end, endLabel, icon }: Omit<SheetProps, 'player'> & {
+    title: string;
+    holds: string;
+    restriction: PlayerRestriction | null;
+    durations: { value: string; label: string }[];
+    initial: string;
+    start: 'silence' | 'tradelock';
+    startLabel: string;
+    end: 'unsilence' | 'untradelock';
+    endLabel: string;
+    icon: ReactNode;
+}) => {
+    const [ duration, setDuration ] = useState(initial);
+
+    return (
+        <Sheet title={title} open={open} onClose={onClose}>
+            {restriction && (
+                <Block title="Now">
+                    <Holds what={holds} restriction={restriction} />
+                    <Button variant="secondary" disabled={action.busy} onClick={() => action.run({ action: end }, undefined, onClose)}>{endLabel}</Button>
+                </Block>
+            )}
+            <Block title={restriction ? 'Change how long' : 'How long'}>
+                <Segmented label="How long" value={duration} onChange={setDuration} options={durations} />
+                <Button icon={icon} disabled={action.busy} onClick={() => action.run({ action: start, duration }, undefined, onClose)}>{startLabel}</Button>
+            </Block>
+        </Sheet>
+    );
+};
+
+interface SheetProps {
+    player: PlayerDetailResponse;
+    action: PlayerAction;
+    open: boolean;
+    onClose: () => void;
+}
+
+/** A button of the actions row; marked when what it does already holds ("Muted"). */
+const ActionButton = ({ icon, label, holds, onClick, disabled, danger }: { icon: ReactNode; label: string; holds?: string; onClick: () => void; disabled?: boolean; danger?: boolean }) => (
+    <Button variant={danger ? 'danger' : 'secondary'} icon={icon} onClick={onClick} disabled={disabled} className="max-sm:flex-[1_1_9rem]">
+        {label}
+        {holds && <Badge tone="amber" className="ml-0.5 px-1 py-0 text-[10px]">{holds}</Badge>}
+    </Button>
+);
+
 /**
- * What staff may do to a player from their page: send them a message, ban, silence or trade lock
- * them (and lift each), disconnect them, change their balances, and give or take badges and give
- * furniture. Each is the hotel's own
- * command, run as the staff member, so the same permissions and the command log apply, and a
- * player who outranks them is refused by the command itself. Only what they may do is shown.
+ * What staff may do to a player, along the bottom of their card on every tab of their page:
+ * alert them, sanction (ban) them, mute them and trade lock them, each in a sheet that also lifts
+ * the one that holds, and disconnect them while they are online. Each is the hotel's own command,
+ * run as the staff member, so the same permissions and the command log apply, and a player who
+ * outranks them is refused by the command itself. Only what they may do is shown.
  */
 export const PlayerActions = ({ player }: { player: PlayerDetailResponse }) => {
     const { data: can } = usePlayerAbilities();
-    const queryClient = useQueryClient();
-    const [ message, setMessage ] = useState('');
-    const [ messageKind, setMessageKind ] = useState<'warn' | 'alert'>('warn');
-    const [ banFor, setBanFor ] = useState('1d');
-    const [ banReason, setBanReason ] = useState('');
-    const [ silenceFor, setSilenceFor ] = useState('1h');
-    const [ lockFor, setLockFor ] = useState('7d');
-    const [ currency, setCurrency ] = useState(player.currencies[0]?.name ?? 'credits');
-    const [ amount, setAmount ] = useState('');
-    const [ badge, setBadge ] = useState('');
-    const [ furni, setFurni ] = useState('');
-    const [ furniCount, setFurniCount ] = useState('1');
-
-    const act = useMutation({
-        mutationFn: (run: () => Promise<RunCommandResponse>) => run(),
-        onSettled: () => void queryClient.invalidateQueries({ queryKey: [ 'player', player.id ] }),
-    });
+    const action = usePlayerAction(player);
+    const [ open, setOpen ] = useState<Open>(null);
+    const close = () => setOpen(null);
 
     if (!can)
         return null;
 
-    const run = (request: PlayerActionRequest, question?: Question, then?: () => void) => {
-        const go = () => {
-            act.mutate(() => actOnPlayer(player.id, request));
-            then?.();
-        };
+    const banned = player.sanctions.find(x => x.isActive && x.kind === 'Ban');
+    const shown = (can.warn || can.alert) || (can.ban || can.unban) || can.silence || can.tradelock || (can.disconnect && player.isOnline);
 
-        if (question)
-            ask(question, go);
-        else
-            go();
-    };
-
-    const confirmPending = () => act.mutate(() => post<RunCommandResponse>('/commands/run', { line: 'confirm' }));
-
-    const sendMessage = (event: FormEvent) => {
-        event.preventDefault();
-        run({ action: messageKind, reason: message.trim() });
-        setMessage('');
-    };
-
-    const tabs: Tab[] = [];
-
-    if (can.warn || can.alert)
-        tabs.push({
-            id: 'message',
-            label: 'Message',
-            content: (
-                <form onSubmit={sendMessage}>
-                    <Block title="Send a message">
-                        {can.warn && can.alert && (
-                            <Segmented
-                                label="Kind of message"
-                                value={messageKind}
-                                onChange={value => setMessageKind(value as 'warn' | 'alert')}
-                                options={[ { value: 'warn', label: 'Moderator warning' }, { value: 'alert', label: 'Pop-up' } ]}
-                            />
-                        )}
-                        <Textarea value={message} onChange={event => setMessage(event.target.value)} rows={3} placeholder={`What ${player.name} should read`} aria-label="Message" />
-                        <Button type="submit" variant="secondary" icon={<MessageSquareWarning />} disabled={act.isPending || message.trim() === ''} className="self-start">
-                            Send
-                        </Button>
-                    </Block>
-                </form>
-            ),
-        });
-
-    if (can.ban || can.unban || can.silence || can.tradelock)
-        tabs.push({
-            id: 'sanctions',
-            label: 'Sanctions',
-            content: (
-                <>
-                    {(can.ban || can.unban) && (
-                        <Block title="Ban from the hotel">
-                            {can.ban && (
-                                <>
-                                    <Segmented label="How long to ban" value={banFor} onChange={setBanFor} options={BAN_DURATIONS} />
-                                    <Labeled label="Reason">
-                                        <Input value={banReason} onChange={event => setBanReason(event.target.value)} placeholder="Shown to them, and kept with the ban" />
-                                    </Labeled>
-                                </>
-                            )}
-                            <div className="flex flex-wrap gap-2">
-                                {can.ban && (
-                                    <Button
-                                        variant="danger"
-                                        icon={<Gavel />}
-                                        disabled={act.isPending}
-                                        onClick={() => run({ action: 'ban', duration: banFor, reason: banReason.trim() || undefined }, { title: `Ban ${player.name} from the hotel?`, confirm: 'Ban' })}
-                                    >
-                                        Ban
-                                    </Button>
-                                )}
-                                {can.unban && <Button variant="secondary" disabled={act.isPending} onClick={() => run({ action: 'unban' })}>Lift ban</Button>}
-                            </div>
-                        </Block>
-                    )}
-                    {can.silence && (
-                        <Block title="Silence everywhere">
-                            <Segmented label="How long to silence" value={silenceFor} onChange={setSilenceFor} options={SILENCE_DURATIONS} />
-                            <div className="flex flex-wrap gap-2">
-                                <Button variant="secondary" icon={<MicOff />} disabled={act.isPending} onClick={() => run({ action: 'silence', duration: silenceFor })}>Silence</Button>
-                                <Button variant="ghost" disabled={act.isPending} onClick={() => run({ action: 'unsilence' })}>Unsilence</Button>
-                            </div>
-                        </Block>
-                    )}
-                    {can.tradelock && (
-                        <Block title="Trade lock">
-                            <Segmented label="How long to lock trading" value={lockFor} onChange={setLockFor} options={TRADELOCK_DURATIONS} />
-                            <div className="flex flex-wrap gap-2">
-                                <Button variant="secondary" icon={<Repeat2 />} disabled={act.isPending} onClick={() => run({ action: 'tradelock', duration: lockFor })}>Lock trading</Button>
-                                <Button variant="ghost" disabled={act.isPending} onClick={() => run({ action: 'untradelock' })}>Unlock</Button>
-                            </div>
-                        </Block>
-                    )}
-                </>
-            ),
-        });
-
-    if (can.give && player.currencies.length > 0)
-        tabs.push({
-            id: 'wallet',
-            label: 'Wallet',
-            content: (
-                <form
-                    onSubmit={(event) => {
-                        event.preventDefault();
-                        run(
-                            { action: 'give', currency, amount: Number(amount) },
-                            Number(amount) < 0 ? { title: `Take ${-Number(amount)} ${currency} from ${player.name}?`, confirm: 'Take' } : undefined,
-                            () => setAmount(''),
-                        );
-                    }}
-                >
-                    <Block title="Give or take">
-                        <div className="flex flex-wrap gap-2">
-                            <Select value={currency} onChange={event => setCurrency(event.target.value)} aria-label="Currency" className="flex-[1_1_8rem]">
-                                {player.currencies.map(x => <option key={x.typeId} value={x.name}>{x.name}</option>)}
-                            </Select>
-                            <Input
-                                type="number"
-                                value={amount}
-                                onChange={event => setAmount(event.target.value)}
-                                placeholder="Amount; negative takes"
-                                aria-label="Amount"
-                                className="flex-[1_1_8rem] font-mono"
-                            />
-                        </div>
-                        <Button type="submit" variant="secondary" icon={<Coins />} disabled={act.isPending || amount === '' || Number(amount) === 0} className="self-start">
-                            {Number(amount) < 0 ? 'Take' : 'Give'}
-                        </Button>
-                    </Block>
-                </form>
-            ),
-        });
-
-    if (can.giveBadge || can.takeBadge || can.giveItem)
-        tabs.push({
-            id: 'items',
-            label: 'Items',
-            content: (
-                <>
-                    {(can.giveBadge || can.takeBadge) && (
-                        <form
-                            onSubmit={(event) => {
-                                event.preventDefault();
-
-                                if (can.giveBadge)
-                                    run({ action: 'givebadge', badge: badge.trim() });
-                            }}
-                        >
-                            <Block title="Badge">
-                                <Input value={badge} onChange={event => setBadge(event.target.value)} placeholder="Badge code, like ADM or ACH_Login1" aria-label="Badge code" className="font-mono" />
-                                <div className="flex flex-wrap gap-2">
-                                    {can.giveBadge && <Button type="submit" variant="secondary" icon={<Award />} disabled={act.isPending || badge.trim() === ''}>Give</Button>}
-                                    {can.takeBadge && (
-                                        <Button
-                                            variant="ghost"
-                                            disabled={act.isPending || badge.trim() === ''}
-                                            onClick={() => run({ action: 'takebadge', badge: badge.trim() }, { title: `Take the badge ${badge.trim()} from ${player.name}?`, confirm: 'Take badge' })}
-                                        >
-                                            Take
-                                        </Button>
-                                    )}
-                                </div>
-                            </Block>
-                        </form>
-                    )}
-                    {can.giveItem && (
-                        <form
-                            onSubmit={(event) => {
-                                event.preventDefault();
-                                run({ action: 'giveitem', furni: furni.trim(), amount: Number(furniCount) });
-                            }}
-                        >
-                            <Block title="Furniture">
-                                <div className="flex flex-wrap gap-2">
-                                    <Input value={furni} onChange={event => setFurni(event.target.value)} placeholder="Class name, like throne" aria-label="Furniture class name" className="flex-[3_1_10rem] font-mono" />
-                                    <Input type="number" min={1} value={furniCount} onChange={event => setFurniCount(event.target.value)} aria-label="How many" className="flex-[1_1_4rem] font-mono" />
-                                </div>
-                                <Button type="submit" variant="secondary" icon={<PackagePlus />} disabled={act.isPending || furni.trim() === '' || !(Number(furniCount) >= 1)} className="self-start">
-                                    Put in inventory
-                                </Button>
-                            </Block>
-                        </form>
-                    )}
-                </>
-            ),
-        });
-
-    if (tabs.length === 0 && !(can.disconnect && player.isOnline))
+    if (!shown)
         return null;
 
     return (
-        <div className="flex flex-col gap-3">
-            {tabs.length > 0 && <TabbedPanel tabs={tabs} />}
-            {can.disconnect && player.isOnline && (
-                <Button
-                    variant="danger"
-                    icon={<Unplug />}
-                    disabled={act.isPending}
-                    onClick={() => run({ action: 'disconnect' }, { title: `Close ${player.name}'s connection?`, confirm: 'Disconnect', danger: true })}
-                >
-                    Disconnect
-                </Button>
-            )}
-            {act.error && <ErrorNotice error={act.error} />}
-            {act.data && <CommandAnswer response={act.data} onConfirm={confirmPending} busy={act.isPending} />}
-            <p className="flex items-center gap-1.5 text-xs text-muted [&>svg]:size-3.5">
-                <Ban />
-                Each action is the hotel&apos;s own command, run as you and kept in the command log.
-            </p>
+        <div className="flex flex-col gap-3 border-t border-line bg-canvas/40 px-4 py-3">
+            <div className="flex flex-wrap items-center gap-2">
+                <Label className="mr-1 max-sm:basis-full">Actions</Label>
+                {(can.warn || can.alert) && <ActionButton icon={<MessageSquareWarning />} label="Alert" onClick={() => setOpen('alert')} />}
+                {(can.ban || can.unban) && <ActionButton icon={<Gavel />} label="Sanction" holds={banned ? 'banned' : undefined} onClick={() => setOpen('sanction')} />}
+                {can.silence && <ActionButton icon={<MicOff />} label="Mute" holds={player.silenced ? 'muted' : undefined} onClick={() => setOpen('mute')} />}
+                {can.tradelock && <ActionButton icon={<Repeat2 />} label="Trade lock" holds={player.tradeLocked ? 'locked' : undefined} onClick={() => setOpen('tradelock')} />}
+                {can.disconnect && player.isOnline && (
+                    <ActionButton
+                        danger
+                        icon={<Unplug />}
+                        label="Disconnect"
+                        disabled={action.busy}
+                        onClick={() => action.run({ action: 'disconnect' }, { title: `Close ${player.name}'s connection?`, confirm: 'Disconnect', danger: true })}
+                    />
+                )}
+            </div>
+            <ActionAnswer action={action} />
+
+            <AlertSheet player={player} action={action} open={open === 'alert'} onClose={close} warn={can.warn} alert={can.alert} />
+            <SanctionSheet player={player} action={action} open={open === 'sanction'} onClose={close} ban={can.ban} unban={can.unban} />
+            <RestrictionSheet
+                action={action}
+                open={open === 'mute'}
+                onClose={close}
+                title={`Mute ${player.name}`}
+                holds="Muted everywhere"
+                restriction={player.silenced}
+                durations={MUTE_DURATIONS}
+                initial="1h"
+                start="silence"
+                startLabel="Mute"
+                end="unsilence"
+                endLabel="Unmute"
+                icon={<MicOff />}
+            />
+            <RestrictionSheet
+                action={action}
+                open={open === 'tradelock'}
+                onClose={close}
+                title={`Trade lock ${player.name}`}
+                holds="Trading locked"
+                restriction={player.tradeLocked}
+                durations={TRADELOCK_DURATIONS}
+                initial="7d"
+                start="tradelock"
+                startLabel="Lock trading"
+                end="untradelock"
+                endLabel="Unlock trading"
+                icon={<Repeat2 />}
+            />
         </div>
     );
 };

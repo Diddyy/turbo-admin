@@ -52,6 +52,11 @@ export interface PlayerDiscordInfo {
     activeSignIns: number;
 }
 
+/** A silence or a trade lock that holds now: until when, or null for good. */
+export interface PlayerRestriction {
+    untilUtc: string | null;
+}
+
 export interface PlayerDetailResponse {
     id: number;
     name: string;
@@ -66,10 +71,13 @@ export interface PlayerDetailResponse {
     respectPoints: number;
     currencies: { typeId: number; name: string; amount: number }[];
     roomsOwned: number;
-    recentRooms: PlayerRoomRef[];
     sanctions: PlayerSanctionItem[];
     /** The Discord account they sign in to the public site with; null when none. */
     discord: PlayerDiscordInfo | null;
+    /** Their silence (`chat.speak` denied), when one holds now. */
+    silenced: PlayerRestriction | null;
+    /** Their trade lock (`trade` denied), when one holds now. */
+    tradeLocked: PlayerRestriction | null;
 }
 
 export const usePlayerSearch = (text: string, by: PlayerSearchMode, online: boolean, page: number) => useQuery({
@@ -126,12 +134,6 @@ export const usePlayerInventory = (id: number) => useQuery({
     queryFn: () => api<PlayerInventoryResponse>(`/players/${id}/inventory`),
 });
 
-/** The rooms a player went into, newest first. */
-export const usePlayerVisits = (id: number) => useQuery({
-    queryKey: [ 'player', id, 'visits' ],
-    queryFn: () => api<RoomVisitItem[]>(`/players/${id}/visits`),
-});
-
 /** What the signed-in staff member may do to players: one flag per command. */
 export interface PlayerAbilities {
     ban: boolean;
@@ -145,6 +147,8 @@ export interface PlayerAbilities {
     giveBadge: boolean;
     takeBadge: boolean;
     giveItem: boolean;
+    /** Holds `command.gift`: send furniture as a present from the hotel. */
+    gift: boolean;
     /** Holds `admin.players.create`. */
     createPlayers: boolean;
     /** Holds `admin.tickets.issue`; a ticket still needs the player to be one they can do everything of. */
@@ -196,16 +200,18 @@ export const usePlayerAbilities = () => useQuery({
 });
 
 export interface PlayerActionRequest {
-    action: 'ban' | 'unban' | 'silence' | 'unsilence' | 'tradelock' | 'untradelock' | 'disconnect' | 'warn' | 'alert' | 'give' | 'givebadge' | 'takebadge' | 'giveitem';
+    action: 'ban' | 'unban' | 'silence' | 'unsilence' | 'tradelock' | 'untradelock' | 'disconnect' | 'warn' | 'alert' | 'give' | 'givebadge' | 'takebadge' | 'giveitem' | 'gift';
     duration?: string;
     reason?: string;
     currency?: string;
     /** The amount to give, or for `giveitem` how many. */
     amount?: number;
-    /** The badge code, for `givebadge` and `takebadge`. */
+    /** The badge code, for `givebadge` and `takebadge`; for `gift`, one given as the present is opened. */
     badge?: string;
-    /** The furniture's class name, for `giveitem`. */
+    /** The furniture's class name, for `giveitem` and `gift`. */
     furni?: string;
+    /** The note on the present's tag, for `gift`. */
+    note?: string;
 }
 
 /** Runs an action on a player: the hotel's own command, as you. Answers as the console does. */

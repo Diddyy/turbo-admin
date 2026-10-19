@@ -212,19 +212,26 @@ const Visitors = ({ roomId, linked }: { roomId: number; linked: boolean }) => {
         return <EmptyState>Nobody has gone into the room lately.</EmptyState>;
 
     return (
-        <ul>
-            {visits.map((visit, index) => (
-                <li key={index} className="flex min-h-14 items-center gap-3 border-t border-line px-4 py-2 first:border-t-0">
-                    <Avatar id={visit.playerId} name={visit.playerName || `#${visit.playerId}`} />
-                    <div className="min-w-0 flex-1 truncate text-sm">
-                        {linked
-                            ? <Link to={`/players/${visit.playerId}`} className="font-medium hover:underline">{visit.playerName || `#${visit.playerId}`}</Link>
-                            : <span className="font-medium">{visit.playerName || `#${visit.playerId}`}</span>}
-                    </div>
-                    <span className="text-xs text-muted" title={formatDateTime(visit.enteredUtc)}>{fromNow(visit.enteredUtc)}</span>
-                </li>
-            ))}
-        </ul>
+        <>
+            {linked && (
+                <div className="flex justify-end border-b border-line px-4 py-2.5">
+                    <TextLink to={`/room-visits?${new URLSearchParams({ room: String(roomId) })}`}>Every visit, in the log ›</TextLink>
+                </div>
+            )}
+            <ul>
+                {visits.map((visit, index) => (
+                    <li key={index} className="flex min-h-14 items-center gap-3 border-t border-line px-4 py-2 first:border-t-0">
+                        <Avatar id={visit.playerId} name={visit.playerName || `#${visit.playerId}`} />
+                        <div className="min-w-0 flex-1 truncate text-sm">
+                            {linked
+                                ? <Link to={`/players/${visit.playerId}`} className="font-medium hover:underline">{visit.playerName || `#${visit.playerId}`}</Link>
+                                : <span className="font-medium">{visit.playerName || `#${visit.playerId}`}</span>}
+                        </div>
+                        <span className="text-xs text-muted" title={formatDateTime(visit.enteredUtc)}>{fromNow(visit.enteredUtc)}</span>
+                    </li>
+                ))}
+            </ul>
+        </>
     );
 };
 

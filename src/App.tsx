@@ -38,6 +38,7 @@ import { RewardTracksPage } from '#/pages/reward-tracks/RewardTracksPage';
 import { RoomPage } from '#/pages/rooms/RoomPage';
 import { RoomSettingsPage } from '#/pages/rooms/RoomSettingsPage';
 import { RoomsPage } from '#/pages/rooms/RoomsPage';
+import { RoomVisitsPage } from '#/pages/RoomVisitsPage';
 import { SettingsPage } from '#/pages/settings/SettingsPage';
 import { StaffPage } from '#/pages/StaffPage';
 
@@ -56,7 +57,7 @@ export const App = () => (
             <Route path="rooms/:id/overview" element={<RoomPage />} />
             <Route path="rooms/:id/settings" element={<RoomSettingsPage />} />
             <Route path="players" element={<PlayerListPage />} />
-            <Route path="players/:id/:tab?/:sub?" element={<PlayerProfilePage />} />
+            <Route path="players/:id/:tab?" element={<PlayerProfilePage />} />
             <Route path="groups" element={<GuildsPage />} />
             <Route path="groups/badge-parts" element={<BadgePartsPage />} />
             <Route path="groups/:id" element={<GuildPage />} />
@@ -82,6 +83,7 @@ export const App = () => (
             <Route path="plugin/:key/:page/:id" element={<PluginPage />} />
             <Route path="command-log" element={<CommandLogPage />} />
             <Route path="chatlog" element={<ChatlogPage />} />
+            <Route path="room-visits" element={<RoomVisitsPage />} />
             <Route path="permission-log" element={<LogPage />} />
             <Route path="console" element={<ConsolePage />} />
             <Route path="permissions" element={<ToTab to="groups" />} />

@@ -23,6 +23,7 @@ const MODES: { value: RoomSearchMode; label: string; placeholder: string }[] = [
     { value: 'name', label: 'Room name', placeholder: 'Part of the room\'s name' },
     { value: 'owner', label: 'Owner', placeholder: 'The owner\'s name, or how it starts' },
     { value: 'id', label: 'Room id', placeholder: 'e.g. 1234' },
+    { value: 'ownerId', label: 'Owner id', placeholder: 'The owner\'s player id' },
 ];
 
 const modeOf = (value: string | null): RoomSearchMode =>

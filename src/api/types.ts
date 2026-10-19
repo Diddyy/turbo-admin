@@ -119,7 +119,7 @@ export interface PasskeyLinkResponse {
     hasPanelAccess: boolean;
 }
 
-export type RoomSearchMode = 'name' | 'owner' | 'id';
+export type RoomSearchMode = 'name' | 'owner' | 'id' | 'ownerId';
 
 export interface RoomListItem {
     id: number;

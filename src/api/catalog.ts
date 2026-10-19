@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { postForm } from './bundles';
 import { api, post, put, remove } from './client';
 
 /**
@@ -449,7 +450,22 @@ export interface ImportRequest {
     publish: boolean;
 }
 
-/** A page of the capture and what happens to it; `out` is a page here taken out of the Builders Club. */
+/** Habbo's catalogues to take in from G-Earth packet logs of its client: the normal catalogue's, the Builders Club's, or both. */
+export interface LogImportRequest {
+    normal: File | null;
+    buildersClub: File | null;
+    takeOthersOut: boolean;
+    publish: boolean;
+}
+
+/** What importing the packet logs would do, or did; null for a catalogue no log was given for. */
+export interface LogImportPlan {
+    normal: ImportPlan | null;
+    buildersClub: ImportPlan | null;
+    changes: boolean;
+}
+
+/** A page of the capture and what happens to it; `out` is a page here taken out of that catalogue. */
 export interface ImportPageChange {
     name: string;
     title: string;
@@ -468,8 +484,9 @@ export interface ImportSkip {
     offers: number;
 }
 
-/** What importing a capture would do, or did. */
+/** What importing a capture would do, or did, to one catalogue; `category` is the tab the Builders Club's pages go under. */
 export interface ImportPlan {
+    catalog: 'NORMAL' | 'BUILDERS_CLUB';
     category: string;
     pages: ImportPageChange[];
     pagesTakenOut: ImportPageChange[];
@@ -559,6 +576,23 @@ export const catalogCalls = {
     generate: (request: GenerateRequest) => post<GenerateResult>('/catalog/generate', request),
     previewImport: (request: ImportRequest) => post<ImportPlan>('/catalog/import/preview', request),
     importCapture: (request: ImportRequest) => post<ImportPlan>('/catalog/import', request),
+    previewLogImport: (request: LogImportRequest) => postForm<LogImportPlan>('/catalog/import/logs/preview', logForm(request)),
+    importLogs: (request: LogImportRequest) => postForm<LogImportPlan>('/catalog/import/logs', logForm(request)),
+};
+
+const logForm = (request: LogImportRequest) => {
+    const form = new FormData();
+
+    if (request.normal)
+        form.append('normal', request.normal);
+
+    if (request.buildersClub)
+        form.append('buildersClub', request.buildersClub);
+
+    form.append('takeOthersOut', String(request.takeOthersOut));
+    form.append('publish', String(request.publish));
+
+    return form;
 };
 
 /** A catalog edit; the tree and pages are read again once it lands, saved or not. */

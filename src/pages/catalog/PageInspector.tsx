@@ -47,7 +47,7 @@ const ImageField = ({ id, label, hint, value, onChange, disabled, highlight }: {
 
     return (
         <div className={cx('flex gap-3 rounded-lg p-1 transition-colors', highlight && 'bg-accent-soft ring-2 ring-accent')}>
-            {image?.hasFile
+            {image
                 ? <CatalogImageThumb image={image} className="size-16" />
                 : (
                         <span className={cx('grid size-16 shrink-0 place-items-center overflow-hidden rounded-lg border border-line', CHECKS)}>

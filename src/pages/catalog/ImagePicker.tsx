@@ -17,12 +17,12 @@ interface Option {
 }
 
 const usedOn = (image: CatalogImage) =>
-    !image.hasFile ? 'not on the server' : image.pages.length === 0 ? 'on no page' : image.pages.length === 1 ? 'on 1 page' : `on ${image.pages.length} pages`;
+    image.pages.length === 0 ? 'on no page' : image.pages.length === 1 ? 'on 1 page' : `on ${image.pages.length} pages`;
 
 /**
- * A catalog picture, found by typing among those the server keeps (the ones a sync took from
- * Habbo and the uploads), each drawn beside its name with how many pages show it. A name the
- * server has no file for can still be kept, typed in and taken with Enter; and one who may change
+ * A catalog picture, found by typing among the files in the server's catalog pictures folder,
+ * each drawn beside its name with how many pages show it. A name the folder has no file for can
+ * still be kept, typed in and taken with Enter; and one who may change
  * the catalog can upload a picture from here, named as typed, which is then picked.
  */
 export const ImagePicker = ({ id, value, onChange, disabled, canUpload }: { id: string; value: string; onChange: (value: string) => void; disabled?: boolean; canUpload: boolean }) => {
@@ -137,7 +137,7 @@ export const ImagePicker = ({ id, value, onChange, disabled, canUpload }: { id: 
                     )}
                 >
                     <span className={cx('min-w-0 flex-1 truncate font-mono', !value && 'font-sans text-muted')}>{value || 'Pick a picture'}</span>
-                    {value && images && !current?.hasFile && <span className="shrink-0 rounded bg-warn-soft px-1.5 text-[11px] font-medium text-warn">not on the server</span>}
+                    {value && images && !current && <span className="shrink-0 rounded bg-warn-soft px-1.5 text-[11px] font-medium text-warn">not on the server</span>}
                     <ChevronDown className={cx('size-4 shrink-0 text-muted transition-transform', open && 'rotate-180')} aria-hidden />
                 </button>
                 {value && !disabled && (

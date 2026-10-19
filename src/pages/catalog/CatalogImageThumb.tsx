@@ -10,10 +10,10 @@ export const CHECKS = 'bg-[repeating-conic-gradient(var(--color-subtle)_0_25%,tr
 
 /**
  * A catalog picture as this server has it - an upload shows before it is published - on checks,
- * fitted into the box; a picture with no file, or none picked, shows a mark instead.
+ * fitted into the box; one that can't be drawn, or none picked, shows a mark instead.
  */
-export const CatalogImageThumb = ({ image, className }: { image: Pick<CatalogImage, 'name' | 'updatedAtUtc' | 'hasFile'> | null; className?: string }) => {
-    const path = image?.hasFile ? catalogImagePath(image) : null;
+export const CatalogImageThumb = ({ image, className }: { image: Pick<CatalogImage, 'name' | 'updatedAtUtc'> | null; className?: string }) => {
+    const path = image ? catalogImagePath(image) : null;
     const picture = useQuery(apiImageQuery(path));
 
     return (

@@ -4,21 +4,18 @@ import { postForm } from './bundles';
 import { api, remove } from './client';
 
 /**
- * A catalog picture - a page's header or teaser - as the server keeps it under `images/catalog`:
- * its name as a page gives it, its file (`<name>.gif`), where the file came from, and the pages
- * that show it. A name a page gives with no file on the server has `hasFile` false.
+ * A catalog picture - a page's header or teaser - as a file in the server's `images/catalog`
+ * folder: its name as a page gives it, its file (`<name>.gif`), and the pages that show it.
  */
 export interface CatalogImage {
     name: string;
     file: string;
-    source: 'habbo' | 'upload' | 'built' | null;
-    hasFile: boolean;
     size: number;
     updatedAtUtc: string | null;
     pages: { id: number; title: string }[];
 }
 
-export type CatalogImageShow = 'all' | 'missing' | 'unused' | 'uploaded';
+export type CatalogImageShow = 'all' | 'unused';
 
 export interface CatalogImageQuery {
     q: string;

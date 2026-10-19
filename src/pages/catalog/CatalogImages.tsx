@@ -1,4 +1,4 @@
-import { ImageOff, Images, RefreshCw, Trash2, Upload } from 'lucide-react';
+import { Images, RefreshCw, Trash2, Upload } from 'lucide-react';
 import { type DragEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 
@@ -9,7 +9,7 @@ import { Modal } from '#/components/Modal';
 import { Pagination } from '#/components/Pagination';
 import { SearchInput } from '#/components/SearchInput';
 import { toast, toastError } from '#/components/toast';
-import { Badge, Button, EmptyState, ErrorNotice, IconButton, Input, Labeled, Loading, Segmented } from '#/components/ui';
+import { Button, EmptyState, ErrorNotice, IconButton, Input, Labeled, Loading, Segmented } from '#/components/ui';
 import { cx } from '#/lib/cx';
 import { useDebounced } from '#/lib/debounce';
 
@@ -19,19 +19,15 @@ const PAGE_SIZE = 60;
 
 const SHOWS: { value: CatalogImageShow; label: string }[] = [
     { value: 'all', label: 'All' },
-    { value: 'missing', label: 'Missing' },
     { value: 'unused', label: 'Not used' },
-    { value: 'uploaded', label: 'Uploaded' },
 ];
-
-const SOURCES = { habbo: 'Habbo', upload: 'Uploaded', built: 'Built' } as const;
 
 /** A file's name as a picture's: without its extension, and only the characters a name may hold. */
 const nameOfFile = (file: string) => file.replace(/\.(gif|png)$/i, '').replace(/[^\w.-]+/g, '_');
 
 const sizeOf = (bytes: number) => (bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(bytes < 10_240 ? 1 : 0)} KB`);
 
-/** The pages that show a picture, each a link to open it; a picture none shows, or none has a file for, says so. */
+/** The pages that show a picture, each a link to open it; a picture none shows says so. */
 const ShownOn = ({ image, onOpenPage }: { image: CatalogImage; onOpenPage: (id: number) => void }) => {
     if (image.pages.length === 0)
         return <span className="text-muted">On no page</span>;
@@ -55,20 +51,15 @@ const ImageCard = ({ image, canManage, onOpenPage, onReplace, onDelete }: { imag
     <li className="flex flex-col overflow-hidden rounded-xl border border-line bg-surface">
         <CatalogImageThumb image={image} className="h-32 w-full rounded-none border-0 border-b p-2" />
         <div className="flex min-w-0 flex-1 flex-col gap-1 p-2.5 text-xs">
-            <div className="flex items-start gap-1.5">
-                <span title={image.file} className="line-clamp-2 min-w-0 flex-1 font-mono text-[13px] break-all text-ink">{image.name}</span>
-                {image.source && <Badge tone={image.source === 'upload' ? 'accent' : 'neutral'}>{SOURCES[image.source]}</Badge>}
-            </div>
-            {image.hasFile
-                ? <span className="text-muted">{`${image.file.endsWith('.png') ? 'PNG' : 'GIF'} · ${sizeOf(image.size)}`}</span>
-                : <span className="flex items-center gap-1 font-medium text-warn"><ImageOff className="size-3.5" /> Not on the server</span>}
+            <span title={image.file} className="line-clamp-2 font-mono text-[13px] break-all text-ink">{image.name}</span>
+            <span className="text-muted">{`${image.file.endsWith('.png') ? 'PNG' : 'GIF'} · ${sizeOf(image.size)}`}</span>
             <ShownOn image={image} onOpenPage={onOpenPage} />
             {canManage && (
                 <div className="mt-auto flex items-center gap-1 pt-1">
-                    <Button variant="ghost" icon={image.hasFile ? <RefreshCw /> : <Upload />} onClick={onReplace} className="h-8 flex-1 justify-start px-2 sm:h-7">
-                        {image.hasFile ? 'Replace' : 'Upload it'}
+                    <Button variant="ghost" icon={<RefreshCw />} onClick={onReplace} className="h-8 flex-1 justify-start px-2 sm:h-7">
+                        Replace
                     </Button>
-                    {(image.hasFile || image.source) && <IconButton label={`Delete ${image.name}`} icon={<Trash2 />} tone="bad" small onClick={onDelete} />}
+                    <IconButton label={`Delete ${image.name}`} icon={<Trash2 />} tone="bad" small onClick={onDelete} />
                 </div>
             )}
         </div>
@@ -176,10 +167,9 @@ const UploadDialog = ({ open, name: fixedName, taken, onClose }: { open: boolean
 };
 
 /**
- * The catalog's pictures - the headers and teasers its pages show - as this server keeps them,
- * each with the pages that show it: those a sync took from Habbo, the uploads, and the names a
- * page gives with no file behind them, to upload. An upload reaches players once the assets are
- * published.
+ * The catalog's pictures - the headers and teasers its pages show - as the files in the server's
+ * catalog pictures folder, each with the pages that show it. An upload goes into the folder and
+ * reaches players once the assets are published.
  */
 export const CatalogImages = ({ tree, onOpenPage }: { tree: CatalogTree; onOpenPage: (id: number) => void }) => {
     const [ text, setText ] = useState('');
@@ -256,7 +246,7 @@ export const CatalogImages = ({ tree, onOpenPage }: { tree: CatalogTree; onOpenP
             {result.isPending && <Loading />}
             {data && items.length === 0 && (
                 <EmptyState framed icon={<Images />}>
-                    {q ? `No picture's name holds “${q}”.` : show === 'missing' ? 'Every picture a page names is on the server.' : show === 'uploaded' ? 'No picture has been uploaded yet.' : show === 'unused' ? 'Every picture is on a page.' : 'The server has no catalog pictures yet. A sync takes those the pages name from Habbo.'}
+                    {q ? `No picture's name holds “${q}”.` : show === 'unused' ? 'Every picture is on a page.' : 'The catalog pictures folder is empty. Upload one, or a sync takes those the pages name from Habbo.'}
                 </EmptyState>
             )}
             {items.length > 0 && (
@@ -279,7 +269,7 @@ export const CatalogImages = ({ tree, onOpenPage }: { tree: CatalogTree; onOpenP
                     key={uploading.name ?? 'new'}
                     open
                     name={uploading.name}
-                    taken={name => items.some(x => x.name === name && x.hasFile)}
+                    taken={name => items.some(x => x.name === name)}
                     onClose={() => setUploading(null)}
                 />
             )}

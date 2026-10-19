@@ -1,4 +1,4 @@
-import { Bell, CalendarClock, CheckCheck, Gavel, ShieldAlert } from 'lucide-react';
+import { Bell, CalendarClock, CheckCheck, Flag, Gavel, ShieldAlert } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 
@@ -11,6 +11,8 @@ import { fromNow } from '#/lib/time';
 const KINDS: Record<string, { icon: ReactNode; tone: string; to: (item: NotificationItem) => string }> = {
     availability: { icon: <CalendarClock />, tone: 'bg-warn-soft text-warn', to: () => '/' },
     ban: { icon: <Gavel />, tone: 'bg-bad-soft text-bad', to: item => (item.playerId ? `/players/${item.playerId}` : '/players') },
+    // A call for help still open: its own page, to pick and close.
+    report: { icon: <Flag />, tone: 'bg-warn-soft text-warn', to: item => `/reports/${item.id.slice('report:'.length)}` },
     refusedCommand: {
         icon: <ShieldAlert />,
         tone: 'bg-accent-soft text-accent',
@@ -23,7 +25,7 @@ const FALLBACK = KINDS.refusedCommand!;
 
 /**
  * The bell under the sidebar's logo (in a phone's header): what staff should know of lately
- * (maintenance or a shutdown, the week's bans, commands refused), with how many this browser has
+ * (maintenance or a shutdown, the week's bans, commands refused, calls for help still open), with how many this browser has
  * not seen. The live stream asks again the moment a ban or maintenance happens. Picking one opens
  * what it is about; "Mark all read" clears the count. `align` is the edge of the bell its list
  * keeps to: "start" in the sidebar, so it opens over the page and not off the window's left.
@@ -105,7 +107,7 @@ export const NotificationsBell = ({ align = 'end' }: { align?: 'start' | 'end' }
                             <div className="flex flex-col items-center gap-1.5 px-4 py-8 text-center">
                                 <Bell className="size-6 text-muted" />
                                 <span className="text-sm font-medium">Nothing new</span>
-                                <span className="text-xs text-muted">Maintenance, bans and refused commands from the last week show here.</span>
+                                <span className="text-xs text-muted">Maintenance, bans, refused commands and open reports from the last week show here.</span>
                             </div>
                         )}
                         {items.map((item) => {

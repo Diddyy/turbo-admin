@@ -1,6 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api, post } from './client';
+import { liveInterval } from './live';
 
 export type ReportState = 'open' | 'picked' | 'closed';
 export type ReportSource = 'room' | 'im' | 'photo' | 'forum';
@@ -96,7 +97,7 @@ export interface ReportCursor {
     after?: number;
 }
 
-/** How often the open reports are asked again: players send them while you read. */
+/** How often the open reports are asked again without the live stream; with it, a change asks at once. */
 const REFRESH_MS = 20_000;
 
 export const useReports = (filter: ReportFilter, cursor: ReportCursor) => {
@@ -115,14 +116,14 @@ export const useReports = (filter: ReportFilter, cursor: ReportCursor) => {
         queryKey: [ 'reports', filter, cursor ],
         queryFn: () => api<ReportListResponse>(`/reports?${query}`),
         placeholderData: keepPreviousData,
-        refetchInterval: cursor.before || cursor.after ? false : REFRESH_MS,
+        refetchInterval: cursor.before || cursor.after ? false : liveInterval(REFRESH_MS),
     });
 };
 
 export const useReport = (id: number) => useQuery({
     queryKey: [ 'report', id ],
     queryFn: () => api<ReportDetailResponse>(`/reports/${id}`),
-    refetchInterval: REFRESH_MS,
+    refetchInterval: liveInterval(REFRESH_MS),
 });
 
 export interface CloseReportRequest {

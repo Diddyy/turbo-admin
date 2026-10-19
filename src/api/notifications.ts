@@ -6,11 +6,12 @@ import { liveInterval } from './live';
 
 /**
  * What the bell lists. `availability` is maintenance or a shutdown, coming or under way (`atUtc`
- * is when it starts); `ban` and `refusedCommand` are the week's, newest first.
+ * is when it starts); `ban` and `refusedCommand` are the week's, newest first; `report` is a call
+ * for help of the week still open, for moderators.
  */
 export interface NotificationItem {
     id: string;
-    kind: 'availability' | 'ban' | 'refusedCommand' | (string & {});
+    kind: 'availability' | 'ban' | 'refusedCommand' | 'report' | (string & {});
     atUtc: string;
     title: string;
     detail: string | null;

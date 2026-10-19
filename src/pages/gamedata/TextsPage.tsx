@@ -1,4 +1,4 @@
-import { History } from 'lucide-react';
+import { History, Plus } from 'lucide-react';
 import { useState } from 'react';
 
 import type { HistoryScope } from '#/api/gamedata';
@@ -27,6 +27,9 @@ export const TextsPage = () => {
     const tab = useTab(TEXT_TABS.map(x => x.value));
     const found = useFoundKey();
     const [ history, setHistory ] = useState(false);
+    // The tab whose new entry is being written, in a dialog over the list.
+    const [ adding, setAdding ] = useState<string | null>(null);
+    const noun = { products: 'product', texts: 'text', variables: 'variable' }[tab];
 
     return (
         <>
@@ -36,14 +39,15 @@ export const TextsPage = () => {
                 tabs={{ items: TEXT_TABS, value: tab }}
             >
                 <Button variant="secondary" icon={<History />} onClick={() => setHistory(true)}>History</Button>
+                {state.canManage && <Button icon={<Plus />} onClick={() => setAdding(tab)}>New {noun}</Button>}
             </PageHeader>
             <PageBody className="flex flex-col gap-4 lg:gap-5">
                 <Loaded state={state}>
                     {status => (
                         <>
-                            {tab === 'products' && <ProductsTab key={found} status={status} />}
-                            {tab === 'texts' && <TextsTab key={found} status={status} />}
-                            {tab === 'variables' && <VariablesTab key={found} status={status} />}
+                            {tab === 'products' && <ProductsTab key={found} status={status} adding={adding === tab} onAdded={() => setAdding(null)} />}
+                            {tab === 'texts' && <TextsTab key={found} status={status} adding={adding === tab} onAdded={() => setAdding(null)} />}
+                            {tab === 'variables' && <VariablesTab key={found} status={status} adding={adding === tab} onAdded={() => setAdding(null)} />}
                         </>
                     )}
                 </Loaded>

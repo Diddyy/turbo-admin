@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router';
 import { FILES, type GamedataStatus, type ProductEntry, useDeleteProduct, useProductImport, useProductImportPreview, useProductSearch, useSaveProduct } from '#/api/gamedata';
 import { ask } from '#/components/confirm';
 import { ListToolbar } from '#/components/ListToolbar';
+import { Modal } from '#/components/Modal';
 import { SearchInput } from '#/components/SearchInput';
 import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, Panel, Textarea } from '#/components/ui';
 import { cx } from '#/lib/cx';
@@ -120,7 +121,7 @@ const Origin = ({ product }: { product: ProductEntry }) => {
  * the code its name key gives. A product changed here stays when Habbo changes it; one removed
  * here stays removed unless Habbo changes it.
  */
-export const ProductsTab = ({ status }: { status: GamedataStatus }) => {
+export const ProductsTab = ({ status, adding, onAdded }: { status: GamedataStatus; adding: boolean; onAdded: () => void }) => {
     const [ params ] = useSearchParams();
     // Opened from the search: what it found, and the one picked there open.
     const [ text, setText ] = useState(() => params.get('q') ?? '');
@@ -147,13 +148,7 @@ export const ProductsTab = ({ status }: { status: GamedataStatus }) => {
                         className="min-w-48 flex-1 sm:max-w-96"
                         aria-label="Find products"
                     />
-                    {status.canManage && <Button variant="secondary" icon={<Plus />} onClick={() => setOpen('')}>New product</Button>}
                 </ListToolbar>
-                {open === '' && (
-                    <div className="border-b border-line bg-subtle/40 p-4">
-                        <ProductEditor product={null} canManage={status.canManage} onDone={() => setOpen(null)} />
-                    </div>
-                )}
                 {error && <div className="p-4"><ErrorNotice error={error} /></div>}
                 {!found && isFetching && <Loading />}
                 {found && found.items.length === 0 && <EmptyState>{text.trim() ? 'No product has those words.' : 'No products yet: take Habbo’s in above.'}</EmptyState>}
@@ -179,6 +174,11 @@ export const ProductsTab = ({ status }: { status: GamedataStatus }) => {
                     </ul>
                 )}
             </Panel>
+            <Modal title="New product" open={adding} onClose={onAdded} className="sm:h-fit! sm:max-w-xl">
+                <div className="p-4 sm:p-5">
+                    <ProductEditor product={null} canManage={status.canManage} onDone={onAdded} />
+                </div>
+            </Modal>
         </>
     );
 };

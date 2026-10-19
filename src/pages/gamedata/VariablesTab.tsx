@@ -6,6 +6,7 @@ import { type GamedataStatus, useDeleteVariable, useLinkVariable, useSaveVariabl
 import { useSettings } from '#/api/settings';
 import { ask } from '#/components/confirm';
 import { ListToolbar } from '#/components/ListToolbar';
+import { Modal } from '#/components/Modal';
 import { SearchInput } from '#/components/SearchInput';
 import { Badge, Button, Checkbox, EmptyState, ErrorNotice, Input, Labeled, Loading, Panel, Select, SuccessNotice, Textarea } from '#/components/ui';
 import { cx } from '#/lib/cx';
@@ -305,7 +306,7 @@ const ImportPanel = ({ initial, onDone }: { initial: string | null; onDone: () =
  * /gamedata/external_variables/0 (the client's nitro.config.url). A variable holds a value of its
  * own, or follows a server setting or a gamedata file's address by hash.
  */
-export const VariablesTab = ({ status }: { status: GamedataStatus }) => {
+export const VariablesTab = ({ status, adding, onAdded }: { status: GamedataStatus; adding: boolean; onAdded: () => void }) => {
     const [ params ] = useSearchParams();
     const [ text, setText ] = useState(() => params.get('q') ?? '');
     const [ page, setPage ] = useState(0);
@@ -335,18 +336,8 @@ export const VariablesTab = ({ status }: { status: GamedataStatus }) => {
                         className="min-w-48 flex-1 sm:max-w-96"
                         aria-label="Find variables"
                     />
-                    {status.canManage && (
-                        <>
-                            <Button variant="secondary" icon={<Upload />} onClick={() => setImporting(true)} disabled={importing}>Import</Button>
-                            <Button variant="secondary" icon={<Plus />} onClick={() => setOpen('')}>New variable</Button>
-                        </>
-                    )}
+                    {status.canManage && <Button variant="secondary" icon={<Upload />} onClick={() => setImporting(true)} disabled={importing}>Import</Button>}
                 </ListToolbar>
-                {open === '' && (
-                    <div className="border-b border-line bg-subtle/40 p-4">
-                        <VariableEditor variable={null} linking={linking} canManage={status.canManage} onDone={() => setOpen(null)} />
-                    </div>
-                )}
                 {error && <div className="p-4"><ErrorNotice error={error} /></div>}
                 {!found && isFetching && <Loading />}
                 {found && found.items.length === 0 && <EmptyState>{text.trim() ? 'No variable has those words.' : 'No variables yet: import the client’s config.'}</EmptyState>}
@@ -374,6 +365,11 @@ export const VariablesTab = ({ status }: { status: GamedataStatus }) => {
                     </ul>
                 )}
             </Panel>
+            <Modal title="New variable" open={adding} onClose={onAdded} className="sm:h-fit! sm:max-w-2xl">
+                <div className="p-4 sm:p-5">
+                    <VariableEditor variable={null} linking={linking} canManage={status.canManage} onDone={onAdded} />
+                </div>
+            </Modal>
         </>
     );
 };

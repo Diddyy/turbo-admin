@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router';
 import { FILES, type GamedataStatus, type TextEntry, useDeleteText, useSaveText, useTextImport, useTextImportPreview, useTextSearch } from '#/api/gamedata';
 import { ask } from '#/components/confirm';
 import { ListToolbar } from '#/components/ListToolbar';
+import { Modal } from '#/components/Modal';
 import { SearchInput } from '#/components/SearchInput';
 import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, Panel, Textarea } from '#/components/ui';
 import { cx } from '#/lib/cx';
@@ -106,7 +107,7 @@ const TextEditor = ({ text, canManage, onDone }: { text: TextEntry | null; canMa
  * The hotel's external texts: Habbo's taken in, and the hotel's own. A text changed here stays
  * when Habbo changes it; one removed here stays removed unless Habbo changes it.
  */
-export const TextsTab = ({ status }: { status: GamedataStatus }) => {
+export const TextsTab = ({ status, adding, onAdded }: { status: GamedataStatus; adding: boolean; onAdded: () => void }) => {
     const [ params ] = useSearchParams();
     // Opened from the search: what it found, and the one picked there open.
     const [ text, setText ] = useState(() => params.get('q') ?? '');
@@ -133,13 +134,7 @@ export const TextsTab = ({ status }: { status: GamedataStatus }) => {
                         className="min-w-48 flex-1 sm:max-w-96"
                         aria-label="Find texts"
                     />
-                    {status.canManage && <Button variant="secondary" icon={<Plus />} onClick={() => setOpen('')}>New text</Button>}
                 </ListToolbar>
-                {open === '' && (
-                    <div className="border-b border-line bg-subtle/40 p-4">
-                        <TextEditor text={null} canManage={status.canManage} onDone={() => setOpen(null)} />
-                    </div>
-                )}
                 {error && <div className="p-4"><ErrorNotice error={error} /></div>}
                 {!found && isFetching && <Loading />}
                 {found && found.items.length === 0 && <EmptyState>{text.trim() ? 'No text has those words.' : 'No texts yet: take Habbo’s in above.'}</EmptyState>}
@@ -167,6 +162,11 @@ export const TextsTab = ({ status }: { status: GamedataStatus }) => {
                     </ul>
                 )}
             </Panel>
+            <Modal title="New text" open={adding} onClose={onAdded} className="sm:h-fit! sm:max-w-xl">
+                <div className="p-4 sm:p-5">
+                    <TextEditor text={null} canManage={status.canManage} onDone={onAdded} />
+                </div>
+            </Modal>
         </>
     );
 };

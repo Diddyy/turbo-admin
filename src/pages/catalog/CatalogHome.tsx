@@ -2,11 +2,8 @@ import { ArrowRight, ChevronRight, Copy, EyeOff, PackageSearch, Star, Wand2 } fr
 import type { ReactNode } from 'react';
 
 import { type CatalogTree, FRONT_PAGE_LAYOUT, useDuplicates, useUnoffered } from '#/api/catalog';
-import { Button, Label, Stat } from '#/components/ui';
+import { Button, Stat } from '#/components/ui';
 import { cx } from '#/lib/cx';
-import { plural } from '#/lib/plural';
-
-import { PageIcon } from './PageTree';
 
 /** The tint behind a card's icon: good news, something to see to, or neither. */
 const TONES = {
@@ -52,9 +49,9 @@ interface CatalogHomeProps {
 }
 
 /**
- * The editor before a page is picked: the catalog at a glance - its tabs to jump into, the front
- * page (or making one), the furni it doesn't sell and the furni it sells twice - and generating a
- * whole new catalog. On a phone it is a short summary above the page tree, which lists the tabs.
+ * The editor before a page is picked: the catalog at a glance - the front page (or making one), the
+ * furni it doesn't sell and the furni it sells twice - and generating a whole new catalog. The tabs
+ * are the page tree's, beside it. On a phone it is a short summary above the page tree.
  */
 export const CatalogHome = ({ tree, busy, compact, onOpenPage, onView, onCreateFrontPage }: CatalogHomeProps) => {
     const missing = useUnoffered({ scope: 'missing', q: '', line: '', category: '', page: 0, size: 1 });
@@ -145,26 +142,6 @@ export const CatalogHome = ({ tree, busy, compact, onOpenPage, onView, onCreateF
                     action={<Button variant="secondary" icon={<ArrowRight />} onClick={() => onView('generate')}>Plan one</Button>}
                 />
             </div>
-
-            {tabs.length > 0 && (
-                <section className="rounded-xl border border-line bg-surface p-3">
-                    <Label as="h3" className="mb-2 px-1">Tabs</Label>
-                    <ul className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-2">
-                        {tabs.map(tab => (
-                            <li key={tab.id}>
-                                <button type="button" onClick={() => onOpenPage(tab.id)} className="flex w-full items-center gap-2.5 rounded-lg border border-line bg-canvas px-3 py-2.5 text-left transition hover:-translate-y-0.5 hover:border-accent hover:shadow-md">
-                                    <PageIcon icon={tab.icon} className="size-6" />
-                                    <span className="min-w-0 flex-1">
-                                        <span className={cx('block truncate text-sm font-medium', tab.display === 'invisible' && 'text-muted')}>{tab.localization}</span>
-                                        <span className="block text-[11px] text-muted">{plural(tree.pages.filter(x => x.parentId === tab.id).length, 'page')}</span>
-                                    </span>
-                                    {tab.display === 'invisible' && <EyeOff className="size-3.5 text-muted" />}
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                </section>
-            )}
         </div>
     );
 };

@@ -5,6 +5,7 @@ import { ask } from '#/components/confirm';
 import { SearchInput } from '#/components/SearchInput';
 import { Badge, Button, EmptyState, Input, Labeled, Panel, Select } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import { useFillHeight } from '#/lib/fillHeight';
 
 import type { HotelViewDraft } from './draft';
 import { GenericEditor } from './GenericEditor';
@@ -61,6 +62,7 @@ export const PromosTab = ({ draft, codes, now, open, onOpen, onOpenSlot, disable
 }) => {
     const [ making, setMaking ] = useState<{ from: string | null } | null>(null);
     const [ filter, setFilter ] = useState('');
+    const fillPromos = useFillHeight<HTMLElement>();
     const shown = codes.filter(x => x.toLowerCase().includes(filter.trim().toLowerCase()));
     const selected = open && codes.includes(open) ? open : null;
 
@@ -106,14 +108,14 @@ export const PromosTab = ({ draft, codes, now, open, onOpen, onOpenSlot, disable
 
     return (
         <div className="grid items-start gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
-            <Panel className="overflow-clip lg:sticky lg:top-4">
+            <Panel ref={fillPromos} className="flex flex-col overflow-clip lg:sticky lg:top-4 lg:max-h-(--fill-height)">
                 <div className="flex items-center gap-2 border-b border-line p-3">
                     <SearchInput value={filter} onValueChange={setFilter} placeholder="Find a promo" className="min-w-0 flex-1" />
                     {!disabled && <Button variant="secondary" icon={<Plus />} onClick={() => setMaking({ from: null })}>New</Button>}
                 </div>
                 {making && <NewPromo codes={codes} from={making.from} onMake={code => make(code, making.from)} onCancel={() => setMaking(null)} />}
                 {shown.length === 0 && <EmptyState>{codes.length === 0 ? 'No promos yet.' : 'No promo has that code.'}</EmptyState>}
-                <ul className="max-h-[70vh] divide-y divide-line overflow-y-auto">
+                <ul className="max-h-[60dvh] min-h-0 divide-y divide-line overflow-y-auto lg:max-h-none">
                     {shown.map((code) => {
                         const uses = usesOf(draft, code, now);
                         const type = draft.text(codeKey(code, 'widget'));

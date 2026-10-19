@@ -7,6 +7,7 @@ import { ListToolbar } from '#/components/ListToolbar';
 import { SearchInput } from '#/components/SearchInput';
 import { Badge, Button, EmptyState, ErrorNotice, IconButton, Input, Labeled, Loading, Panel, Segmented, Select, Switch, Textarea } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import { useFillHeight } from '#/lib/fillHeight';
 
 import { HabboDiffers, OpenRow } from './parts';
 
@@ -560,6 +561,7 @@ const NewKind = ({ kinds, onAdded }: { kinds: FigureKindEntry[]; onAdded: (type:
 export const ClothingEditor = ({ canManage }: { canManage: boolean }) => {
     const { data, error } = useFigureKinds();
     const [ chosen, setChosen ] = useState<string | null>(null);
+    const fillKinds = useFillHeight<HTMLElement>();
 
     if (error)
         return <ErrorNotice error={error} />;
@@ -571,9 +573,9 @@ export const ClothingEditor = ({ canManage }: { canManage: boolean }) => {
 
     return (
         <div className="grid items-start gap-4 lg:grid-cols-[14rem_1fr]">
-            <Panel className="overflow-clip lg:sticky lg:top-16">
+            <Panel ref={fillKinds} className="flex flex-col overflow-clip lg:sticky lg:top-16 lg:max-h-(--fill-height)">
                 {data.kinds.length === 0 && <EmptyState>No kinds yet: take Habbo’s figure data in above.</EmptyState>}
-                <ul className="max-h-[calc(100vh-12rem)] divide-y divide-line overflow-y-auto">
+                <ul className="max-h-[60dvh] min-h-0 divide-y divide-line overflow-y-auto lg:max-h-none">
                     {data.kinds.map(({ entry, pieces }) => (
                         <li key={entry.key}>
                             <button

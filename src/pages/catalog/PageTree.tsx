@@ -49,12 +49,12 @@ const Marks = ({ page }: { page: CatalogPageNode }) => (
     </>
 );
 
-/** What a row looks like, in the tree and under the pointer while it is dragged. */
+/** What a row looks like, in the tree and under the pointer while it is dragged: a long title wraps onto a second line. */
 export const PageRowBody = ({ page, needle = '', path, strong }: { page: CatalogPageNode; needle?: string; path?: string; strong?: boolean }) => (
     <>
         <PageIcon icon={page.icon} className={strong ? 'size-6' : undefined} />
         <span className="flex min-w-0 flex-1 flex-col">
-            <span className={cx('truncate', strong && 'font-semibold', (page.display === 'invisible' || page.display === 'bc_only') && 'opacity-60')}>
+            <span title={page.localization} className={cx('line-clamp-2 leading-snug break-words', strong && 'font-semibold', (page.display === 'invisible' || page.display === 'bc_only') && 'opacity-60')}>
                 <Highlight text={page.localization} needle={needle} />
             </span>
             {path && <span className="truncate text-[11px] text-muted">{path}</span>}
@@ -101,12 +101,12 @@ const Row = ({ row, selected, open, canManage, projectedDepth, onToggle, onSelec
     const { onKeyDown, ...pointer } = listeners ?? {};
 
     return (
-        <li ref={setNodeRef} style={{ transform: CSS.Translate.toString(transform), transition }} className={cx('relative', isDragging && 'z-10', isTab && !isDragging && 'mt-1 first:mt-0')}>
+        <li ref={setNodeRef} style={{ transform: CSS.Translate.toString(transform), transition }} className={cx('relative', isDragging && 'z-10', isTab && !isDragging && 'mt-1.5 first:mt-0')}>
             <Guides depth={depth} />
             <div
                 {...(canManage ? pointer : {})}
                 className={cx(
-                    'group relative flex items-center gap-1 rounded-lg pr-1 text-[13px] transition-colors select-none',
+                    'group relative flex items-center gap-1 rounded-lg pr-1.5 text-sm transition-colors select-none',
                     isTab ? 'min-h-10' : 'min-h-10 sm:min-h-8',
                     isDragging
                         ? 'border-2 border-dashed border-accent bg-accent-soft/50'
@@ -126,21 +126,19 @@ const Row = ({ row, selected, open, canManage, projectedDepth, onToggle, onSelec
                 >
                     <ChevronRight className={cx('size-3.5 transition-transform', open && 'rotate-90')} />
                 </button>
-                <button type="button" onClick={onSelect} onDoubleClick={onToggle} className={cx('flex min-w-0 flex-1 items-center gap-2 py-1 text-left', isDragging && 'opacity-60')}>
+                <button type="button" onClick={onSelect} onDoubleClick={onToggle} className={cx('flex min-w-0 flex-1 items-center gap-2 py-1.5 text-left', isDragging && 'opacity-60')}>
                     <PageRowBody page={page} strong={isTab} />
                 </button>
                 {canManage && (
-                    <>
+                    // Out of the way until the row is pointed at or has the focus, so the title has the width;
+                    // a touch screen has no pointing, so there they always show.
+                    <span className="hidden shrink-0 items-center group-focus-within:flex group-hover:flex [@media(hover:none)]:flex">
                         <button
                             type="button"
                             onClick={onAddUnder}
                             title={`Add a page under ${page.localization}`}
                             aria-label={`Add a page under ${page.localization}`}
-                            // Hidden until the row is pointed at, picked or focused; a touch screen has no pointing, so there it always shows.
-                            className={cx(
-                                'grid size-9 shrink-0 place-items-center rounded text-muted transition-opacity hover:bg-surface hover:text-accent focus-visible:opacity-100 sm:size-6 [@media(hover:none)]:opacity-100',
-                                selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
-                            )}
+                            className="grid size-9 shrink-0 place-items-center rounded text-muted hover:bg-surface hover:text-accent sm:size-6"
                         >
                             <Plus className="size-3.5" />
                         </button>
@@ -153,7 +151,7 @@ const Row = ({ row, selected, open, canManage, projectedDepth, onToggle, onSelec
                         >
                             <GripVertical className="size-3.5" />
                         </span>
-                    </>
+                    </span>
                 )}
             </div>
         </li>

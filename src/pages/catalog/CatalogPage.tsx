@@ -16,7 +16,7 @@ import {
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Eye, PackagePlus, Settings2, Sparkles } from 'lucide-react';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { type CSSProperties, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 
@@ -41,6 +41,7 @@ import { Tabs } from '#/components/Tabs';
 import { celebrate, toast, toastError } from '#/components/toast';
 import { Badge, Button, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Segmented, WarningNotice } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import { useFillHeight } from '#/lib/fillHeight';
 
 import { Backups } from './Backups';
 import { CatalogHome } from './CatalogHome';
@@ -63,6 +64,8 @@ import { PagePreview, type SlotRef } from './PagePreview';
 import { PageIcon, PageRowBody, PageTree } from './PageTree';
 import { ancestorsOf, childrenOf } from './tree';
 import { flatten, movePageIn, project } from './treeDrag';
+import { TreeResizer } from './TreeResizer';
+import { useTreeWidth } from './treeWidth';
 
 /** What a new offer starts as on a page of this layout. */
 const startOf = (layout: string): OfferStart => (layout === CLUB_BUY ? 'membership' : layout === CLUB_GIFTS ? 'gift' : 'item');
@@ -189,6 +192,8 @@ const CatalogEditor = ({ view }: { view: View }) => {
     const [ offsetX, setOffsetX ] = useState(0);
     const [ building, setBuilding ] = useState(false);
     const [ addingFurni, setAddingFurni ] = useState(false);
+    const [ treeWidth, setTreeWidth ] = useTreeWidth();
+    const fillTree = useFillHeight<HTMLElement>();
 
     // The page's edit, kept until it is saved or the page changes underneath it.
     const savedKey = page.data ? JSON.stringify(pageDraftOf(page.data)) + page.data.id : '';
@@ -494,14 +499,16 @@ const CatalogEditor = ({ view }: { view: View }) => {
                                             <CatalogHome tree={data} busy={frontPage.isPending} compact onOpenPage={id => openPage(id)} onView={setView} onCreateFrontPage={createFrontPage} />
                                         </div>
                                     )}
-                                    <div className="grid items-start gap-3 lg:grid-cols-[17rem_minmax(0,1fr)]">
+                                    <div className="grid items-start gap-3 lg:grid-cols-[var(--tree-width)_minmax(0,1fr)]" style={{ '--tree-width': `${treeWidth}px` } as CSSProperties}>
                                         <aside
+                                            ref={fillTree}
                                             aria-label="Pages"
                                             className={cx(
-                                                'flex flex-col overflow-hidden rounded-xl border border-line bg-surface lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)]',
+                                                'flex flex-col overflow-hidden rounded-xl border border-line bg-surface lg:sticky lg:top-6 lg:max-h-(--fill-height)',
                                                 selected !== null && 'max-lg:hidden',
                                             )}
                                         >
+                                            <TreeResizer width={treeWidth} onWidth={setTreeWidth} />
                                             <PageTree
                                                 tree={data}
                                                 rows={rows}

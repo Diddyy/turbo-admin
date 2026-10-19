@@ -28,6 +28,7 @@ import { Tabs } from '#/components/Tabs';
 import { toast, toastError } from '#/components/toast';
 import { Badge, Button, ErrorNotice, IconButton, Input, Labeled, Loading, Panel, WarningNotice } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import { useFillHeight } from '#/lib/fillHeight';
 import { SAMPLE_LOOKS, useChatHead } from '#/preview/avatar';
 import type { Backdrop } from '#/preview/backdrops';
 import { CHAT_BUBBLE_WIDTH_NORMAL, CHAT_BUBBLE_WIDTH_THIN, CHAT_BUBBLE_WIDTH_WIDE, CHAT_FONT_SIZE_LABELS, CHAT_FONT_SIZE_SCALES, type ChatStyleRegPoints, DEFAULT_FONT_FACE, DEFAULT_FONT_SIZE, layoutBubble, NO_CHEST_COLOR, paintBubble, paintGuides, recolour, tintBackground } from '#/preview/chatBubble';
@@ -160,6 +161,7 @@ export const ChatStylesTab = ({ canManage }: { canManage: boolean }) => {
     const [ fontSizeMode, setFontSizeMode ] = useState(0);
     const [ zoom, setZoom ] = useState(2);
     const [ backdrop, setBackdrop ] = useState<Backdrop>('room');
+    const fillStyles = useFillHeight<HTMLElement>('(min-width: 80rem)');
     const { head, chestColor, unavailable } = useChatHead(figure);
 
     const items = useMemo(() => data?.items ?? [], [ data ]);
@@ -318,7 +320,8 @@ export const ChatStylesTab = ({ canManage }: { canManage: boolean }) => {
             <Panel
                 title="Styles"
                 description={`${items.length.toLocaleString()} styles, ${drawable.toLocaleString()} in ${LIBRARY}${data.bundle ? '' : ' (not built yet)'}.`}
-                className="overflow-clip xl:sticky xl:top-4"
+                ref={fillStyles}
+                className="flex flex-col overflow-clip xl:sticky xl:top-4 xl:max-h-(--fill-height)"
             >
                 <div className="flex flex-col gap-2 p-3">
                     <SearchInput value={text} onValueChange={setText} placeholder="Name or id" aria-label="Find chat styles" className="w-full" />
@@ -348,7 +351,7 @@ export const ChatStylesTab = ({ canManage }: { canManage: boolean }) => {
                         </div>
                     )}
                 </div>
-                <div className="grid max-h-[45vh] xl:max-h-[70vh] grid-cols-[repeat(auto-fill,minmax(7.5rem,1fr))] content-start gap-2 overflow-y-auto border-t border-line p-3">
+                <div className="grid max-h-[45vh] min-h-0 grid-cols-[repeat(auto-fill,minmax(7.5rem,1fr))] content-start gap-2 overflow-y-auto border-t border-line p-3 xl:max-h-none">
                     {shown.map(style => (
                         <StyleCard
                             key={style.id}

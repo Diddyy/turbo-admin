@@ -6,6 +6,7 @@ import { ACHIEVEMENT_STATES, type AchievementDefinition, type AchievementItem, u
 import { SearchInput } from '#/components/SearchInput';
 import { Badge, Button, EmptyState, ErrorNotice, IconButton, Input, Labeled, Loading, Panel, Select, SuccessNotice, Textarea } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import { useFillHeight } from '#/lib/fillHeight';
 
 const STATE_TONES: Record<number, 'green' | 'neutral' | 'amber' | 'red'> = { 0: 'red', 1: 'green', 2: 'neutral', 3: 'amber', 4: 'neutral' };
 
@@ -208,18 +209,19 @@ export const AchievementsTab = () => {
     const shown = items.filter(x => !words || x.key.toLowerCase().includes(words) || x.category.toLowerCase().includes(words) || x.source.toLowerCase().includes(words));
     const selected = items.find(x => x.id === open) ?? null;
     const categories = [ ...new Set(shown.map(x => x.category)) ];
+    const fillList = useFillHeight<HTMLElement>();
 
     if (error) return <ErrorNotice error={error} />;
     if (!data) return <Loading />;
 
     return (
         <div className="grid items-start gap-4 lg:grid-cols-[22rem_minmax(0,1fr)]">
-            <Panel className="overflow-clip lg:sticky lg:top-4">
+            <Panel ref={fillList} className="flex flex-col overflow-clip lg:sticky lg:top-4 lg:max-h-(--fill-height)">
                 <div className="border-b border-line p-3">
                     <SearchInput value={filter} onValueChange={setFilter} placeholder="Key, category or source" aria-label="Find achievements" />
                 </div>
                 {shown.length === 0 && <EmptyState>No achievement matches.</EmptyState>}
-                <div className="max-h-[75vh] overflow-y-auto">
+                <div className="max-h-[60dvh] min-h-0 overflow-y-auto lg:max-h-none">
                     {categories.map(category => (
                         <section key={category}>
                             <h3 className="sticky top-0 border-b border-line bg-subtle px-3 py-1.5 font-mono text-[11px] tracking-wide text-muted uppercase">{category}</h3>

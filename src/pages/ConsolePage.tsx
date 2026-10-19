@@ -5,6 +5,7 @@ import { useCommands, useMe, useRunCommand } from '#/api/queries';
 import type { CommandInfo, RunCommandResponse } from '#/api/types';
 import { Button, ErrorNotice, FIELD_CLASS, Input, Loading, PageBody, PageHeader, Panel } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import { useFillHeight } from '#/lib/fillHeight';
 
 interface Entry {
     id: number;
@@ -56,9 +57,10 @@ const CommandList = ({ commands, picked, onPick }: { commands: CommandInfo[]; pi
     }, [ commands, filter ]);
 
     const anyRoomOnly = commands.some(command => command.needsRoom);
+    const fillCommands = useFillHeight<HTMLElement>();
 
     return (
-        <Panel title="Commands" className="flex max-h-[70dvh] flex-col">
+        <Panel ref={fillCommands} title="Commands" className="flex max-h-[70dvh] flex-col lg:max-h-(--fill-height)">
             <div className="flex flex-col gap-2 border-b border-line p-3">
                 <Input
                     type="search"
@@ -69,7 +71,7 @@ const CommandList = ({ commands, picked, onPick }: { commands: CommandInfo[]; pi
                 />
                 {anyRoomOnly && <p className="text-xs text-muted">Commands marked room only act on the room you are standing in, so run them in game.</p>}
             </div>
-            <div className="overflow-y-auto p-2">
+            <div className="min-h-0 overflow-y-auto p-2">
                 {groups.length === 0 && <p className="p-2 text-sm text-muted">No command matches.</p>}
                 {groups.map(([ category, list ]) => (
                     <div key={category} className="mb-3">

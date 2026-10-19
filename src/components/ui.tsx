@@ -1,5 +1,5 @@
 import { CheckCircle2, Menu, XCircle } from 'lucide-react';
-import { type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes, useState } from 'react';
+import { type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type Ref, type SelectHTMLAttributes, type TextareaHTMLAttributes, useState } from 'react';
 import { Link } from 'react-router';
 
 import { useClientAssets } from '#/api/assets';
@@ -128,10 +128,11 @@ interface PanelProps {
     actions?: ReactNode;
     children: ReactNode;
     className?: string;
+    ref?: Ref<HTMLElement>;
 }
 
-export const Panel = ({ title, description, actions, children, className }: PanelProps) => (
-    <section className={cx('rounded-xl border border-line bg-surface', className)}>
+export const Panel = ({ title, description, actions, children, className, ref }: PanelProps) => (
+    <section ref={ref} className={cx('rounded-xl border border-line bg-surface', className)}>
         {(title || actions) && (
             <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line px-4 py-3">
                 {/* Shrinks to 8rem, its description wrapping, before the actions drop below it. */}

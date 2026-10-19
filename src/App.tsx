@@ -36,6 +36,7 @@ import { PluginPage } from '#/pages/plugins/PluginPage';
 import { PluginsPage } from '#/pages/PluginsPage';
 import { ReportPage } from '#/pages/reports/ReportPage';
 import { ReportsPage } from '#/pages/reports/ReportsPage';
+import { WordFilterPage } from '#/pages/reports/WordFilterPage';
 import { RewardTracksPage } from '#/pages/reward-tracks/RewardTracksPage';
 import { RoomPage } from '#/pages/rooms/RoomPage';
 import { RoomSettingsPage } from '#/pages/rooms/RoomSettingsPage';
@@ -62,6 +63,7 @@ export const App = () => (
             <Route path="players/:id/:tab?" element={<PlayerProfilePage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="reports/:id" element={<ReportPage />} />
+            <Route path="word-filter" element={<WordFilterPage />} />
             <Route path="groups" element={<GuildsPage />} />
             <Route path="groups/badge-parts" element={<BadgePartsPage />} />
             <Route path="groups/:id" element={<GuildPage />} />

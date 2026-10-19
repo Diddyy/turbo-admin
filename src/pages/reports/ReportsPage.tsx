@@ -8,6 +8,7 @@ import { ListToolbar } from '#/components/ListToolbar';
 import { PhoneLabel, Row, RowList } from '#/components/RowList';
 import { SearchInput } from '#/components/SearchInput';
 import { Button, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Panel, Segmented } from '#/components/ui';
+import { useHubTabs } from '#/layout/nav';
 import { cx } from '#/lib/cx';
 import { plural } from '#/lib/plural';
 import { fromNow } from '#/lib/time';
@@ -39,6 +40,7 @@ const cursorOf = (params: URLSearchParams): ReportCursor => ({
  * so a player's page can link to the reports about them.
  */
 export const ReportsPage = () => {
+    const tabs = useHubTabs('moderation');
     const me = useMe().data;
     const [ params, setParams ] = useSearchParams();
     const filter = filterOf(params);
@@ -78,7 +80,8 @@ export const ReportsPage = () => {
     return (
         <>
             <PageHeader
-                title="Reports"
+                title="Moderation"
+                tabs={tabs}
                 description={counts ? `${plural(counts.open, 'open report')}, ${counts.picked.toLocaleString()} picked by a moderator` : 'The calls for help players send'}
             />
             <PageBody>

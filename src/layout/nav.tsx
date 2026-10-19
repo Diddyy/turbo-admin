@@ -1,4 +1,4 @@
-import { Activity, Armchair, Bug, CloudDownload, Disc3, DoorOpen, Flag, Gauge, History, House, KeyRound, Landmark, Languages, MessagesSquare, Milestone, PackagePlus, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
+import { Activity, Armchair, Bug, CloudDownload, Disc3, DoorOpen, Flag, FunnelX, Gauge, History, House, KeyRound, Landmark, Languages, MessagesSquare, Milestone, PackagePlus, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router';
 
@@ -28,6 +28,7 @@ const PAGES = {
     performance: { to: '/performance', label: 'Performance', icon: <Activity />, end: false, key: 'm' },
     players: { to: '/players', label: 'Players', icon: <Users />, end: false, key: 'p', needs: 'canViewPlayers' },
     reports: { to: '/reports', label: 'Reports', icon: <Flag />, end: false, key: 'q', needs: 'canHandleReports' },
+    wordFilter: { to: '/word-filter', label: 'Word filter', icon: <FunnelX />, end: false, needs: 'canHandleReports' },
     rooms: { to: '/rooms', label: 'Rooms', icon: <House />, end: false, key: 'r', needs: 'canViewRooms' },
     groups: { to: '/groups', label: 'Groups', icon: <Shield />, end: false, key: 'b', needs: 'canViewContent' },
     badgeParts: { to: '/groups/badge-parts', label: 'Badge parts', icon: <Puzzle />, end: false, needs: 'canViewContent' },
@@ -79,6 +80,7 @@ export interface NavSection {
 
 const OVERVIEW: NavEntry = { label: 'Overview', icon: <Gauge />, pages: [ 'dashboard', 'performance' ], hint: 'The hotel now, and how the server runs' };
 const LOGS: NavEntry = { label: 'Logs', icon: <ScrollText />, pages: [ 'commandLog', 'chatlog', 'roomVisits', 'permissionLog' ], hint: 'Commands run, chat in rooms, room visits, permission changes' };
+const MODERATION: NavEntry = { label: 'Moderation', icon: <Flag />, pages: [ 'reports', 'wordFilter' ], hint: 'Calls for help players send, and the word filter' };
 const GROUPS: NavEntry = { label: 'Groups', icon: <Shield />, pages: [ 'groups', 'badgeParts' ], hint: 'Groups, their members, and badge parts' };
 const ACCESS: NavEntry = { label: 'Access', icon: <KeyRound />, pages: [ 'permissions', 'staff' ], hint: 'Groups, nodes and staff passkeys' };
 
@@ -88,7 +90,7 @@ const SECTIONS: NavSection[] = [
         label: 'Community',
         entries: [
             { label: 'Players', icon: <Users />, pages: [ 'players' ], hint: 'Find a player, act on them' },
-            { label: 'Reports', icon: <Flag />, pages: [ 'reports' ], hint: 'Calls for help players send, to read and close' },
+            MODERATION,
             { label: 'Rooms', icon: <House />, pages: [ 'rooms' ], hint: 'Rooms, who is in them, their settings' },
             GROUPS,
         ],
@@ -215,10 +217,10 @@ export const useIsActive = () => {
  * The tabs of an entry that holds several pages, for its pages' headers: each a link to its page,
  * the one open now chosen. Only the pages the viewer may open; none at all when that is one.
  */
-export const useHubTabs = (hub: 'overview' | 'logs' | 'groups'): { items: TabItem[]; value: string } | undefined => {
+export const useHubTabs = (hub: 'overview' | 'logs' | 'groups' | 'moderation'): { items: TabItem[]; value: string } | undefined => {
     const { data: me } = useMe();
     const { pathname } = useLocation();
-    const entry = { overview: OVERVIEW, logs: LOGS, groups: GROUPS }[hub];
+    const entry = { overview: OVERVIEW, logs: LOGS, groups: GROUPS, moderation: MODERATION }[hub];
     const pages = entry.pages.map(name => PAGES[name] as NavItem).filter(page => allowed(me, page));
 
     if (pages.length < 2)

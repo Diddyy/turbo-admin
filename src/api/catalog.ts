@@ -214,6 +214,17 @@ export const useCatalogPage = (id: number | null) => useQuery({
     enabled: id !== null,
 });
 
+/**
+ * The colours each of these furni is placed in from a `recolorable_furniture` page, as `RRGGBB` in
+ * palette order, by its name; a furni that isn't recolorable is left out.
+ */
+export const useRecolorablePalettes = (names: string[]) => useQuery({
+    queryKey: [ 'catalog', 'recolorable-palettes', names ],
+    queryFn: () => api<Record<string, string[]>>(`/catalog/recolorable-palettes?${new URLSearchParams({ names: names.join(',') })}`),
+    enabled: names.length > 0,
+    staleTime: 5 * 60_000,
+});
+
 export const useFurnitureSearch = (text: string) => useQuery({
     queryKey: [ 'catalog', 'furniture', text ],
     queryFn: () => api<CatalogFurniture[]>(`/catalog/furniture?${new URLSearchParams({ q: text })}`),

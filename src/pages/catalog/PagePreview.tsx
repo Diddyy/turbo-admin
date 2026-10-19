@@ -3,7 +3,7 @@ import { ImagePlus, Info, Plus, Sparkles, TriangleAlert, Type } from 'lucide-rea
 import type { ReactNode } from 'react';
 
 import { catalogImageUrl, promoImageUrl, useClientAssets } from '#/api/assets';
-import type { CatalogFeaturedItem, CatalogOffer, CatalogPageDetail, CatalogTree } from '#/api/catalog';
+import type { CatalogFeaturedItem, CatalogOffer, CatalogPageDetail, CatalogTree, PageDisplay } from '#/api/catalog';
 import { EmptyState } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
@@ -12,6 +12,7 @@ import { layoutOf, type LayoutSlot, showsOffers } from './layouts';
 import { offerDragId } from './offers';
 import { OfferTile } from './OfferTile';
 import { PageIcon } from './PageTree';
+import { RecolorablePalette } from './RecolorablePalette';
 
 /** Which of a page's images or texts. */
 export interface SlotRef {
@@ -54,6 +55,9 @@ const TextSlot = ({ text, slot, onEdit, className }: { text: string; slot: Layou
             : <><Type className="size-3.5" />{slot.label}</>}
     </button>
 );
+
+/** The layout whose palette picks the colour its furni are placed in. */
+const RECOLORABLE_LAYOUT = 'recolorable_furniture';
 
 const slotOf = (slots: LayoutSlot[], index: number) => slots.find(x => x.index === index);
 
@@ -117,7 +121,7 @@ interface PagePreviewProps {
     tree: CatalogTree;
     page: CatalogPageDetail;
     /** The page's images and texts as they are being edited, so the preview follows the fields. */
-    draft: { localization: string; icon: number; layout: string; imageData: string[]; textData: string[] };
+    draft: { localization: string; icon: number; layout: string; imageData: string[]; textData: string[]; display?: PageDisplay };
     featured: CatalogFeaturedItem[];
     selectedOffer: number | 'new' | null;
     onSelectOffer: (id: number) => void;
@@ -212,6 +216,7 @@ export const PagePreview = ({ tree, page, draft, featured, selectedOffer, onSele
                     <p className="flex items-start gap-1.5 text-xs text-muted"><Info className="mt-px size-3.5 shrink-0" />{spec.offersNote}</p>
                 )}
                 {body}
+                {spec.code === RECOLORABLE_LAYOUT && <RecolorablePalette offers={page.offers} selectedOffer={selectedOffer} display={draft.display} />}
                 {!sells && spec.kind !== 'featured' && page.offers.length > 0 && (
                     <div className="flex flex-col gap-2 border-t border-line pt-3">
                         <span className="text-xs font-medium text-muted">Offers on this page ({page.offers.length})</span>

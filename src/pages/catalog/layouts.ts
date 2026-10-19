@@ -91,6 +91,7 @@ export const LAYOUTS: LayoutSpec[] = [
 
     { code: 'builders_club_frontpage', title: 'Builders Club', group: 'Builders Club', kind: 'info', blurb: 'The Builders Club\'s own front page, with its membership.', ...DESCRIPTION_ONLY },
     { code: 'builders_club_addons', title: 'Builders Club add-ons', group: 'Builders Club', kind: 'info', blurb: 'More Builders Club furni slots.', ...DESCRIPTION_ONLY },
+    { code: 'recolorable_furniture', title: 'Recolorable furni', group: 'Builders Club', kind: 'grid', blurb: 'The recolorable building blocks (*_recolorable): a palette under the preview picks the colour a builder places each in.', images: [ HEADER_IMAGE, TEASER_IMAGE ], texts: [ HEADER_TEXT, DESCRIPTION_TEXT ], offersNote: 'Builders place these from the Builders Club, each in the colour picked from its palette below; the palettes are set on the server (Turbo:Rooms RecolorablePalettes).' },
     { code: 'builders_club_loyalty', title: 'Builders Club loyalty', group: 'Builders Club', kind: 'info', blurb: 'Builders Club for loyalty points.', ...DESCRIPTION_ONLY },
 
     { code: 'marketplace', title: 'Marketplace', group: 'Hotel systems', kind: 'info', blurb: 'The player marketplace.', ...HEADER_ONLY, offersNote: 'The marketplace\'s listings, not offers.' },

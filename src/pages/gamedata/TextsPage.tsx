@@ -28,12 +28,12 @@ export const TextsPage = () => {
     const [ tab, toTab ] = usePathTab(TEXT_TABS.map(x => x.value));
     const found = useFoundKey();
     const [ history, setHistory ] = useState(false);
-
-    if (toTab)
-        return toTab;
     // The tab whose new entry is being written, in a dialog over the list.
     const [ adding, setAdding ] = useState<string | null>(null);
     const noun = { products: 'product', texts: 'text', variables: 'variable' }[tab];
+
+    if (toTab)
+        return toTab;
 
     return (
         <>

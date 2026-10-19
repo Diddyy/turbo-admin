@@ -447,14 +447,14 @@ export const EmptyState = ({ children, icon, framed }: { children: ReactNode; ic
 /** A player's initials in a coloured tile, the colour picked from their id so it stays theirs. */
 export const Avatar = ({ id, name, figure, large, className }: { id: number; name: string; figure?: string; large?: boolean; className?: string }) => {
     const imager = useClientAssets()?.imager;
-    const url = figure ? avatarUrl(imager, figure, { size: large ? 'l' : 'n', headOnly: true, direction: 2, headDirection: 2 }) : null;
+    const url = figure ? avatarUrl(imager, figure, { size: large ? 'l' : 'n', headOnly: true, crop: true, direction: 2, headDirection: 2 }) : null;
     const [ failed, setFailed ] = useState<string | null>(null);
     const drawn = url !== null && failed !== url;
 
     return (
         <span
             aria-hidden
-            className={cx('grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg font-mono text-xs font-semibold text-[#0a0e13] sm:size-8', className)}
+            className={cx('grid size-11 shrink-0 place-items-center overflow-hidden rounded-lg font-mono text-xs font-semibold text-[#0a0e13] sm:size-10', className)}
             style={{ background: drawn ? `color-mix(in srgb, ${AVATAR_COLOURS[Math.abs(id) % AVATAR_COLOURS.length]} 35%, var(--color-subtle))` : AVATAR_COLOURS[Math.abs(id) % AVATAR_COLOURS.length] }}
         >
             {/* Their head as the client draws it, from the hotel's imager; their initials without one. */}

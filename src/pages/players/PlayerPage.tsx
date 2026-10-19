@@ -57,7 +57,7 @@ const PlayerCard = ({ player }: { player: PlayerDetailResponse }) => {
     return (
         <section aria-label={player.name} className="overflow-clip rounded-xl border border-line bg-surface">
             <div className="flex items-center gap-4 px-4 py-4">
-                <Avatar id={player.id} name={player.name} figure={player.figure} large className="size-16 rounded-xl text-base sm:size-16" />
+                <Avatar id={player.id} name={player.name} figure={player.figure} large className="size-20 rounded-xl text-base sm:size-20" />
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                         <h2 className="truncate text-lg font-semibold tracking-tight">{player.name}</h2>

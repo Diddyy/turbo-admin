@@ -26,6 +26,8 @@ export interface AvatarOptions {
     direction?: number;
     headDirection?: number;
     headOnly?: boolean;
+    /** Trimmed to what is drawn, without the room's margin around it: centred, it sits in the middle. */
+    crop?: boolean;
     gesture?: string;
     action?: string;
     gender?: 'M' | 'F';
@@ -40,6 +42,7 @@ export const avatarUrl = (imager: string | undefined, figure: string, options: A
 
     if (options.headDirection !== undefined) params.set('head_direction', String(options.headDirection));
     if (options.headOnly) params.set('headonly', '1');
+    if (options.crop) params.set('crop', '1');
     if (options.gesture) params.set('gesture', options.gesture);
     if (options.action) params.set('action', options.action);
     if (options.gender) params.set('gender', options.gender);

@@ -1,4 +1,4 @@
-import { Activity, Armchair, Bug, CloudDownload, Coins, Disc3, DoorOpen, Flag, FunnelX, Gauge, History, House, KeyRound, Landmark, Languages, Mail, MessagesSquare, Milestone, PackagePlus, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
+import { Activity, Armchair, BellRing, Bug, CloudDownload, Coins, Disc3, DoorOpen, Flag, FunnelX, Gauge, History, House, KeyRound, Landmark, Languages, Mail, MessagesSquare, Milestone, PackagePlus, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router';
 
@@ -37,6 +37,7 @@ const PAGES = {
     songs: { to: '/catalog/songs', label: 'Songs', icon: <Disc3 />, end: false, needs: 'canViewCatalog' },
     discounts: { to: '/catalog/discounts', label: 'Bundle discounts', icon: <PackagePlus />, end: false, needs: 'canViewSettings' },
     hotelView: { to: '/hotel-view', label: 'Hotel view', icon: <Landmark />, end: false, key: 'v', needs: 'canViewGamedata' },
+    notices: { to: '/notices', label: 'Notices', icon: <BellRing />, end: false, needs: 'canViewGamedata' },
     rewardTracks: { to: '/reward-tracks', label: 'Reward tracks', icon: <Milestone />, end: false, key: 'w', needs: 'canManageRewardTracks' },
     content: { to: '/content', label: 'Content', icon: <Puzzle />, end: false, key: 't', needs: 'canViewContent' },
     updates: { to: '/gamedata/updates', label: 'Habbo updates', icon: <CloudDownload />, end: false, key: 'g', needs: 'canViewGamedata' },
@@ -105,6 +106,7 @@ const SECTIONS: NavSection[] = [
         label: 'World',
         entries: [
             { label: 'Hotel view', icon: <Landmark />, pages: [ 'hotelView' ], hint: 'The reception players land in' },
+            { label: 'Notices', icon: <BellRing />, pages: [ 'notices' ], hint: 'The new feature notices under the purse: words, look, links and order' },
             { label: 'Reward tracks', icon: <Milestone />, pages: [ 'rewardTracks' ], hint: 'Progression tracks: tasks, prizes and premium' },
             { label: 'Content', icon: <Puzzle />, pages: [ 'content' ], hint: 'Achievements, badges, pets, chat styles' },
         ],

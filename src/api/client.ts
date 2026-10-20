@@ -16,10 +16,12 @@ export class ApiError extends Error {
     }
 }
 
-const MESSAGES: Record<number, string> = {
+export const MESSAGES: Record<number, string> = {
     400: 'The server could not use that request.',
     401: 'Your session has ended. Sign in again.',
     403: 'You do not have access to the admin panel.',
+    // An upload over its limit says which; a bare 413 is most often the site's nginx, set lower than that.
+    413: 'That is too large to send. If the site\'s nginx refused it, raise client_max_body_size in its /api/ block, as scripts/ploi/nginx.conf has it.',
     429: 'Too many attempts. Wait a minute and try again.',
     500: 'The server ran into a problem. It is in the server log.',
 };

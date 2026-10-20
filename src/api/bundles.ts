@@ -2,7 +2,7 @@ import { keepPreviousData, type QueryClient, useMutation, useQuery, useQueryClie
 
 import { useSession } from '#/auth/session';
 
-import { api, API_URL, ApiError, post, put, remove } from './client';
+import { api, API_URL, ApiError, MESSAGES, post, put, remove } from './client';
 
 /**
  * The asset bundles the client draws furniture, effects and pets from: kept on this server, taken
@@ -339,7 +339,7 @@ const refusal = async (response: Response, token: string | undefined) => {
         // No body, or not JSON: the status speaks for it.
     }
 
-    return new ApiError(response.status, message ?? `The server answered ${response.status}.`);
+    return new ApiError(response.status, message ?? MESSAGES[response.status] ?? `The server answered ${response.status}.`);
 };
 
 const send = async (path: string, init: RequestInit) => {

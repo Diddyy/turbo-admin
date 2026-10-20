@@ -27,6 +27,7 @@ import { GroupPage as GuildPage } from '#/pages/groups/GroupPage';
 import { GroupsPage as GuildsPage } from '#/pages/groups/GroupsPage';
 import { HotelViewPage } from '#/pages/hotel-view/HotelViewPage';
 import { MessagesPage } from '#/pages/MessagesPage';
+import { NoticesPage } from '#/pages/notices/NoticesPage';
 import { GroupPage } from '#/pages/permissions/GroupPage';
 import { GroupsPage } from '#/pages/permissions/GroupsPage';
 import { LogPage, NodesPage, SearchPage } from '#/pages/permissions/LookupPages';
@@ -81,6 +82,7 @@ export const App = () => (
             {/* Products, texts and variables: the files the client reads, each by its name. */}
             <Route path="gamedata/:tab" element={<TextsPage />} />
             <Route path="hotel-view/:group?/:view?" element={<HotelViewPage />} />
+            <Route path="notices" element={<NoticesPage />} />
             <Route path="reward-tracks" element={<RewardTracksPage />} />
             <Route path="reward-tracks/import" element={<RewardTracksPage importing />} />
             <Route path="reward-tracks/:id/:tab?" element={<RewardTracksPage />} />

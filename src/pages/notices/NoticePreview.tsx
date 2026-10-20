@@ -1,70 +1,82 @@
-import { ImageOff } from 'lucide-react';
+import { ImageOff, TriangleAlert } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
-import { useClientAssets } from '#/api/assets';
 import { cx } from '#/lib/cx';
 
-import { DEFAULT_COLOR, lighterHalfway, type Notice, parseColor } from './model';
+import { useNoticeImage } from './hooks';
+import { countdownText, DEFAULT_COLOR, descKey, lighterHalfway, type Notice, parseColor, timeOf } from './model';
 
-/**
- * `static_bitmap.assetUri` as the client loads it: an address with `${image.library.url}` filled
- * in, or one of the client's own images by name (null: the panel can't draw those).
- */
-const useImageUrl = (image: string) => {
-    const assets = useClientAssets();
-    const value = image.trim();
+/** The seconds until a time in the variables' form by the panel's clock, ticking. */
+const useSecondsUntil = (value: string) => {
+    const at = timeOf(value);
+    const [ now, setNow ] = useState(() => Date.now());
 
-    if (!value || (!value.includes('/') && !value.includes('${'))) return null;
+    useEffect(() => {
+        if (at === null || at <= Date.now()) return;
 
-    const resolved = value.replaceAll('${image.library.url}', assets?.imageLibrary ?? '');
+        const timer = setInterval(() => setNow(Date.now()), 1000);
 
-    if (resolved.includes('${')) return null;
+        return () => clearInterval(timer);
+    }, [ at ]);
 
-    return resolved.startsWith('//') ? `https:${resolved}` : resolved;
+    return at === null ? 0 : Math.max(0, (at - now) / 1000);
 };
 
 /**
  * A notice about as the client docks it in the column under the purse (192 wide): a normal one
  * filled with its colour, its open button lighter and a cancel link; a promo or a countdown with
- * its colour as the border, the words underlined as a link, a countdown's clock under them. Drawn
- * by the panel, not the client: the client's own images show as their name.
+ * its colour as the border, the words underlined as a link, a countdown's clock under them (by the
+ * panel's clock). Drawn by the panel, not the client. A notice without words shows its text key,
+ * as the client does, marked; a picture the client can't find shows a warning in its place.
  */
-export const NoticePreview = ({ notice, missingText }: { notice: Notice; missingText?: boolean }) => {
+export const NoticePreview = ({ notice }: { notice: Notice }) => {
     const color = parseColor(notice.fields.color) ?? DEFAULT_COLOR;
     const type = notice.fields.type || 'normal';
-    const url = useImageUrl(notice.fields.image);
     const image = notice.fields.image.trim();
-    const words = notice.desc || `notifications.new_feature.${notice.key}.desc`;
+    const picture = useNoticeImage(image);
+    const seconds = useSecondsUntil(type === 'countdown' ? notice.fields.count_down_to : '');
+    const missingText = !notice.texts.desc;
+    const words = notice.texts.desc || descKey(notice.key);
+    const canClose = notice.fields.close !== 'never';
 
-    const picture = (
-        <span className="flex size-[30px] shrink-0 items-center justify-center" title={image || 'No image'}>
-            {url
-                ? <img src={url} alt="" className="max-h-[30px] max-w-[30px] [image-rendering:pixelated]" />
-                : image
-                    ? <span className="rounded bg-black/30 px-0.5 font-mono text-[8px] leading-tight break-all text-white/80">{image.slice(0, 24)}</span>
-                    : <ImageOff className="size-4 text-white/40" />}
+    const art = (
+        <span className="flex size-[30px] shrink-0 items-center justify-center" title={picture.missing ? `The client has no image ${image}` : image || 'No image'}>
+            {picture.url && !picture.missing
+                ? <img src={picture.url} alt="" onError={picture.onError} className="max-h-[30px] max-w-[30px] [image-rendering:pixelated]" />
+                : picture.missing
+                    ? <TriangleAlert className="size-4 text-amber-300" aria-label="Image not found" />
+                    : <ImageOff className="size-4 text-white/40" aria-label="No image" />}
+        </span>
+    );
+    const text = (
+        <span
+            className={cx('leading-tight', type !== 'normal' && 'underline', missingText && 'rounded bg-black/40 px-0.5 font-mono text-[9px] break-all text-amber-200 no-underline')}
+            title={missingText ? `No text ${descKey(notice.key)}: the client shows its key` : undefined}
+        >
+            {words}
         </span>
     );
 
     if (type === 'normal') return (
-        <div data-testid="notice-preview" className="flex w-[192px] flex-col gap-1 rounded-md p-1.5 text-[11px] text-white" style={{ backgroundColor: color }}>
+        <div data-testid="notice-preview" className="flex w-[192px] shrink-0 flex-col gap-1 rounded-md p-1.5 text-[11px] text-white" style={{ backgroundColor: color }}>
             <div className="flex items-center gap-1.5">
-                {picture}
-                <span className={cx('leading-tight', missingText && 'italic opacity-70')}>{words}</span>
+                {art}
+                {text}
             </div>
             <div className="flex items-center justify-between gap-2">
-                <span className="rounded px-2 py-0.5 text-[11px] font-bold text-black" style={{ backgroundColor: lighterHalfway(color) }}>Open</span>
-                <span className="underline">Close</span>
+                <span className="rounded px-2 py-0.5 text-[11px] font-bold text-black" style={{ backgroundColor: lighterHalfway(color) }}>{notice.texts.open_button || 'Open'}</span>
+                {canClose && <span className="underline">{notice.texts.cancel_link || 'Close'}</span>}
             </div>
         </div>
     );
 
     return (
-        <div data-testid="notice-preview" className="flex w-[192px] flex-col rounded-md border-2 bg-[#2b2b2b]/90 p-1 text-[11px] text-white" style={{ borderColor: color, backgroundImage: `linear-gradient(${color}55, ${color}55)` }}>
+        <div data-testid="notice-preview" className="flex w-[192px] shrink-0 flex-col rounded-md border-2 bg-[#2b2b2b]/90 p-1 text-[11px] text-white" style={{ borderColor: color, backgroundImage: `linear-gradient(${color}55, ${color}55)` }}>
             <div className="flex items-center gap-1.5">
-                {picture}
-                <span className={cx('leading-tight underline', missingText && 'italic opacity-70')}>{words}</span>
+                {art}
+                {text}
             </div>
-            {type === 'countdown' && <span className="self-center font-mono text-[12px] font-bold tabular-nums">00:00:00:00</span>}
+            {type === 'countdown' && <span className="self-center font-mono text-[12px] font-bold tabular-nums">{countdownText(seconds)}</span>}
         </div>
     );
 };

@@ -1,5 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { openZip } from '#/lib/zip';
+import { dataUrlOf } from '#/preview/images';
+
+import { useClientAssets } from './assets';
 import { api, post, put, remove } from './client';
 import type { ChangeSet, TextSearchResult, VariableSearchResult } from './gamedata';
 import type { HotelViewHabboEntry } from './hotelView';
@@ -104,6 +108,67 @@ export const useSaveNotices = () => {
 
             return changeSet;
         },
-        onSettled: () => void queryClient.invalidateQueries({ queryKey: [ 'gamedata' ] }),
+        // Answered once the notices are read back, so a saved notice's draft can go without a flash of the old one.
+        onSettled: () => queryClient.invalidateQueries({ queryKey: [ 'gamedata' ] }),
     });
+};
+
+/** The client library a notice's image name is looked up in, and what its files are called. */
+const WINDOW_LIBRARY = 'habbo-window-manager-com';
+const WINDOW_IMAGE = new RegExp(`^${WINDOW_LIBRARY}-(.+)\\.png$`);
+
+/**
+ * The client's own images a notice can name (`static_bitmap.assetUri` without a `/`): the PNGs of
+ * the `habbo-window-manager-com` template bundle, read from where the client loads it
+ * (`asset.bundles.templates`), by name. Null names none: the bundle's address isn't known, or it
+ * couldn't be read.
+ */
+export const useClientImages = () => {
+    const template = useClientAssets()?.templates ?? '';
+
+    return useQuery({
+        queryKey: [ 'notices', 'client-images', template ],
+        queryFn: async () => {
+            const response = await fetch(template.replaceAll('%libname%', WINDOW_LIBRARY));
+
+            if (!response.ok)
+                throw new Error(`The client's ${WINDOW_LIBRARY} bundle answered ${response.status}.`);
+
+            const zip = openZip(await response.arrayBuffer());
+            const files = new Map(zip.names.flatMap((file) => {
+                const name = WINDOW_IMAGE.exec(file)?.[1];
+
+                return name ? [ [ name, file ] as const ] : [];
+            }));
+
+            return {
+                names: [ ...files.keys() ].sort(),
+                has: (name: string) => files.has(name),
+                url: async (name: string) => {
+                    const file = files.get(name);
+                    const data = file ? await zip.read(file) : null;
+
+                    return data ? dataUrlOf(new Blob([ data as BlobPart ], { type: 'image/png' })) : null;
+                },
+            };
+        },
+        enabled: !!template,
+        staleTime: Infinity,
+        gcTime: Infinity,
+        refetchOnWindowFocus: false,
+        retry: false,
+    });
+};
+
+/** One of the client's own images as a data url; null while unknown, or when the client has none by that name. */
+export const useClientImageUrl = (name: string | null) => {
+    const { data: images } = useClientImages();
+
+    return useQuery({
+        queryKey: [ 'notices', 'client-image', name ],
+        queryFn: () => images!.url(name!),
+        enabled: !!images && !!name && images.has(name),
+        staleTime: Infinity,
+        refetchOnWindowFocus: false,
+    }).data ?? null;
 };

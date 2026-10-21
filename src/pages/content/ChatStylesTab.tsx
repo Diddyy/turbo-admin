@@ -351,7 +351,8 @@ export const ChatStylesTab = ({ canManage }: { canManage: boolean }) => {
                         </div>
                     )}
                 </div>
-                <div className="grid max-h-[45vh] min-h-0 grid-cols-[repeat(auto-fill,minmax(7.5rem,1fr))] content-start gap-2 overflow-y-auto border-t border-line p-3 xl:max-h-none">
+                {/* Rows as tall as their cards: a card clips its overflow, so a capped grid would otherwise squash them to fit rather than scroll. */}
+                <div className="grid max-h-[45vh] min-h-0 auto-rows-max grid-cols-[repeat(auto-fill,minmax(7.5rem,1fr))] content-start gap-2 overflow-y-auto border-t border-line p-3 xl:max-h-none">
                     {shown.map(style => (
                         <StyleCard
                             key={style.id}

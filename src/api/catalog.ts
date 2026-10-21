@@ -496,6 +496,8 @@ export interface ImportPlan {
     offersUnchanged: number;
     skipped: ImportSkip[];
     missingClasses: string[];
+    /** Pictures the pages show that this hotel has no file of, by the names the pages give them. */
+    missingPictures: string[];
     warnings: string[];
     saved: boolean;
     published: boolean;

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { postForm } from './bundles';
-import { api, remove } from './client';
+import { type AssetJob, postForm } from './bundles';
+import { api, post, remove } from './client';
 
 /**
  * A catalog picture - a page's header or teaser - as a file in the server's `images/catalog`
@@ -75,6 +75,19 @@ export const useUploadCatalogImage = () => {
             return postForm<CatalogImage>('/catalog/images', form);
         },
         onSuccess: refresh,
+    });
+};
+
+/**
+ * Takes Habbo's pictures of these names in, those the hotel lacks, as an asset job: it runs on
+ * the Assets page, and players see the pictures once the assets are published.
+ */
+export const useFetchCatalogPictures = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (names: string[]) => post<AssetJob>('/catalog/images/habbo', { names }),
+        onSuccess: () => void queryClient.invalidateQueries({ queryKey: [ 'assets' ] }),
     });
 };
 

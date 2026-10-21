@@ -1,8 +1,9 @@
 import { useMutation } from '@tanstack/react-query';
-import { FileUp, Hammer, Layers, Sparkles, TriangleAlert } from 'lucide-react';
+import { Download, FileUp, Hammer, ImageOff, Layers, Sparkles, TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 
 import { catalogCalls, type CatalogTree, type ImportPageChange, type ImportPlan, type LogImportPlan, useCatalogEdit } from '#/api/catalog';
+import { useFetchCatalogPictures } from '#/api/catalogImages';
 import { ask } from '#/components/confirm';
 import { celebrate, toast, toastError } from '#/components/toast';
 import { Button, EmptyState, ErrorNotice, Label, Segmented, Stat, Switch } from '#/components/ui';
@@ -57,8 +58,44 @@ const PageRow = ({ page, top }: { page: ImportPageChange; top: number }) => {
     );
 };
 
+/**
+ * The pictures a plan's pages show that this hotel has no file of: the client shows nothing there
+ * until they are taken in from Habbo, which runs as an asset job, and the assets are published.
+ */
+const MissingPictures = ({ names, canManage }: { names: string[]; canManage: boolean }) => {
+    const fetch = useFetchCatalogPictures();
+
+    const doFetch = () => fetch.mutate(names, {
+        onSuccess: () => toast(`Taking ${names.length.toLocaleString()} pictures in from Habbo: follow it on the Assets page, then publish the assets for players to see them.`),
+        onError: toastError,
+    });
+
+    return (
+        <details className="rounded-xl border border-warn-line bg-warn-soft/40">
+            <summary className="flex cursor-pointer flex-wrap items-center gap-2 px-3 py-2 text-xs">
+                <ImageOff className="size-3.5 text-warn" />
+                <span className="min-w-0 flex-1">{names.length.toLocaleString()} headers and teasers this hotel has no picture of: the pages show nothing there until they are taken in.</span>
+                {canManage && (
+                    <Button
+                        variant="secondary"
+                        icon={<Download />}
+                        disabled={fetch.isPending}
+                        onClick={(event) => {
+                            event.preventDefault();
+                            doFetch();
+                        }}
+                    >
+                        Fetch from Habbo
+                    </Button>
+                )}
+            </summary>
+            <p className="px-3 pb-2 font-mono text-[11px] break-words text-muted">{names.join(' · ')}</p>
+        </details>
+    );
+};
+
 /** One catalogue's plan: what is added and changed, the pages, and what is left out and why. */
-const PlanView = ({ plan }: { plan: ImportPlan }) => {
+const PlanView = ({ plan, canManage }: { plan: ImportPlan; canManage: boolean }) => {
     const builders = plan.catalog === 'BUILDERS_CLUB';
     const added = plan.pages.filter(x => x.action === 'add').length;
     const updated = plan.pages.filter(x => x.action === 'update').length;
@@ -90,6 +127,7 @@ const PlanView = ({ plan }: { plan: ImportPlan }) => {
                     ))}
                 </ul>
             )}
+            {plan.missingPictures.length > 0 && <MissingPictures names={plan.missingPictures} canManage={canManage} />}
             <div className="rounded-xl border border-line bg-surface">
                 <div className="border-b border-line px-3 py-2 text-xs text-muted">Pages</div>
                 <ul className="max-h-[32rem] overflow-y-auto p-1.5">
@@ -260,7 +298,7 @@ export const ImportCapture = ({ tree }: { tree: CatalogTree }) => {
                         Pick a log or a capture and plan it. Every page shows here with what happens to it, and what is left out and why, before anything is made.
                     </EmptyState>
                 )}
-                {data && plansOf(data).map(x => <PlanView key={x.catalog} plan={x} />)}
+                {data && plansOf(data).map(x => <PlanView key={x.catalog} plan={x} canManage={tree.canManage} />)}
                 {data && tree.canManage && data.changes && (
                     <div className="sticky bottom-3 z-20 flex flex-wrap items-center gap-3 rounded-xl border border-accent/50 bg-surface/95 p-3 shadow-xl backdrop-blur">
                         <span className="mr-auto text-xs text-muted">{publish ? 'Live as soon as it is saved.' : 'Nothing goes live until you publish.'}</span>

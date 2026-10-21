@@ -60,4 +60,14 @@ export const LOGIN_STEPS: Record<string, string> = {
     'client.init.handshake.ok': 'Handshake done',
     'client.init.auth.ok': 'Logged in',
     'client.init.room.enter': 'First room entered',
+    'client.init.auth.fail': 'Ticket refused',
 };
+
+/**
+ * Why a client reports nothing, when it does not: Habbo's own external variables never send a
+ * performance report (performancetest.interval and tracking.framerate.reportInterval.seconds are
+ * 2147483647), so a hotel turns them on in its variables.
+ */
+export const NO_PERFORMANCE_HINT = 'No performance reports in this range. Clients send them only when the hotel\'s external variables set performancetest.interval (seconds between reports, 60 for example; Habbo\'s own is 2147483647, never), up to performancetest.reportlimit times.';
+
+export const NO_ROOM_FPS_HINT = 'No frame rate in this range. Clients send a room\'s frame rate when the hotel\'s external variables set tracking.framerate.reportInterval.seconds (300 for example; Habbo\'s own is 2147483647, never), or with performance reports (performancetest.interval).';

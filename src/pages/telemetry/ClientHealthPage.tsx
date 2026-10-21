@@ -5,7 +5,7 @@ import { Row, RowList } from '#/components/RowList';
 import { EmptyState, ErrorNotice, Input, Loading, PageBody, PageHeader, Panel, Select, Stat } from '#/components/ui';
 import { useHubTabs } from '#/layout/nav';
 
-import { dayPoints, fps, LOGIN_STEPS, megabytes, ms, number, SERIES_1, SERIES_2, useDayRange } from './format';
+import { dayPoints, fps, LOGIN_STEPS, megabytes, ms, NO_PERFORMANCE_HINT, NO_ROOM_FPS_HINT, number, SERIES_1, SERIES_2, useDayRange } from './format';
 import { DayChartCard, Figure, RangePicker } from './shared';
 
 const DEVICE_COLUMNS = [
@@ -123,6 +123,7 @@ export const ClientHealthPage = () => {
                                 points={dayPoints(data.days, x => x.fpsP50 > 0 || x.fpsP95 > 0, x => x.fpsP50, x => x.fpsP95)}
                                 format={fps}
                                 dimmed={dimmed}
+                                empty={filter.room ? NO_ROOM_FPS_HINT : NO_PERFORMANCE_HINT}
                             />
                             <DayChartCard
                                 title="Latency"
@@ -140,6 +141,7 @@ export const ClientHealthPage = () => {
                                     points={dayPoints(data.days, x => x.reports > 0, x => x.memoryP50Mb, x => x.memoryP95Mb)}
                                     format={megabytes}
                                     dimmed={dimmed}
+                                    empty={NO_PERFORMANCE_HINT}
                                 />
                             )}
                             <DayChartCard
@@ -154,7 +156,7 @@ export const ClientHealthPage = () => {
 
                         <Panel title="Browsers and devices" description="Read from each report's user agent. Percentiles over several days weight each day by its reports.">
                             {data.devices.length === 0
-                                ? <EmptyState>No performance reports in this range.</EmptyState>
+                                ? <EmptyState>{NO_PERFORMANCE_HINT}</EmptyState>
                                 : (
                                         <RowList columns="minmax(0,1fr) repeat(6,auto)" headers={DEVICE_COLUMNS}>
                                             {data.devices.map(x => (
@@ -196,7 +198,7 @@ export const ClientHealthPage = () => {
                                             </RowList>
                                         )}
                             </Panel>
-                            <Panel title="Logins" description="How many logins reached each step, and how long after connecting.">
+                            <Panel title="Logins, as the server sees them" description="How many connections reached each step, and how long after the socket opened. Habbo's client tells its own steps only to its web page, so these are the server's.">
                                 {firstStep === 0
                                     ? <EmptyState>No logins in this range.</EmptyState>
                                     : (

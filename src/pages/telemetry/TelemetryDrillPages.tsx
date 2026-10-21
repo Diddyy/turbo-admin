@@ -5,7 +5,7 @@ import { type ClientLagRow, type ClientLatencyRow, type ClientPerformanceRow, us
 import { Row, RowList } from '#/components/RowList';
 import { EmptyState, ErrorNotice, HeaderLink, Loading, PageBody, PageHeader, Panel } from '#/components/ui';
 
-import { dayPoints, fps, LOGIN_STEPS, megabytes, ms, number, SERIES_1, SERIES_2, useDayRange, when } from './format';
+import { dayPoints, fps, LOGIN_STEPS, megabytes, ms, NO_PERFORMANCE_HINT, NO_ROOM_FPS_HINT, number, SERIES_1, SERIES_2, useDayRange, when } from './format';
 import { DayChartCard, Figure, RangePicker } from './shared';
 
 /** Who sent a report, a link to their client reports; where from, a link to the room's. */
@@ -31,7 +31,7 @@ const PERFORMANCE_COLUMNS = [
 
 const PerformanceRows = ({ rows, params }: { rows: ClientPerformanceRow[]; params: string }) => (
     rows.length === 0
-        ? <EmptyState>No performance reports in this range.</EmptyState>
+        ? <EmptyState>{NO_PERFORMANCE_HINT}</EmptyState>
         : (
                 <RowList columns="auto minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) repeat(3,auto)" headers={PERFORMANCE_COLUMNS}>
                     {rows.map((x, index) => (
@@ -118,6 +118,7 @@ export const TelemetryRoomPage = () => {
                                 points={dayPoints(data.days, x => x.fpsP50 > 0 || x.fpsP95 > 0, x => x.fpsP50, x => x.fpsP95)}
                                 format={fps}
                                 dimmed={false}
+                                empty={NO_ROOM_FPS_HINT}
                             />
                             <DayChartCard
                                 title="Chat lag warnings"

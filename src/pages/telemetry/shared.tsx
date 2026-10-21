@@ -15,16 +15,18 @@ const VIEWS = [
 ];
 
 /** One chart of days in a card, with a switch to the same figures as a table. */
-export const DayChartCard = ({ title, description, series, points, format, dimmed }: {
+export const DayChartCard = ({ title, description, series, points, format, dimmed, empty = 'Nothing reported in this range.' }: {
     title: string;
     description: ReactNode;
     series: ChartSeries[];
     points: ChartPoint[];
     format: (value: number) => string;
     dimmed: boolean;
+    /** What the card says when nothing was reported. */
+    empty?: ReactNode;
 }) => {
     const [ table, setTable ] = useState(false);
-    const empty = points.every(point => point.values.every(value => value === null));
+    const nothing = points.every(point => point.values.every(value => value === null));
 
     return (
         <Panel
@@ -32,8 +34,8 @@ export const DayChartCard = ({ title, description, series, points, format, dimme
             description={description}
             actions={<Segmented label={`Show ${title} as`} value={table ? 'table' : 'chart'} onChange={value => setTable(value === 'table')} options={VIEWS} />}
         >
-            {empty
-                ? <EmptyState>Nothing reported in this range.</EmptyState>
+            {nothing
+                ? <EmptyState>{empty}</EmptyState>
                 : table
                     ? <ChartTable label={title} series={series} points={points} format={format} timeFormat={dateOf} />
                     : <div className="pb-2"><LineChart label={title} series={series} points={points} format={format} dimmed={dimmed} timeFormat={dateOf} /></div>}

@@ -147,6 +147,19 @@ export const useSaveRewardTrack = () => useTrackChange((track: RewardTrack) => p
 
 export const useDeleteRewardTrack = () => useTrackChange((id: string) => remove<undefined>(`/reward-tracks/${encodeURIComponent(id)}`));
 
+/**
+ * Puts the tracks in this order: the order players are sent them, which the Progression menu lists
+ * their items in after Introduction. Tracks not named keep their order after them.
+ */
+export const useReorderRewardTracks = () => useTrackChange((trackIds: string[]) => post<{ tracks: RewardTrackListItem[] }>('/reward-tracks/order', { trackIds }));
+
+/** Turns a track on or off: read whole, then saved whole with the switch changed. */
+export const useSetRewardTrackEnabled = () => useTrackChange(async ({ id, enabled }: { id: string; enabled: boolean }) => {
+    const { track } = await api<RewardTrackDetail>(`/reward-tracks/${encodeURIComponent(id)}`);
+
+    return put<RewardTrackDetail>(`/reward-tracks/${encodeURIComponent(id)}`, { ...track, enabled });
+});
+
 /** Reads the tables again, after an edit made by hand. */
 export const useReloadRewardTracks = () => useTrackChange(() => post<{ tracks: RewardTrackListItem[] }>('/reward-tracks/reload'));
 

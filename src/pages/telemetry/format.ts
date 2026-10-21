@@ -68,6 +68,10 @@ export const LOGIN_STEPS: Record<string, string> = {
  * performance report (performancetest.interval and tracking.framerate.reportInterval.seconds are
  * 2147483647), so a hotel turns them on in its variables.
  */
-export const NO_PERFORMANCE_HINT = 'No performance reports in this range. Clients send them only when the hotel\'s external variables set performancetest.interval (seconds between reports, 60 for example; Habbo\'s own is 2147483647, never), up to performancetest.reportlimit times.';
+export const NO_PERFORMANCE_HINT = 'No performance reports in this range. Clients send them only when the hotel\'s external variables set performancetest.interval (seconds between reports, 300 for example; Habbo\'s own is 2147483647, never), up to performancetest.reportlimit times.';
 
 export const NO_ROOM_FPS_HINT = 'No frame rate in this range. Clients send a room\'s frame rate when the hotel\'s external variables set tracking.framerate.reportInterval.seconds (300 for example; Habbo\'s own is 2147483647, never), or with performance reports (performancetest.interval).';
+
+export const NO_LAG_HINT = 'No chat lag in this range. Clients report chat lines that come back late only when the hotel\'s external variables set lagWarningLog.enabled=1 (Habbo\'s own does), at most every lagWarningLog.interval.seconds (10 by default).';
+
+export const NO_LATENCY_HINT = 'No latency reports in this range. Clients test their ping every latencytest.interval ms (20000, the default and Habbo\'s own; below 1 turns it off) and report after latencytest.report.index pings (Habbo\'s own: 3, the default 100).';

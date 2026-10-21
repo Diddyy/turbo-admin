@@ -5,7 +5,7 @@ import { Row, RowList } from '#/components/RowList';
 import { EmptyState, ErrorNotice, Input, Loading, PageBody, PageHeader, Panel, Select, Stat } from '#/components/ui';
 import { useHubTabs } from '#/layout/nav';
 
-import { dayPoints, fps, LOGIN_STEPS, megabytes, ms, NO_PERFORMANCE_HINT, NO_ROOM_FPS_HINT, number, SERIES_1, SERIES_2, useDayRange } from './format';
+import { dayPoints, fps, LOGIN_STEPS, megabytes, ms, NO_LAG_HINT, NO_LATENCY_HINT, NO_PERFORMANCE_HINT, NO_ROOM_FPS_HINT, number, SERIES_1, SERIES_2, useDayRange } from './format';
 import { DayChartCard, Figure, RangePicker } from './shared';
 
 const DEVICE_COLUMNS = [
@@ -132,6 +132,7 @@ export const ClientHealthPage = () => {
                                 points={dayPoints(data.days, x => x.latencyReports > 0, x => x.latencyP50Ms, x => x.latencyP95Ms)}
                                 format={ms}
                                 dimmed={dimmed}
+                                empty={NO_LATENCY_HINT}
                             />
                             {!filter.room && (
                                 <DayChartCard
@@ -148,9 +149,10 @@ export const ClientHealthPage = () => {
                                 title="Chat lag warnings"
                                 description="Chat lines that came back to their sender late, every browser."
                                 series={[ { name: 'Warnings', color: SERIES_1 } ]}
-                                points={dayPoints(data.days, () => true, x => x.lagWarnings)}
+                                points={dayPoints(data.days, () => totals.lag > 0, x => x.lagWarnings)}
                                 format={number}
                                 dimmed={dimmed}
+                                empty={NO_LAG_HINT}
                             />
                         </div>
 

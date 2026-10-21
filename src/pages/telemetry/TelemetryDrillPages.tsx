@@ -5,7 +5,7 @@ import { type ClientLagRow, type ClientLatencyRow, type ClientPerformanceRow, us
 import { Row, RowList } from '#/components/RowList';
 import { EmptyState, ErrorNotice, HeaderLink, Loading, PageBody, PageHeader, Panel } from '#/components/ui';
 
-import { dayPoints, fps, LOGIN_STEPS, megabytes, ms, NO_PERFORMANCE_HINT, NO_ROOM_FPS_HINT, number, SERIES_1, SERIES_2, useDayRange, when } from './format';
+import { dayPoints, fps, LOGIN_STEPS, megabytes, ms, NO_LAG_HINT, NO_LATENCY_HINT, NO_PERFORMANCE_HINT, NO_ROOM_FPS_HINT, number, SERIES_1, SERIES_2, useDayRange, when } from './format';
 import { DayChartCard, Figure, RangePicker } from './shared';
 
 /** Who sent a report, a link to their client reports; where from, a link to the room's. */
@@ -53,7 +53,7 @@ const LATENCY_COLUMNS = [ { label: 'When' }, { label: 'Who' }, { label: 'Where' 
 
 const LatencyRows = ({ rows, params }: { rows: ClientLatencyRow[]; params: string }) => (
     rows.length === 0
-        ? <EmptyState>No latency reports in this range.</EmptyState>
+        ? <EmptyState>{NO_LATENCY_HINT}</EmptyState>
         : (
                 <RowList columns="auto minmax(0,1fr) minmax(0,1fr) repeat(3,auto)" headers={LATENCY_COLUMNS}>
                     {rows.map((x, index) => (
@@ -74,7 +74,7 @@ const LAG_COLUMNS = [ { label: 'When' }, { label: 'Who' }, { label: 'Where' }, {
 
 const LagRows = ({ rows, params }: { rows: ClientLagRow[]; params: string }) => (
     rows.length === 0
-        ? <EmptyState>No chat lag in this range.</EmptyState>
+        ? <EmptyState>{NO_LAG_HINT}</EmptyState>
         : (
                 <RowList columns="auto minmax(0,1fr) minmax(0,1fr) auto" headers={LAG_COLUMNS}>
                     {rows.map((x, index) => (
@@ -124,9 +124,10 @@ export const TelemetryRoomPage = () => {
                                 title="Chat lag warnings"
                                 description="Chat lines that came back late in the room."
                                 series={[ { name: 'Warnings', color: SERIES_1 } ]}
-                                points={dayPoints(data.days, () => true, x => x.lagWarnings)}
+                                points={dayPoints(data.days, () => data.days.some(x => x.lagWarnings > 0), x => x.lagWarnings)}
                                 format={number}
                                 dimmed={false}
+                                empty={NO_LAG_HINT}
                             />
                         </div>
                         <Panel title="Chat lag"><LagRows rows={data.lag} params={params} /></Panel>

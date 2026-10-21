@@ -374,6 +374,31 @@ export interface Duplicate {
     offers: DuplicateOffer[];
 }
 
+/** A page of a name another page has too. `display` is regular, bc_only, both or invisible. */
+export interface DuplicatePageItem {
+    pageId: number;
+    title: string;
+    path: string;
+    display: string;
+    shown: boolean;
+    offers: number;
+    pages: number;
+}
+
+export interface DuplicatePage {
+    name: string;
+    pages: DuplicatePageItem[];
+}
+
+export interface PageMergeResult {
+    offersMoved: number;
+    offersDropped: number;
+    pagesMoved: number;
+    pagesDeleted: number;
+    display: string;
+    unpublishedChanges: number;
+}
+
 export interface AddFurniInput {
     definitionIds: number[];
     costCredits: number;
@@ -540,6 +565,11 @@ export const useUnoffered = (query: UnofferedQuery) => useQuery({
     placeholderData: previous => previous,
 });
 
+export const useDuplicatePages = () => useQuery({
+    queryKey: [ 'catalog', 'audit', 'duplicate-pages' ],
+    queryFn: () => api<{ total: number; items: DuplicatePage[] }>('/catalog/audit/duplicate-pages'),
+});
+
 export const useDuplicates = () => useQuery({
     queryKey: [ 'catalog', 'audit', 'duplicates' ],
     queryFn: () => api<{ total: number; items: Duplicate[] }>('/catalog/audit/duplicates'),
@@ -568,6 +598,7 @@ export const catalogCalls = {
     addFurni: (pageId: number, input: AddFurniInput) => post<BulkResult>(`/catalog/pages/${pageId}/furni`, input),
     deleteOffers: (offerIds: number[]) => post<BulkResult>('/catalog/offers/delete', { offerIds }),
     createFrontPage: () => post<Saved>('/catalog/frontpage'),
+    mergePages: (keepId: number, pageIds: number[]) => post<PageMergeResult>(`/catalog/pages/${keepId}/merge`, { pageIds }),
     undo: () => post<CatalogHistory>('/catalog/undo'),
     redo: () => post<CatalogHistory>('/catalog/redo'),
     discard: () => post<CatalogHistory>('/catalog/discard'),

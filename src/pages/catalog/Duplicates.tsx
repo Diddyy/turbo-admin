@@ -8,6 +8,7 @@ import { toast, toastError } from '#/components/toast';
 import { Button, EmptyState, ErrorNotice, IconButton, Loading, Switch, TextButton } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
+import { DuplicatePages } from './DuplicatePages';
 import { priceOf } from './offers';
 import { ProductIcon } from './ProductIcon';
 
@@ -131,6 +132,8 @@ export const Duplicates = ({ tree, onOpen }: { tree: CatalogTree; onOpen: (pageI
                 ))}
             </ul>
             {shown.length > 200 && <p className="text-center text-xs text-muted">Showing 200 of {shown.length}; find furni to narrow it down.</p>}
+
+            <DuplicatePages tree={tree} onOpen={pageId => onOpen(pageId, 0)} />
         </div>
     );
 };

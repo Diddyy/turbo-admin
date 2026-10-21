@@ -55,6 +55,8 @@ interface HabboUpdateProps {
     canManage: boolean;
     /** Whether there is anything to take in at all. */
     canTake: boolean;
+    /** Whether Take in waits for something besides that: a pick of none. */
+    takeDisabled?: boolean;
     /** What to ask before taking it in; its button says "Take in". */
     confirm: Pick<Question, 'title' | 'body'>;
     onTake: () => void;
@@ -71,7 +73,7 @@ interface HabboUpdateProps {
  * would add, update and keep, the changes to review, and taking it in. Every data tab heads with
  * one, so each reads the same way.
  */
-export const HabboUpdate = ({ title, version, preview, error, extra, file, canManage, canTake, confirm, onTake, taking, takeError, children, defaultOpen = false }: HabboUpdateProps) => {
+export const HabboUpdate = ({ title, version, preview, error, extra, file, canManage, canTake, takeDisabled = false, confirm, onTake, taking, takeError, children, defaultOpen = false }: HabboUpdateProps) => {
     const [ open, setOpen ] = useState(defaultOpen);
     const check = useCheckHabbo();
     const { data: jobData } = useImportJob();
@@ -123,7 +125,7 @@ export const HabboUpdate = ({ title, version, preview, error, extra, file, canMa
                     {canManage && preview && !upToDate && (
                         <Button
                             icon={<Download />}
-                            disabled={taking || running || !canTake}
+                            disabled={taking || running || !canTake || takeDisabled}
                             onClick={() => ask({ ...confirm, confirm: 'Take in', danger: false }, onTake)}
                         >
                             {running && job ? 'Taking in' : 'Take in'}

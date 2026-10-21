@@ -36,6 +36,8 @@ export interface HabboRelease {
     checkedAt: string;
     /** Null until its furniture is taken in. */
     importedAt: string | null;
+    /** The hash Habbo's /gamedata/hashes lists the file under; null when unread, absent from a server older than the panel. */
+    habboHash?: string | null;
 }
 
 export interface GamedataFile {
@@ -54,6 +56,8 @@ export interface HabboTextVersion {
     checkedAt: string;
     /** Null until it is taken in. */
     importedAt: string | null;
+    /** The hash Habbo's /gamedata/hashes lists the file under; null when unread, absent from a server older than the panel. */
+    habboHash?: string | null;
 }
 
 export interface HabboProductVersion {
@@ -65,6 +69,8 @@ export interface HabboProductVersion {
     checkedAt: string;
     /** Null until it is taken in. */
     importedAt: string | null;
+    /** The hash Habbo's /gamedata/hashes lists the file under; null when unread, absent from a server older than the panel. */
+    habboHash?: string | null;
 }
 
 export interface HabboFigureVersion {
@@ -78,6 +84,8 @@ export interface HabboFigureVersion {
     checkedAt: string;
     /** Null until it is taken in. */
     importedAt: string | null;
+    /** The hash Habbo's /gamedata/hashes lists the file under; null when unread, absent from a server older than the panel. */
+    habboHash?: string | null;
 }
 
 export interface GamedataStatus {
@@ -305,12 +313,24 @@ export interface HabboClientRelease {
     size: number;
 }
 
-/** Habbo's HTML client: each environment, the releases kept (newest first), and the one built from. */
+/** Habbo's AIR client: the newest an environment named, and the one kept for the window templates. */
+export interface HabboAirClient {
+    version: string | null;
+    kept: string | null;
+    /** When Habbo built the one kept. */
+    builtAt: string | null;
+    downloadedAt: string | null;
+    size: number;
+}
+
+/** Habbo's HTML client: each environment, the releases kept (newest first), and the one built from; and its AIR client. */
 export interface HabboClientStatus {
     environments: HabboClientEnvironment[];
     releases: HabboClientRelease[];
     follow: string | null;
     followed: string | null;
+    /** Absent from a server older than the panel. */
+    air?: HabboAirClient;
 }
 
 /** Asked again every few seconds while a release downloads. */
@@ -611,6 +631,8 @@ export interface HabboVariableVersion {
     checkedAt: string;
     /** When any of it was last taken in; null until some is. */
     importedAt: string | null;
+    /** The hash Habbo's /gamedata/hashes lists the file under; null when unread, absent from a server older than the panel. */
+    habboHash?: string | null;
 }
 
 /** What taking one of Habbo's variables in does: HabboVariableUpdateAction. */

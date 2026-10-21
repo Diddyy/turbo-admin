@@ -68,6 +68,8 @@ export interface AssetKindSummary {
     bundles: number;
     failed: number;
     bytes: number;
+    /** When one was last downloaded from Habbo; null when none was. Absent from a server older than the panel. */
+    updatedAt?: string | null;
 }
 
 export interface AssetsStatus {
@@ -239,6 +241,10 @@ export interface HabboClientBuild {
     problems: string[];
     /** What the last build left unbuilt, and why. */
     notes: string[];
+    /** The AIR client the templates took from, and how many images and layouts; absent from a server older than the panel. */
+    airVersion?: string | null;
+    airImages?: number;
+    airLayouts?: number;
 }
 
 /** Read again whenever an asset job ends, as every asset query is. */

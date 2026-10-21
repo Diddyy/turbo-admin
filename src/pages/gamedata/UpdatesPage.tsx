@@ -1,60 +1,27 @@
-import { CheckCircle2, ChevronDown, Hotel, Library, RefreshCw } from 'lucide-react';
-import { type ReactNode, useState } from 'react';
+import { CheckCircle2, ChevronDown, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 
-import { type AssetsStatus, type BundleKind, useAssetJob, useRelist, useSyncPreview } from '#/api/bundles';
+import { type AssetsStatus, type BundleKind, useAssetJob, useSyncPreview } from '#/api/bundles';
 import { type GamedataStatus, useCheckHabbo, useFigureImportPreview, useHabboVariableUpdate, useImportPreview, useProductImportPreview, useTextImportPreview } from '#/api/gamedata';
 import { toast, toastError } from '#/components/toast';
-import { Badge, type BadgeTone, Button, ErrorNotice, Label, PageBody, PageHeader, Panel } from '#/components/ui';
+import { Button, Label, PageBody, PageHeader, Panel } from '#/components/ui';
 import { cx } from '#/lib/cx';
 import { usePathTab } from '#/lib/tabs';
 import { fromNow } from '#/lib/time';
-import { BundleUpdate, SyncButton } from '#/pages/assets/BundleUpdate';
+import { BundleUpdate } from '#/pages/assets/BundleUpdate';
 import { JobPanel } from '#/pages/assets/JobPanel';
 
 import { HabboFigures } from './FiguresTab';
 import { Loaded } from './frame';
 import { HabboFurniture } from './FurnitureTab';
-import { HabboClientPanel } from './HabboClientPanel';
 import { HabboVariables } from './HabboVariables';
 import { HistoryPanel } from './HistoryPanel';
 import { HabboProducts } from './ProductsTab';
+import { SourcesTab } from './SourcesTab';
 import { useGamedata } from './state';
 import { HabboTexts } from './TextsTab';
-
-/** Something Habbo has that the hotel may take in: its count waiting, and its list to review and take in. */
-interface Category {
-    id: string;
-    label: string;
-    group: 'Gamedata' | 'Bundles';
-    /** What waits to be taken in; null while it is worked out or can't be. */
-    count: number | null;
-    /** Why there is no count, when it isn't only loading. */
-    note?: string;
-    content: ReactNode;
-}
-
-const Fact = ({ label, children }: { label: string; children: ReactNode }) => (
-    <div className="min-w-0">
-        <div className="text-xs text-muted">{label}</div>
-        <div className="truncate text-sm font-medium">{children}</div>
-    </div>
-);
-
-/** A place updates come from, with what it serves and when it was looked at. */
-const SourceBox = ({ icon, name, tags, facts, actions }: { icon: ReactNode; name: string; tags: { label: string; tone: BadgeTone }[]; facts: ReactNode; actions?: ReactNode }) => (
-    <div className="flex min-w-0 items-start gap-3 rounded-lg border border-line p-3">
-        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent [&>svg]:size-4.5">{icon}</span>
-        <div className="flex min-w-0 flex-1 flex-col gap-2.5">
-            <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-sm font-semibold">{name}</span>
-                {tags.map(tag => <Badge key={tag.label} tone={tag.tone}>{tag.label}</Badge>)}
-            </div>
-            <div className="grid grid-cols-3 gap-3">{facts}</div>
-            {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
-        </div>
-    </div>
-);
+import { type Category, LIBRARY_CATEGORIES } from './updates';
 
 /** The categories, worked out from the same previews the library and texts pages show; before the gamedata is read, none. */
 const useCategories = (status: GamedataStatus | undefined, canManage: boolean): Category[] => {
@@ -127,15 +94,7 @@ const useCategories = (status: GamedataStatus | undefined, canManage: boolean): 
             note: status.latestVariables ? undefined : unchecked,
             content: <HabboVariables status={status} defaultOpen />,
         },
-        bundleCategory('furniture', 'furniture-bundles', 'Furniture'),
-        bundleCategory('figure', 'figure-bundles', 'Clothing'),
-        bundleCategory('effect', 'effect-bundles', 'Effects'),
-        bundleCategory('pet', 'pet-bundles', 'Pets'),
-        bundleCategory('room', 'room-bundles', 'Room libraries'),
-        bundleCategory('badge', 'badges', 'Badges'),
-        bundleCategory('catalog-icon', 'catalog-icons', 'Catalog icons'),
-        bundleCategory('catalog-image', 'catalog-pictures', 'Catalog pictures'),
-        bundleCategory('sound', 'trax-samples', 'Trax samples'),
+        ...LIBRARY_CATEGORIES.map(x => bundleCategory(x.kind, x.id, x.label)),
     ];
 };
 
@@ -212,64 +171,6 @@ const WaitingTab = ({ categories, assets, canManage }: { categories: Category[];
     );
 };
 
-/** Where updates come from: Habbo's gamedata, its libraries, and its HTML client, with when each was looked at. */
-const SourcesTab = ({ status, assets, canManage, waitingData }: { status: GamedataStatus; assets: AssetsStatus; canManage: boolean; waitingData: number }) => {
-    const relist = useRelist();
-    const { data: bundles, error: bundlesError } = useSyncPreview();
-    const release = status.latestRelease;
-    const bundlesPending = bundles?.kinds.reduce((sum, x) => sum + x.new + x.updated, 0) ?? 0;
-
-    return (
-        <>
-            <Panel title="Habbo" description="Habbo is checked on a schedule; Check Habbo asks it at once, and a sync may follow.">
-                <div className="grid gap-3 p-3 sm:p-4 lg:grid-cols-2">
-                    <SourceBox
-                        icon={<Hotel />}
-                        name={release ? `habbo.${release.domain}` : 'Habbo'}
-                        tags={[
-                            ...(release ? [] : [ { label: 'not checked', tone: 'neutral' as const } ]),
-                            ...(waitingData > 0 ? [ { label: `${waitingData} with changes`, tone: 'amber' as const } ] : release ? [ { label: 'up to date', tone: 'green' as const } ] : []),
-                        ]}
-                        facts={(
-                            <>
-                                <Fact label="Release"><span className="font-mono">{release ? release.revision.replace(/^PRODUCTION-/, '') : '-'}</span></Fact>
-                                <Fact label="Checked">{release ? fromNow(release.checkedAt) : 'never'}</Fact>
-                                <Fact label="Furniture">{release ? release.furnitureCount.toLocaleString() : '-'}</Fact>
-                            </>
-                        )}
-                    />
-                    <SourceBox
-                        icon={<Library />}
-                        name="Habbo's libraries"
-                        tags={[
-                            ...(bundlesError ? [ { label: 'can\'t read Habbo', tone: 'red' as const } ] : []),
-                            ...(bundles ? [ bundlesPending > 0 ? { label: `${bundlesPending.toLocaleString()} to download`, tone: 'amber' as const } : { label: 'up to date', tone: 'green' as const } ] : []),
-                        ]}
-                        facts={(
-                            <>
-                                <Fact label="Client"><span className="font-mono">{bundles ? bundles.revision.replace(/^PRODUCTION-/, '') : '-'}</span></Fact>
-                                <Fact label="Listed">{bundles ? fromNow(bundles.listedAt) : '-'}</Fact>
-                                <Fact label="Bundles">{assets.kinds.reduce((sum, x) => sum + x.bundles, 0).toLocaleString()}</Fact>
-                            </>
-                        )}
-                        actions={(
-                            <>
-                                <Button variant="secondary" icon={<RefreshCw />} disabled={relist.isPending} onClick={() => relist.mutate()}>
-                                    {relist.isPending ? 'Reading' : 'Read again'}
-                                </Button>
-                                {canManage && <SyncButton pending={bundlesPending} variant="secondary" />}
-                            </>
-                        )}
-                    />
-                </div>
-                {relist.error && <div className="border-t border-line p-4"><ErrorNotice error={relist.error} /></div>}
-            </Panel>
-
-            <HabboClientPanel canManage={canManage} />
-        </>
-    );
-};
-
 /** Asks Habbo now, saying what it found. */
 const CheckButton = () => {
     const check = useCheckHabbo();
@@ -334,7 +235,7 @@ export const UpdatesPage = () => {
                     {(status, assets) => (
                         <>
                             {tab === 'waiting' && <WaitingTab categories={categories} assets={assets} canManage={state.canManage} />}
-                            {tab === 'sources' && <SourcesTab status={status} assets={assets} canManage={state.canManage} waitingData={categories.filter(x => x.group === 'Gamedata' && x.count).length} />}
+                            {tab === 'sources' && <SourcesTab status={status} assets={assets} canManage={state.canManage} categories={categories} />}
                             {tab === 'history' && <HistoryPanel scope="habbo" canManage={status.canManage} />}
                         </>
                     )}

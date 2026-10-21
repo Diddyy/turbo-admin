@@ -35,9 +35,26 @@ const Cell = ({ column, value }: { column: PluginColumn; value: unknown }) => {
             return <Badge tone={value === 'open' ? 'amber' : value === 'resolved' ? 'green' : 'neutral'}>{String(value)}</Badge>;
         case 'number':
             return <span className="font-mono tabular-nums">{String(value)}</span>;
+        case 'link': {
+            const href = String(value);
+
+            if (href.startsWith('/')) return <Link className="text-accent hover:underline" to={href}>{href}</Link>;
+            if (/^https?:\/\//.test(href)) return <a className="text-accent hover:underline" href={href} target="_blank" rel="noreferrer">{href}</a>;
+
+            return <span>{href}</span>;
+        }
         default:
             return <span>{String(value)}</span>;
     }
+};
+
+/** The panel route `open:<page>` goes to: that page of the plugin for the id the call answered with. */
+const openedBy = (then: string, key: string, answer: unknown) => {
+    if (!then.startsWith('open:')) return null;
+
+    const id = (answer as Item | null)?.id;
+
+    return id === undefined || id === null ? null : `/plugin/${key}/${then.slice('open:'.length)}/${encodeURIComponent(String(id))}`;
 };
 
 /** Whether an action's `key=value` holds for the item. */
@@ -207,11 +224,15 @@ const ActionsBlock = ({ block, context, item }: { block: PluginBlock; context: C
             setBusy(true);
 
             try {
-                await call(context.plugin.key, endpointOf(action.endpoint, context.id), { method: action.method });
+                const answer = await call(context.plugin.key, endpointOf(action.endpoint, context.id), { method: action.method });
+                const opened = openedBy(action.then, context.plugin.key, answer);
+
                 toast(`${action.label}: done.`);
 
                 if (action.then === 'back')
                     void (context.back ? navigate(context.back) : navigate(-1));
+                else if (opened)
+                    void navigate(opened);
 
                 void queryClient.invalidateQueries({ queryKey: [ 'plugin', context.plugin.key ] });
             } catch (error) {
@@ -264,6 +285,8 @@ const problemOf = (field: PluginField, value: unknown) => {
 const FormBlock = ({ block, context, item }: { block: PluginBlock; context: Context; item: Item | undefined }) => {
     const call = usePluginCall();
     const queryClient = useQueryClient();
+    const navigate = useNavigate();
+    const [ files, setFiles ] = useState<Record<string, string>>({});
     const [ values, setValues ] = useState<Record<string, unknown>>({});
     const [ busy, setBusy ] = useState(false);
     const fields = block.fields ?? [];
@@ -281,11 +304,16 @@ const FormBlock = ({ block, context, item }: { block: PluginBlock; context: Cont
 
                     setBusy(true);
                     call(context.plugin.key, endpointOf(block.submit.endpoint, context.id), { method: block.submit.method, body: JSON.stringify(values) })
-                        .then(async () => {
+                        .then(async (answer) => {
+                            const opened = openedBy(block.submit!.then, context.plugin.key, answer);
+
                             toast(`${block.submit!.label}: done.`);
                             await queryClient.invalidateQueries({ queryKey: [ 'plugin', context.plugin.key ] });
                             // The item, read again, shows what was saved.
                             setValues({});
+                            setFiles({});
+
+                            if (opened) void navigate(opened);
                         })
                         .catch(toastError)
                         .finally(() => setBusy(false));
@@ -295,6 +323,30 @@ const FormBlock = ({ block, context, item }: { block: PluginBlock; context: Cont
                     <Labeled key={field.key} label={field.label} hint={field.hint ?? undefined}>
                         {field.type === 'bool' && <Checkbox label={field.label} checked={!!valueOf(field.key)} onChange={checked => setValues({ ...values, [field.key]: checked })} />}
                         {field.type === 'textarea' && <Textarea value={String(valueOf(field.key) ?? '')} onChange={event => setValues({ ...values, [field.key]: event.target.value })} />}
+                        {field.type === 'file' && (
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="file"
+                                    accept={(field.options ?? []).join(',') || undefined}
+                                    className="text-sm"
+                                    onChange={(event) => {
+                                        const file = event.target.files?.[0];
+
+                                        if (!file) {
+                                            setValues({ ...values, [field.key]: '' });
+                                            setFiles({ ...files, [field.key]: '' });
+                                            return;
+                                        }
+
+                                        void file.text().then((text) => {
+                                            setValues(current => ({ ...current, [field.key]: text }));
+                                            setFiles(current => ({ ...current, [field.key]: `${file.name}, ${Math.ceil(file.size / 1024)} KB` }));
+                                        });
+                                    }}
+                                />
+                                {files[field.key] && <span className="text-xs text-muted">{files[field.key]}</span>}
+                            </div>
+                        )}
                         {field.type === 'select' && (
                             <Select value={String(valueOf(field.key) ?? '')} onChange={event => setValues({ ...values, [field.key]: event.target.value })}>
                                 {[ '', ...(field.options ?? []) ].map(option => <option key={option} value={option}>{option}</option>)}

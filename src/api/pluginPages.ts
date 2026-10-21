@@ -6,14 +6,16 @@ import { api, apiBlob, ApiError } from './client';
 export interface PluginColumn {
     key: string;
     label: string;
-    type: 'text' | 'number' | 'time' | 'bool' | 'badge' | string;
+    /** `link`: a value starting with `/` opens that panel page, `http(s)://` a new tab. */
+    type: 'text' | 'number' | 'time' | 'bool' | 'badge' | 'link' | string;
 }
 
 /** A form field or a table filter: PluginAdminField. */
 export interface PluginField {
     key: string;
     label: string;
-    type: 'text' | 'textarea' | 'number' | 'bool' | 'select' | string;
+    /** `file`: the chosen file's text is the value (`options` are the accepted extensions, e.g. `.json`). */
+    type: 'text' | 'textarea' | 'number' | 'bool' | 'select' | 'file' | string;
     required: boolean;
     min: number | null;
     max: number | null;
@@ -30,7 +32,8 @@ export interface PluginAction {
     confirm: string | null;
     danger: boolean;
     node: string | null;
-    then: 'refresh' | 'back' | string;
+    /** `open:<page>`: the plugin's page `<page>` for the `id` the call answered with. */
+    then: 'refresh' | 'back' | `open:${string}` | string;
     /** `key=value`: shown only for an item whose field has that value. */
     when: string | null;
 }

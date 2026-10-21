@@ -41,7 +41,7 @@ const PerformanceRows = ({ rows, params }: { rows: ClientPerformanceRow[]; param
                             <Where roomId={x.roomId} roomName={x.roomName} params={params} />
                             <span className="truncate" title={x.userAgent}>{`${x.browser}, ${x.os}, ${x.device}`}</span>
                             <Figure label="FPS">{x.fps ? fps(x.fps) : '-'}</Figure>
-                            <Figure label="Memory">{megabytes(x.memoryMb)}</Figure>
+                            <Figure label="Memory">{x.memoryMb < 0 ? '-' : megabytes(x.memoryMb)}</Figure>
                             <Figure label="Slow frames">{number(x.slowUpdates)}</Figure>
                         </Row>
                     ))}

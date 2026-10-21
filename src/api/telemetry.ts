@@ -100,6 +100,7 @@ export interface ClientPerformanceRow {
     device: string;
     userAgent: string;
     fps: number;
+    /** -1 when the browser does not say. */
     memoryMb: number;
     slowUpdates: number;
     garbageCollections: number;

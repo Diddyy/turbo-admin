@@ -23,12 +23,13 @@ const timeOf = (at: number) => new Date(at).toLocaleTimeString([], { hour: '2-di
 const keyOf = (index: number) => `s${index}`;
 
 /** One readout for every series at the time under the pointer: value first, then whose it is. */
-const Readout = ({ active, payload, label, series, format }: {
+const Readout = ({ active, payload, label, series, format, timeFormat }: {
     active?: boolean;
     payload?: readonly { payload?: unknown }[];
     label?: string | number;
     series: ChartSeries[];
     format: (value: number) => string;
+    timeFormat: (at: number) => string;
 }) => {
     if (!active || !payload?.length)
         return null;
@@ -37,7 +38,7 @@ const Readout = ({ active, payload, label, series, format }: {
 
     return (
         <div className="min-w-36 rounded-lg border border-line bg-surface px-3 py-2 text-xs shadow-lg">
-            <div className="mb-1 font-mono text-[11px] text-muted">{timeOf(Number(label))}</div>
+            <div className="mb-1 font-mono text-[11px] text-muted">{timeFormat(Number(label))}</div>
             {series.map((s, index) => {
                 const value = row[keyOf(index)];
 
@@ -61,13 +62,15 @@ const Readout = ({ active, payload, label, series, format }: {
  * more series get a legend. `format` writes a value with its unit; {@link ChartTable} shows the
  * same figures as a table.
  */
-export const LineChart = ({ label, series, points, format, max, dimmed = false }: {
+export const LineChart = ({ label, series, points, format, max, dimmed = false, timeFormat = timeOf }: {
     label: string;
     series: ChartSeries[];
     points: ChartPoint[];
     format: (value: number) => string;
     max?: number;
     dimmed?: boolean;
+    /** How an x position is written: a time of day unless given (a date, for points a day apart). */
+    timeFormat?: (at: number) => string;
 }) => {
     const data = points.map(point => Object.fromEntries([ [ 'at', point.at ], ...point.values.map((value, index) => [ keyOf(index), value ]) ]));
     const last = points.length - 1;
@@ -93,7 +96,7 @@ export const LineChart = ({ label, series, points, format, max, dimmed = false }
                         type="number"
                         scale="time"
                         domain={[ 'dataMin', 'dataMax' ]}
-                        tickFormatter={timeOf}
+                        tickFormatter={timeFormat}
                         tick={AXIS_TEXT}
                         axisLine={false}
                         tickLine={false}
@@ -110,7 +113,7 @@ export const LineChart = ({ label, series, points, format, max, dimmed = false }
                         allowDecimals={false}
                     />
                     <Tooltip
-                        content={props => <Readout {...props} series={series} format={format} />}
+                        content={props => <Readout {...props} series={series} format={format} timeFormat={timeFormat} />}
                         cursor={{ stroke: 'var(--color-muted)', strokeWidth: 1 }}
                         isAnimationActive={false}
                     />
@@ -148,7 +151,7 @@ export const LineChart = ({ label, series, points, format, max, dimmed = false }
 };
 
 /** The chart's figures as a table, newest first, for reading without the chart. */
-export const ChartTable = ({ label, series, points, format }: { label: string; series: ChartSeries[]; points: ChartPoint[]; format: (value: number) => string }) => (
+export const ChartTable = ({ label, series, points, format, timeFormat = timeOf }: { label: string; series: ChartSeries[]; points: ChartPoint[]; format: (value: number) => string; timeFormat?: (at: number) => string }) => (
     <div className="max-h-[168px] overflow-y-auto">
         <table className="w-full text-xs">
             <caption className="sr-only">{label}</caption>
@@ -161,7 +164,7 @@ export const ChartTable = ({ label, series, points, format }: { label: string; s
             <tbody className="font-mono tabular-nums">
                 {[ ...points ].reverse().map(point => (
                     <tr key={point.at} className="border-t border-line">
-                        <td className="px-4 py-1">{timeOf(point.at)}</td>
+                        <td className="px-4 py-1">{timeFormat(point.at)}</td>
                         {point.values.map((value, i) => <td key={i} className="px-4 py-1 text-right">{value === null ? '-' : format(value)}</td>)}
                     </tr>
                 ))}

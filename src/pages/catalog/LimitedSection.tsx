@@ -2,6 +2,7 @@ import { Save, Sparkles, Trash2 } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 
 import { catalogCalls, type CatalogLimited, type CatalogLimitedInput, useCatalogEdit } from '#/api/catalog';
+import { ask } from '#/components/confirm';
 import { Button, ErrorNotice, Input, Labeled, Switch } from '#/components/ui';
 
 /** A UTC time as a datetime-local input shows it, in the viewer's own time. */
@@ -36,6 +37,8 @@ export const LimitedSection = ({ offerId, limited, canManage }: { offerId: numbe
     const save = useCatalogEdit(catalogCalls.saveLimited);
     const remove = useCatalogEdit(catalogCalls.removeLimited);
     const sold = limited ? limited.total - limited.remaining : 0;
+    // What the raffle has a record of, entered or won, comes off only with the series' sales.
+    const hasSales = sold > 0 || limited?.raffleFinished === true;
 
     if (!open)
         return canManage
@@ -43,6 +46,12 @@ export const LimitedSection = ({ offerId, limited, canManage }: { offerId: numbe
             : null;
 
     const set = <K extends keyof CatalogLimitedInput>(key: K, value: CatalogLimitedInput[K]) => setDraft({ ...draft, [key]: value });
+
+    const removeWithSales = () => ask({
+        title: 'Remove the series with its sales?',
+        body: `The series, its raffle entries and the record of the ${sold.toLocaleString()} sold are taken away for good, and an undo does not bring them back. It stops selling at once; publish to take it off the page. Furni players already have stays theirs, with its serial.`,
+        confirm: 'Remove',
+    }, () => remove.mutate([ offerId, true ]));
 
     const handleSubmit = (event: FormEvent) => {
         event.preventDefault();
@@ -81,9 +90,9 @@ export const LimitedSection = ({ offerId, limited, canManage }: { offerId: numbe
                 <div className="flex flex-wrap gap-2">
                     <Button variant="secondary" icon={<Save />} disabled={save.isPending} onClick={handleSubmit}>{limited ? 'Save series' : 'Make limited'}</Button>
                     {limited
-                        ? sold === 0 && (
-                            <Button variant="ghost" icon={<Trash2 />} disabled={remove.isPending} onClick={() => remove.mutate([ offerId ])}>No longer limited</Button>
-                        )
+                        ? !hasSales
+                                ? <Button variant="ghost" icon={<Trash2 />} disabled={remove.isPending} onClick={() => remove.mutate([ offerId, false ])}>No longer limited</Button>
+                                : <Button variant="ghost" icon={<Trash2 />} disabled={remove.isPending} onClick={removeWithSales}>Remove with its sales</Button>
                         : <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>}
                 </div>
             )}

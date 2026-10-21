@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { type CatalogBackup, catalogCalls, type CatalogTree, useCatalogBackups, useCatalogEdit } from '#/api/catalog';
 import { ask } from '#/components/confirm';
 import { toast, toastError } from '#/components/toast';
-import { Badge, Button, EmptyState, ErrorNotice, IconButton, Input, Loading } from '#/components/ui';
+import { Badge, Button, Checkbox, EmptyState, ErrorNotice, IconButton, Input, Loading } from '#/components/ui';
 
 /** The longest name a backup takes, as the server holds it. */
 const NAME_MAX_LENGTH = 100;
@@ -52,6 +52,7 @@ export const Backups = ({ tree }: { tree: CatalogTree }) => {
     const remove = useCatalogEdit(catalogCalls.deleteBackup);
     const reset = useCatalogEdit(catalogCalls.reset);
     const [ name, setName ] = useState('');
+    const [ removeLimited, setRemoveLimited ] = useState(false);
     const busy = take.isPending || rollback.isPending || remove.isPending || reset.isPending;
     const items = backups.data?.items ?? [];
 
@@ -79,10 +80,12 @@ export const Backups = ({ tree }: { tree: CatalogTree }) => {
     const doReset = () => {
         ask({
             title: 'Reset the catalog?',
-            body: 'Every page but the root, and every offer and featured item, is taken away. What is there now is backed up first, and you can undo it. Players get the empty catalog when you publish.',
+            body: removeLimited
+                ? 'Every page but the root, and every offer and featured item, is taken away, and every limited series with its raffle entries and sales. What is there now is backed up first, and you can undo it, but the limited series stay gone. Furni players already have is kept. Players get the empty catalog when you publish.'
+                : 'Every page but the root, and every offer and featured item, is taken away. What is there now is backed up first, and you can undo it. Players get the empty catalog when you publish.',
             confirm: 'Reset',
         }, () => {
-            reset.mutate([], {
+            reset.mutate([ removeLimited ], {
                 onSuccess: () => toast('Reset: the catalog is empty, and what was there is kept as "Before resetting the catalog". Publish to put it in front of players.'),
                 onError: toastError,
             });
@@ -150,8 +153,15 @@ export const Backups = ({ tree }: { tree: CatalogTree }) => {
                             Reset the catalog
                         </span>
                         <p className="text-xs text-muted">
-                            Takes away every page but the root, and every offer, product and featured item, to start again or import a catalog into. It is backed up first, can be undone, and goes live when you publish. Refused while an offer sells a limited series.
+                            Takes away every page but the root, and every offer, product and featured item, to start again or import a catalog into. It is backed up first, can be undone, and goes live when you publish.
                         </p>
+                        <Checkbox
+                            label="Remove limited series too"
+                            hint="Every series goes with its raffle entries and sales, and an undo does not bring them back. Furni players already won or bought stays theirs. Without it, a catalog that sells limited series is not reset."
+                            checked={removeLimited}
+                            onChange={setRemoveLimited}
+                            disabled={busy}
+                        />
                     </div>
                     <Button variant="danger" icon={<Eraser />} disabled={busy} onClick={doReset}>
                         Reset

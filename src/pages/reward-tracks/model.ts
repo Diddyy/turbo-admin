@@ -42,6 +42,21 @@ export const STATUS: Record<TrackStatus, { label: string; tone: BadgeTone; meani
     off: { label: 'Off', tone: 'neutral', meaning: 'Not sent to anyone.' },
 };
 
+/** The track the Progression menu's own Introduction item opens (AS3 `ProgMenuController`). */
+export const INTRODUCTION = 'introduction';
+
+/** The text a track's Progression menu item shows: Introduction's own, else `widget.progmenu.rewardtrack.<id>`. */
+export const menuTextKey = (id: string) => ((id === INTRODUCTION) ? 'widget.progmenu.introduction' : `widget.progmenu.rewardtrack.${id}`);
+
+/**
+ * The Progression menu's items as a player logging in now gets them (AS3 `ProgMenuController`):
+ * the layout's own five, Introduction always among them, then an item per other live track, in the
+ * tracks' order.
+ */
+export const MENU_ITEMS = [ 'Daily tasks', 'Quests', 'Achievements', 'Leaderboards' ];
+
+export const menuTracks = (tracks: RewardTrackListItem[], now = Date.now()) => tracks.filter(x => x.id !== INTRODUCTION && statusOf(x, now) === 'live');
+
 /** What a prize can give, by the client's product item type. */
 export const PRODUCT_TYPES: { value: RewardTrackProductType; label: string; idLabel: string | null }[] = [
     { value: 8, label: 'Currency', idLabel: 'Currency type' },

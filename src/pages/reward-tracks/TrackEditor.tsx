@@ -11,6 +11,7 @@ import { inputToIso, isoToInput } from '#/pages/hotel-view/model';
 
 import { GamePreview } from './GamePreview';
 import { useGamePreviewUrl, useTrackNames } from './hooks';
+import { MenuItemText } from './MenuItemText';
 import { blankTrack, css, problemsOf, STATUS, statusOf, THEME_NAMES, themeOf, trackPoints } from './model';
 import { PrizesEditor } from './PrizesEditor';
 import { StripPreview } from './StripPreview';
@@ -75,6 +76,7 @@ const SettingsTab = ({ track, onChange }: { track: RewardTrack; onChange: (track
                     </Labeled>
                 </div>
             </Panel>
+            <MenuItemText id={track.id} />
             <Panel title="Premium" description="Bought from the track's window; its levels and prizes need it, and its owner's task points are multiplied by the boost." className="xl:col-span-2">
                 <div className="flex flex-col gap-4 p-4">
                     <Switch

@@ -12,7 +12,10 @@ export interface ClientAssets {
     catalogIcon: string;
     /** `asset.urls.catalog`: `%name%` is the page image's name. */
     catalogImage: string;
-    /** `asset.urls.icons.furni`: `%libname%` is the class name, `%param%` `_` and its colour or nothing. */
+    /**
+     * `asset.urls.icons.furni`: `%libname%` is the class name, `%param%` `_` and its colour or
+     * nothing, `%revision%` its furnidata revision (`furniRevisions`).
+     */
     furniIcon: string;
     /** `badge.asset.url`: `%badgename%` is the badge code. */
     badge: string;
@@ -27,6 +30,8 @@ export interface ClientAssets {
      * `?preview`): the game's own windows, drawn from what the panel posts it. Empty without either.
      */
     preview: string;
+    /** Each furniture's furnidata revision by class name (`throne*4`), when `furniIcon` names a `%revision%`; else null. */
+    furniRevisions: Record<string, number> | null;
 }
 
 /** The addresses change only when the client is redeployed, so they are asked for once a session. */
@@ -53,7 +58,8 @@ export const catalogImageUrl = (assets: ClientAssets | undefined, name: string) 
 
 /**
  * A furniture's icon, by its class name. A coloured one (`throne*4`) is its base class's with `_`
- * and the colour after it, as the client asks for it.
+ * and the colour after it, as the client asks for it. Where the icons are filed under a revision,
+ * it is the furni's own in the furnidata, else its base class's; null when neither is known.
  */
 export const furniIconUrl = (assets: ClientAssets | undefined, className: string | null) => {
     if (!className)
@@ -61,7 +67,16 @@ export const furniIconUrl = (assets: ClientAssets | undefined, className: string
 
     const [ libname = className, colour ] = className.split('*');
 
-    return fill(assets?.furniIcon, { libname, param: colour ? `_${colour}` : '' });
+    if (!/%revision%/i.test(assets?.furniIcon ?? ''))
+        return fill(assets?.furniIcon, { libname, param: colour ? `_${colour}` : '' });
+
+    const revision = assets?.furniRevisions?.[className] ?? assets?.furniRevisions?.[libname];
+
+    if (revision === undefined)
+        return null;
+
+    // The client reads the placeholder in any case; `fill` reads it as written.
+    return fill(assets?.furniIcon.replace(/%revision%/gi, '%revision%'), { libname, param: colour ? `_${colour}` : '', revision: String(revision) });
 };
 
 /** A badge's image, by its code. */

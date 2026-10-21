@@ -257,13 +257,18 @@ const problemOf = (field: PluginField, value: unknown) => {
     return null;
 };
 
-const FormBlock = ({ block, context }: { block: PluginBlock; context: Context }) => {
+/**
+ * A form; on an item's page each field starts from the item's value of the same key (what the
+ * page's detail block shows), and only the fields staff changed are sent.
+ */
+const FormBlock = ({ block, context, item }: { block: PluginBlock; context: Context; item: Item | undefined }) => {
     const call = usePluginCall();
     const queryClient = useQueryClient();
     const [ values, setValues ] = useState<Record<string, unknown>>({});
     const [ busy, setBusy ] = useState(false);
     const fields = block.fields ?? [];
-    const problems = fields.map(field => problemOf(field, values[field.key])).filter(Boolean);
+    const valueOf = (key: string) => (key in values) ? values[key] : item?.[key];
+    const problems = fields.map(field => problemOf(field, valueOf(field.key))).filter(Boolean);
 
     return (
         <Panel title={block.title ?? undefined}>
@@ -276,9 +281,11 @@ const FormBlock = ({ block, context }: { block: PluginBlock; context: Context })
 
                     setBusy(true);
                     call(context.plugin.key, endpointOf(block.submit.endpoint, context.id), { method: block.submit.method, body: JSON.stringify(values) })
-                        .then(() => {
+                        .then(async () => {
                             toast(`${block.submit!.label}: done.`);
-                            void queryClient.invalidateQueries({ queryKey: [ 'plugin', context.plugin.key ] });
+                            await queryClient.invalidateQueries({ queryKey: [ 'plugin', context.plugin.key ] });
+                            // The item, read again, shows what was saved.
+                            setValues({});
                         })
                         .catch(toastError)
                         .finally(() => setBusy(false));
@@ -286,14 +293,14 @@ const FormBlock = ({ block, context }: { block: PluginBlock; context: Context })
             >
                 {fields.map(field => (
                     <Labeled key={field.key} label={field.label} hint={field.hint ?? undefined}>
-                        {field.type === 'bool' && <Checkbox label={field.label} checked={!!values[field.key]} onChange={checked => setValues({ ...values, [field.key]: checked })} />}
-                        {field.type === 'textarea' && <Textarea value={String(values[field.key] ?? '')} onChange={event => setValues({ ...values, [field.key]: event.target.value })} />}
+                        {field.type === 'bool' && <Checkbox label={field.label} checked={!!valueOf(field.key)} onChange={checked => setValues({ ...values, [field.key]: checked })} />}
+                        {field.type === 'textarea' && <Textarea value={String(valueOf(field.key) ?? '')} onChange={event => setValues({ ...values, [field.key]: event.target.value })} />}
                         {field.type === 'select' && (
-                            <Select value={String(values[field.key] ?? '')} onChange={event => setValues({ ...values, [field.key]: event.target.value })}>
+                            <Select value={String(valueOf(field.key) ?? '')} onChange={event => setValues({ ...values, [field.key]: event.target.value })}>
                                 {[ '', ...(field.options ?? []) ].map(option => <option key={option} value={option}>{option}</option>)}
                             </Select>
                         )}
-                        {(field.type === 'text' || field.type === 'number') && <Input type={field.type} value={String(values[field.key] ?? '')} onChange={event => setValues({ ...values, [field.key]: field.type === 'number' && event.target.value !== '' ? Number(event.target.value) : event.target.value })} />}
+                        {(field.type === 'text' || field.type === 'number') && <Input type={field.type} value={String(valueOf(field.key) ?? '')} onChange={event => setValues({ ...values, [field.key]: field.type === 'number' && event.target.value !== '' ? Number(event.target.value) : event.target.value })} />}
                     </Labeled>
                 ))}
                 {problems.length > 0 && <p className="text-xs text-warn">{problems[0]}</p>}
@@ -310,7 +317,7 @@ const Block = ({ block, context, item }: { block: PluginBlock; context: Context;
         case 'table': return <TableBlock block={block} context={context} />;
         case 'detail': return <DetailBlock block={block} context={context} />;
         case 'actions': return <ActionsBlock block={block} context={context} item={item} />;
-        case 'form': return <FormBlock block={block} context={context} />;
+        case 'form': return <FormBlock block={block} context={context} item={item} />;
         default: return <WarningNotice>This page has a block of a kind this panel can't show ({block.type}). Update the panel, or ask the plugin's author.</WarningNotice>;
     }
 };

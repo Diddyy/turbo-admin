@@ -510,7 +510,7 @@ export interface CatalogBackup {
     takenById: number;
     takenByName: string | null;
     takenAtUtc: string;
-    /** Taken by the editor itself, of what a rollback replaced. */
+    /** Taken by the editor itself, of what a rollback replaced or a reset emptied. */
     automatic: boolean;
     pages: number;
     offers: number;
@@ -572,6 +572,7 @@ export const catalogCalls = {
     backup: (name: string) => post<Saved>('/catalog/backups', { name }),
     rollback: (backupId: number) => post<CatalogHistory>(`/catalog/backups/${backupId}/rollback`),
     deleteBackup: (backupId: number) => remove<Saved>(`/catalog/backups/${backupId}`),
+    reset: () => post<CatalogHistory>('/catalog/reset'),
     previewGenerate: (request: GenerateRequest) => post<GeneratePlan>('/catalog/generate/preview', request),
     generate: (request: GenerateRequest) => post<GenerateResult>('/catalog/generate', request),
     previewImport: (request: ImportRequest) => post<ImportPlan>('/catalog/import/preview', request),

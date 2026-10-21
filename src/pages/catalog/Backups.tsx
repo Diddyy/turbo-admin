@@ -1,4 +1,4 @@
-import { ArchiveRestore, DatabaseBackup, Save, Trash2 } from 'lucide-react';
+import { ArchiveRestore, DatabaseBackup, Eraser, Save, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 import { type CatalogBackup, catalogCalls, type CatalogTree, useCatalogBackups, useCatalogEdit } from '#/api/catalog';
@@ -16,7 +16,7 @@ const BackupRow = ({ backup, canManage, busy, onRollback, onDelete }: { backup: 
         <div className="min-w-0 flex-1">
             <div className="flex min-w-0 items-center gap-2">
                 <span className="truncate text-sm font-medium">{backup.name}</span>
-                {backup.automatic && <Badge tone="amber">Before a rollback</Badge>}
+                {backup.automatic && <Badge tone="amber">Automatic</Badge>}
             </div>
             <div className="truncate text-xs text-muted">
                 {takenAt(backup.takenAtUtc)}
@@ -42,15 +42,17 @@ const BackupRow = ({ backup, canManage, busy, onRollback, onDelete }: { backup: 
  * The catalog's backups: copies of every page, offer, product and featured item as they were
  * saved when taken. Rolling back puts the catalog back as one is, ids included, as one change that
  * can be undone and goes live when published; what it replaces is backed up first, so a rollback
- * can itself be rolled back after a publish. Limited series stay as they are.
+ * can itself be rolled back after a publish. Limited series stay as they are. Resetting empties
+ * the catalog to its root, backed up first in the same way.
  */
 export const Backups = ({ tree }: { tree: CatalogTree }) => {
     const backups = useCatalogBackups();
     const take = useCatalogEdit(catalogCalls.backup);
     const rollback = useCatalogEdit(catalogCalls.rollback);
     const remove = useCatalogEdit(catalogCalls.deleteBackup);
+    const reset = useCatalogEdit(catalogCalls.reset);
     const [ name, setName ] = useState('');
-    const busy = take.isPending || rollback.isPending || remove.isPending;
+    const busy = take.isPending || rollback.isPending || remove.isPending || reset.isPending;
     const items = backups.data?.items ?? [];
 
     const doTake = () => take.mutate([ name ], {
@@ -69,6 +71,19 @@ export const Backups = ({ tree }: { tree: CatalogTree }) => {
         }, () => {
             rollback.mutate([ backup.id ], {
                 onSuccess: () => toast(`Rolled back to "${backup.name}". Publish to put it in front of players.`),
+                onError: toastError,
+            });
+        });
+    };
+
+    const doReset = () => {
+        ask({
+            title: 'Reset the catalog?',
+            body: 'Every page but the root, and every offer and featured item, is taken away. What is there now is backed up first, and you can undo it. Players get the empty catalog when you publish.',
+            confirm: 'Reset',
+        }, () => {
+            reset.mutate([], {
+                onSuccess: () => toast('Reset: the catalog is empty, and what was there is kept as "Before resetting the catalog". Publish to put it in front of players.'),
                 onError: toastError,
             });
         });
@@ -125,6 +140,23 @@ export const Backups = ({ tree }: { tree: CatalogTree }) => {
                         />
                     ))}
                 </ul>
+            )}
+
+            {tree.canManage && (
+                <div className="flex flex-wrap items-center gap-3 rounded-xl border border-bad-line bg-bad-soft/60 p-3">
+                    <div className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2 text-sm font-medium">
+                            <Eraser className="size-4 text-bad" />
+                            Reset the catalog
+                        </span>
+                        <p className="text-xs text-muted">
+                            Takes away every page but the root, and every offer, product and featured item, to start again or import a catalog into. It is backed up first, can be undone, and goes live when you publish. Refused while an offer sells a limited series or Builders Club furni was placed from one.
+                        </p>
+                    </div>
+                    <Button variant="danger" icon={<Eraser />} disabled={busy} onClick={doReset}>
+                        Reset
+                    </Button>
+                </div>
             )}
         </div>
     );

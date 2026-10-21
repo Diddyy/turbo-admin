@@ -17,13 +17,16 @@ const RESTART_MINUTES = [
  * Restarting the server, for staff with `admin.server.restart`: a countdown players are warned of
  * as of a shutdown, then everyone is sent home, everything is saved and the server stops for its
  * host to start it again, so the settings waiting on a restart apply. While one counts down it can
- * be called off. `compact` leaves out the explanation, for the Settings page's notice.
+ * be called off. When the hotel shows players a countdown notice for a restart, the restart may
+ * name where it links to (the hotel's default otherwise). `compact` leaves out the explanation, for
+ * the Settings page's notice.
  */
 export const RestartServer = ({ compact = false }: { compact?: boolean }) => {
     const queryClient = useQueryClient();
     const { data: status, error: unreachable } = useServerRestart();
     const [ minutes, setMinutes ] = useState('1');
     const [ reason, setReason ] = useState('');
+    const [ link, setLink ] = useState('');
 
     const act = useMutation({
         mutationFn: (run: () => Promise<ServerRestartStatus>) => run(),
@@ -49,13 +52,14 @@ export const RestartServer = ({ compact = false }: { compact?: boolean }) => {
             body: `${wait === 0 ? 'Everyone is sent home now' : `Players are warned, then sent home in ${wait} min`}; everything is saved and the server stops with exit code ${status.exitCode} for its host to start it again. Without a host that restarts it, it stays stopped.`,
             confirm: 'Restart',
             danger: true,
-        }, () => act.mutate(() => restartServer(wait, reason.trim() || undefined)));
+        }, () => act.mutate(() => restartServer(wait, reason.trim() || undefined, (status.notice && link.trim()) || undefined)));
     };
 
     if (status.scheduled)
         return (
             <div className="flex flex-col gap-3">
                 <p className="text-sm">{restartState(status)}{status.reason && <span className="text-muted"> ({status.reason})</span>}.</p>
+                {status.notice && <p className="text-xs text-muted">Players see a countdown notice{status.noticeLink ? <> linking to <span className="font-mono">{status.noticeLink}</span></> : null}; calling it off takes it down.</p>}
                 <Button variant="secondary" disabled={act.isPending} onClick={() => act.mutate(cancelRestart)} className="sm:self-start">Call it off</Button>
                 {act.error && <ErrorNotice error={act.error} />}
             </div>
@@ -70,6 +74,11 @@ export const RestartServer = ({ compact = false }: { compact?: boolean }) => {
             <Labeled label="Reason (optional)">
                 <Input value={reason} onChange={event => setReason(event.target.value)} placeholder="Shown to players" />
             </Labeled>
+            {status.notice && (
+                <Labeled label="Notice link (optional)" hint="Players also see a countdown notice; a click opens this. A web address or a client link (habbopages/...).">
+                    <Input value={link} onChange={event => setLink(event.target.value)} placeholder={status.noticeLink || 'Nowhere'} />
+                </Labeled>
+            )}
             <Button variant="danger" icon={<RotateCw />} disabled={act.isPending} onClick={restart} className="sm:self-start">
                 {minutes === '0' ? 'Restart now' : `Restart in ${minutes} min`}
             </Button>

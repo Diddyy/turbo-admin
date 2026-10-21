@@ -211,6 +211,7 @@ export interface RoomAbilities {
     staffPick: boolean;
     moderate: boolean;
     manageRights: boolean;
+    manageBotsAndPets: boolean;
     kickAll: boolean;
     muteRoom: boolean;
     unload: boolean;

@@ -4,7 +4,6 @@ import { usePathTab } from '#/lib/tabs';
 
 import { AchievementsTab } from './AchievementsTab';
 import { BadgesTab } from './BadgesTab';
-import { BotsTab } from './BotsTab';
 import { ChatStylesTab } from './ChatStylesTab';
 import { CurrenciesTab } from './CurrenciesTab';
 import { DailyTasksTab } from './DailyTasksTab';
@@ -18,7 +17,6 @@ const TABS = [
     { value: 'badges', label: 'Badges' },
     { value: 'navigator', label: 'Navigator' },
     { value: 'pets', label: 'Pets' },
-    { value: 'bots', label: 'Bots' },
     { value: 'currencies', label: 'Currencies' },
     { value: 'chat-styles', label: 'Chat styles' },
     { value: 'daily-tasks', label: 'Daily tasks' },
@@ -28,7 +26,7 @@ const TABS = [
 
 /**
  * The game's content: what players earn, wear, find and meet - achievements, badges, the
- * navigator, pets, bots, the currencies wallets hold, and the daily tasks, quests and room
+ * navigator, pets, the currencies wallets hold, and the daily tasks, quests and room
  * polls players do.
  * Each change is made at once.
  */
@@ -43,7 +41,7 @@ export const ContentPage = () => {
         <>
             <PageHeader
                 title="Content"
-                description="Achievements, badges, the navigator, pets, bots, currencies, daily tasks, quests and room polls"
+                description="Achievements, badges, the navigator, pets, currencies, daily tasks, quests and room polls"
                 tabs={{ items: TABS, value: tab }}
             />
             <PageBody className="flex flex-col gap-4 lg:gap-5">
@@ -51,7 +49,6 @@ export const ContentPage = () => {
                 {tab === 'badges' && <BadgesTab canManage={canManage} />}
                 {tab === 'navigator' && <NavigatorTab canManage={canManage} />}
                 {tab === 'pets' && <PetsTab canManage={canManage} />}
-                {tab === 'bots' && <BotsTab canManage={canManage} />}
                 {tab === 'currencies' && <CurrenciesTab canManage={canManage} />}
                 {tab === 'chat-styles' && <ChatStylesTab canManage={canManage} />}
                 {tab === 'daily-tasks' && <DailyTasksTab />}

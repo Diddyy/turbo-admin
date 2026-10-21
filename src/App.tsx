@@ -42,7 +42,9 @@ import { ReportPage } from '#/pages/reports/ReportPage';
 import { ReportsPage } from '#/pages/reports/ReportsPage';
 import { WordFilterPage } from '#/pages/reports/WordFilterPage';
 import { RewardTracksPage } from '#/pages/reward-tracks/RewardTracksPage';
+import { RoomBotsPage } from '#/pages/rooms/RoomBotsPage';
 import { RoomPage } from '#/pages/rooms/RoomPage';
+import { RoomPetsPage } from '#/pages/rooms/RoomPetsPage';
 import { RoomSettingsPage } from '#/pages/rooms/RoomSettingsPage';
 import { RoomsPage } from '#/pages/rooms/RoomsPage';
 import { RoomVisitsPage } from '#/pages/RoomVisitsPage';
@@ -70,6 +72,8 @@ export const App = () => (
             <Route path="rooms" element={<RoomsPage />} />
             <Route path="rooms/:id" element={<ToTab to="overview" />} />
             <Route path="rooms/:id/overview" element={<RoomPage />} />
+            <Route path="rooms/:id/bots" element={<RoomBotsPage />} />
+            <Route path="rooms/:id/pets" element={<RoomPetsPage />} />
             <Route path="rooms/:id/settings" element={<RoomSettingsPage />} />
             <Route path="players" element={<PlayerListPage />} />
             <Route path="players/:id/:tab?" element={<PlayerProfilePage />} />

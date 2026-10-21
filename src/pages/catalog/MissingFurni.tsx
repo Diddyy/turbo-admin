@@ -1,7 +1,7 @@
 import { CheckSquare, EyeOff, FolderTree, PackagePlus, PackageSearch, Square, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
-import { type AddFurniPage, type AddFurniSort, type AuditFacet, type AuditFurni, catalogCalls, type CatalogTree, unofferedIds, type UnofferedScope, useAddFurniPlan, useCatalogEdit, useUnoffered } from '#/api/catalog';
+import { type AddFurniSort, type AuditFacet, type AuditFurni, catalogCalls, type CatalogTree, unofferedIds, type UnofferedScope, useAddFurniPlan, useCatalogEdit, useUnoffered } from '#/api/catalog';
 import { Pagination } from '#/components/Pagination';
 import { SearchInput } from '#/components/SearchInput';
 import { toast, toastError } from '#/components/toast';
@@ -10,6 +10,8 @@ import { cx } from '#/lib/cx';
 
 import { PageSelect, type Price, PriceFields } from './fields';
 import { ProductIcon } from './ProductIcon';
+import { SORT_HINTS, SORTS } from './subPageSorts';
+import { SubPagesTree } from './SubPagesTree';
 
 const PAGE_SIZE = 120;
 
@@ -74,26 +76,7 @@ interface MissingFurniProps {
     onAdded?: (count: number) => void;
 }
 
-const SORTS: { value: AddFurniSort | ''; label: string }[] = [
-    { value: '', label: 'Don\'t sort' },
-    { value: 'kind', label: 'By kind' },
-    { value: 'colour', label: 'By colour' },
-    { value: 'kindColour', label: 'Kind, then colour' },
-];
-
-const SORT_HINTS: Record<AddFurniSort, string> = {
-    kind: 'A page under it for each kind: pillow, marquee, … Kinds of fewer than 3 share Other.',
-    colour: 'A page under it for each colour: pink, blue, … Colours of fewer than 3 share Other colours.',
-    kindColour: 'A page for each kind, and under a kind a page for each colour 3 of it share; the rest share Other colours.',
-};
-
-const PlanChip = ({ page }: { page: AddFurniPage }) => (
-    <span className="flex items-center gap-1 rounded-full bg-subtle px-2 py-0.5 text-xs">
-        {page.title}
-        <span className="font-mono text-[11px] text-muted tabular-nums">{page.count}</span>
-        {page.pageId === null && <span className="text-[10px] text-accent uppercase">new</span>}
-    </span>
-);
+const ADD_SORTS: { value: AddFurniSort | ''; label: string }[] = [ { value: '', label: 'Don\'t sort' }, ...SORTS ];
 
 /** The pages picked furni would go on, sorted as the server sorts them; a page's own pages beside it. */
 const SubPagesPlan = ({ pageId, ids, sortBy }: { pageId: number; ids: number[]; sortBy: AddFurniSort }) => {
@@ -109,21 +92,7 @@ const SubPagesPlan = ({ pageId, ids, sortBy }: { pageId: number; ids: number[]; 
     if (pages.length === 1 && pages[0]?.pageId === pageId)
         return <span className="text-xs text-muted">Nothing to sort them into: they go on the page itself.</span>;
 
-    return (
-        <ul className={cx('flex max-h-48 flex-col gap-1 overflow-y-auto transition-opacity', plan.isFetching && 'opacity-60')}>
-            {pages.map(x => (
-                <li key={x.title} className="flex flex-wrap items-center gap-1.5">
-                    <PlanChip page={x} />
-                    {x.pages.length > 0 && (
-                        <>
-                            <span className="text-xs text-muted">→</span>
-                            {x.pages.map(y => <PlanChip key={y.title} page={y} />)}
-                        </>
-                    )}
-                </li>
-            ))}
-        </ul>
-    );
+    return <SubPagesTree pages={pages} fetching={plan.isFetching} className="max-h-48" />;
 };
 
 /**
@@ -315,7 +284,7 @@ export const MissingFurni = ({ tree, pageId, onOpenPage, onAdded }: MissingFurni
                         <div className="flex flex-col gap-2 border-t border-line pt-2">
                             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                                 <div className="max-w-full overflow-x-auto">
-                                    <Segmented label="Sort into sub pages" value={sortBy ?? ''} onChange={value => setSortBy((value || null) as AddFurniSort | null)} options={SORTS} />
+                                    <Segmented label="Sort into sub pages" value={sortBy ?? ''} onChange={value => setSortBy((value || null) as AddFurniSort | null)} options={ADD_SORTS} />
                                 </div>
                                 {sortBy && <span className="text-xs text-muted">{SORT_HINTS[sortBy]}</span>}
                             </div>

@@ -1,4 +1,4 @@
-import { EyeOff, FolderPlus, Hammer, Layers, LayoutTemplate, Merge, RotateCcw, Save, Store, Trash2, X } from 'lucide-react';
+import { EyeOff, FolderPlus, FolderTree, Hammer, Layers, LayoutTemplate, Merge, RotateCcw, Save, Store, Trash2, X } from 'lucide-react';
 import { type FormEvent, type ReactNode, useEffect, useId, useState } from 'react';
 
 import { catalogImageUrl, useClientAssets } from '#/api/assets';
@@ -20,6 +20,7 @@ import { MergePagesDialog } from './MergePagesDialog';
 import { type PageDraft, pageDraftOf, withSlot } from './pageDraft';
 import type { SlotRef } from './PagePreview';
 import { PageIcon } from './PageTree';
+import { ResortPageDialog } from './ResortPageDialog';
 
 const DISPLAYS: { value: PageDisplay; icon: ReactNode; hint: string }[] = [
     { value: 'regular', icon: <Store />, hint: 'The normal catalog.' },
@@ -86,6 +87,7 @@ export const PageInspector = ({ tree, page, draft, onDraft, focus, onOpen }: Pag
     const [ iconOpen, setIconOpen ] = useState(false);
     const [ layoutOpen, setLayoutOpen ] = useState(false);
     const [ mergeOpen, setMergeOpen ] = useState(false);
+    const [ resortOpen, setResortOpen ] = useState(false);
     const linkKeysId = useId();
     const save = useCatalogEdit(catalogCalls.updatePage);
     const create = useCatalogEdit(catalogCalls.createPage);
@@ -245,6 +247,17 @@ export const PageInspector = ({ tree, page, draft, onDraft, focus, onOpen }: Pag
                                 )}
                                 {!isRoot && (
                                     <Button
+                                        variant="secondary"
+                                        icon={<FolderTree />}
+                                        disabled={page.offers.length === 0}
+                                        title={page.offers.length === 0 ? 'It has no offers to sort.' : undefined}
+                                        onClick={() => setResortOpen(true)}
+                                    >
+                                        Sort into sub pages
+                                    </Button>
+                                )}
+                                {!isRoot && (
+                                    <Button
                                         variant="danger"
                                         icon={<Trash2 />}
                                         disabled={remove.isPending || page.offers.length > 0}
@@ -262,6 +275,7 @@ export const PageInspector = ({ tree, page, draft, onDraft, focus, onOpen }: Pag
                                 {!isRoot && page.offers.length > 0 && <p className="w-full text-xs text-muted">To delete the page, move or delete its offers first.</p>}
                             </div>
                             <p className="text-xs text-muted">A new page starts hidden, so it can be set up before anyone sees it. Drag a page in the tree to move it.</p>
+                            {resortOpen && <ResortPageDialog tree={tree} pageId={page.id} onClose={() => setResortOpen(false)} />}
                             {mergeOpen && <MergePagesDialog tree={tree} pageIds={[ page.id ]} keepId={page.id} onClose={() => setMergeOpen(false)} onMerged={onOpen} />}
                         </Section>
                     )}

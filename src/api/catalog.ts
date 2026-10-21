@@ -448,6 +448,12 @@ export interface AddFurniPage {
     pages: AddFurniPage[];
 }
 
+/** The pages under a page its offers would move onto (none when the sort parts nothing), and how many stay on it. */
+export interface ResortPlan {
+    pages: AddFurniPage[];
+    staying: number;
+}
+
 export interface BulkResult {
     done: number;
     unpublishedChanges: number;
@@ -624,6 +630,13 @@ export const usePageMergePlan = (keepId: number | null, pageIds: number[], prior
     placeholderData: previous => previous,
 });
 
+/** Where sorting a page's offers so would move them; nothing is changed. */
+export const useResortPlan = (pageId: number, sortBy: AddFurniSort) => useQuery({
+    queryKey: [ 'catalog', 'resort-plan', pageId, sortBy ],
+    queryFn: () => post<ResortPlan>(`/catalog/pages/${pageId}/resort/preview`, { sortBy }),
+    placeholderData: previous => previous,
+});
+
 export const useDuplicatePages = () => useQuery({
     queryKey: [ 'catalog', 'audit', 'duplicate-pages' ],
     queryFn: () => api<{ total: number; items: DuplicatePage[] }>('/catalog/audit/duplicate-pages'),
@@ -655,6 +668,7 @@ export const catalogCalls = {
     previewBuild: (pageId: number, request: BuildRequest) => post<BuildPlan>(`/catalog/pages/${pageId}/build/preview`, request),
     applyBuild: (pageId: number, request: BuildApply) => post<BuildResult>(`/catalog/pages/${pageId}/build`, request),
     addFurni: (pageId: number, input: AddFurniInput) => post<BulkResult>(`/catalog/pages/${pageId}/furni`, input),
+    resortPage: (pageId: number, sortBy: AddFurniSort) => post<BulkResult>(`/catalog/pages/${pageId}/resort`, { sortBy }),
     deleteOffers: (offerIds: number[]) => post<BulkResult>('/catalog/offers/delete', { offerIds }),
     createFrontPage: () => post<Saved>('/catalog/frontpage'),
     mergePages: (keepId: number, pageIds: number[], priorityPageId: number | null = null) => post<PageMergeResult>(`/catalog/pages/${keepId}/merge`, { pageIds, priorityPageId }),

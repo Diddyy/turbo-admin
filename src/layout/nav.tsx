@@ -1,4 +1,4 @@
-import { Activity, Armchair, BellRing, Bug, CloudDownload, Coins, Disc3, DoorOpen, Flag, FunnelX, Gauge, History, House, KeyRound, Landmark, Languages, Mail, MessagesSquare, Milestone, PackagePlus, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
+import { Activity, Armchair, BellRing, Bug, ChartColumn, CloudDownload, Coins, Disc3, DoorOpen, Flag, FunnelX, Gauge, History, House, KeyRound, Landmark, Languages, Mail, MessagesSquare, Milestone, MonitorSmartphone, PackagePlus, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router';
 
@@ -7,7 +7,7 @@ import { useMe } from '#/api/queries';
 import type { MeResponse } from '#/api/types';
 import type { TabItem } from '#/components/Tabs';
 
-type Need = keyof Pick<MeResponse, 'canViewRooms' | 'canViewPlayers' | 'canViewPermissions' | 'canViewCommandLog' | 'canViewChatlog' | 'canViewCatalog' | 'canViewGamedata' | 'canViewSettings' | 'canViewContent' | 'canViewPlugins' | 'canResetPasskeys' | 'canManageRewardTracks' | 'canHandleReports' | 'canViewMessages'>;
+type Need = keyof Pick<MeResponse, 'canViewRooms' | 'canViewPlayers' | 'canViewPermissions' | 'canViewCommandLog' | 'canViewChatlog' | 'canViewCatalog' | 'canViewGamedata' | 'canViewSettings' | 'canViewContent' | 'canViewPlugins' | 'canResetPasskeys' | 'canManageRewardTracks' | 'canHandleReports' | 'canViewMessages' | 'canViewTelemetry'>;
 
 /** One page of the panel: where `g` and its letter go, and what the search offers by name. */
 export interface NavItem {
@@ -26,6 +26,8 @@ export interface NavItem {
 const PAGES = {
     dashboard: { to: '/', label: 'Overview', icon: <Gauge />, end: true, key: 'd' },
     performance: { to: '/performance', label: 'Performance', icon: <Activity />, end: false, key: 'm' },
+    clientHealth: { to: '/client-health', label: 'Client health', icon: <MonitorSmartphone />, end: false, key: 'y', needs: 'canViewTelemetry' },
+    usage: { to: '/usage', label: 'Usage', icon: <ChartColumn />, end: false, key: 'j', needs: 'canViewTelemetry' },
     players: { to: '/players', label: 'Players', icon: <Users />, end: false, key: 'p', needs: 'canViewPlayers' },
     reports: { to: '/reports', label: 'Reports', icon: <Flag />, end: false, key: 'q', needs: 'canHandleReports' },
     wordFilter: { to: '/word-filter', label: 'Word filter', icon: <FunnelX />, end: false, needs: 'canHandleReports' },
@@ -81,7 +83,7 @@ export interface NavSection {
     entries: NavEntry[];
 }
 
-const OVERVIEW: NavEntry = { label: 'Overview', icon: <Gauge />, pages: [ 'dashboard', 'performance' ], hint: 'The hotel now, and how the server runs' };
+const OVERVIEW: NavEntry = { label: 'Overview', icon: <Gauge />, pages: [ 'dashboard', 'performance', 'clientHealth', 'usage' ], hint: 'The hotel now, how the server and the clients run, and what players use' };
 const LOGS: NavEntry = { label: 'Logs', icon: <ScrollText />, pages: [ 'commandLog', 'chatlog', 'messages', 'currencyLog', 'roomVisits', 'permissionLog' ], hint: 'Commands run, chat in rooms, private messages, wallet changes, room visits, permission changes' };
 const MODERATION: NavEntry = { label: 'Moderation', icon: <Flag />, pages: [ 'reports', 'wordFilter' ], hint: 'Calls for help players send, and the word filter' };
 const GROUPS: NavEntry = { label: 'Groups', icon: <Shield />, pages: [ 'groups', 'badgeParts' ], hint: 'Groups, their members, and badge parts' };

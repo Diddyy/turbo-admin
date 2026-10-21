@@ -44,6 +44,7 @@ export interface MeResponse {
     canHandleReports: boolean;
     /** Holds `admin.messages.view`: may read players' private messages. */
     canViewMessages: boolean;
+    canViewTelemetry: boolean;
 }
 
 export interface DashboardRoom {

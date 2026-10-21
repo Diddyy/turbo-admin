@@ -48,8 +48,12 @@ import { RoomVisitsPage } from '#/pages/RoomVisitsPage';
 import { SettingsPage } from '#/pages/settings/SettingsPage';
 import { StaffPage } from '#/pages/StaffPage';
 
-// Its charts are a large library that no other page needs, so it loads when opened.
+// Their charts are a large library that no other page needs, so they load when opened.
 const PerformancePage = lazy(() => import('#/pages/PerformancePage').then(x => ({ default: x.PerformancePage })));
+const ClientHealthPage = lazy(() => import('#/pages/telemetry/ClientHealthPage').then(x => ({ default: x.ClientHealthPage })));
+const UsagePage = lazy(() => import('#/pages/telemetry/UsagePage').then(x => ({ default: x.UsagePage })));
+const TelemetryRoomPage = lazy(() => import('#/pages/telemetry/TelemetryDrillPages').then(x => ({ default: x.TelemetryRoomPage })));
+const TelemetryPlayerPage = lazy(() => import('#/pages/telemetry/TelemetryDrillPages').then(x => ({ default: x.TelemetryPlayerPage })));
 
 export const App = () => (
     <Routes>
@@ -58,6 +62,10 @@ export const App = () => (
         <Route element={<RequireSession><Shell /></RequireSession>}>
             <Route index element={<DashboardPage />} />
             <Route path="performance" element={<Suspense fallback={<Loading />}><PerformancePage /></Suspense>} />
+            <Route path="client-health" element={<Suspense fallback={<Loading />}><ClientHealthPage /></Suspense>} />
+            <Route path="client-health/rooms/:id" element={<Suspense fallback={<Loading />}><TelemetryRoomPage /></Suspense>} />
+            <Route path="client-health/players/:id" element={<Suspense fallback={<Loading />}><TelemetryPlayerPage /></Suspense>} />
+            <Route path="usage" element={<Suspense fallback={<Loading />}><UsagePage /></Suspense>} />
             <Route path="rooms" element={<RoomsPage />} />
             <Route path="rooms/:id" element={<ToTab to="overview" />} />
             <Route path="rooms/:id/overview" element={<RoomPage />} />

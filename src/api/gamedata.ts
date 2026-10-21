@@ -14,11 +14,11 @@ export const CHANGE_KINDS: Record<number, string> = { 0: 'import', 1: 'edit', 2:
 export const IMPORT_ACTIONS: Record<number, string> = { 0: 'add', 1: 'update', 2: 'keep' };
 
 /** Which table a change touched: GamedataRecordType. */
-export const RECORD_TYPES: Record<number, string> = { 0: 'definition', 1: 'Habbo item', 2: 'text', 3: 'Habbo text', 4: 'product', 5: 'Habbo product', 6: 'figure', 7: 'Habbo figure', 8: 'variable' };
+export const RECORD_TYPES: Record<number, string> = { 0: 'definition', 1: 'Habbo item', 2: 'text', 3: 'Habbo text', 4: 'product', 5: 'Habbo product', 6: 'figure', 7: 'Habbo figure', 8: 'variable', 9: 'Habbo variable' };
 
 /** Which records each history lists the change sets of; Habbo's updates every kind Habbo serves. */
 export const HISTORY_RECORDS = {
-    habbo: [ 0, 1, 2, 3, 4, 5, 6, 7 ],
+    habbo: [ 0, 1, 2, 3, 4, 5, 6, 7, 9 ],
     products: [ 4, 5 ],
     texts: [ 2, 3 ],
     variables: [ 8 ],
@@ -85,6 +85,8 @@ export interface GamedataStatus {
     latestTexts: HabboTextVersion | null;
     latestProducts: HabboProductVersion | null;
     latestFigures: HabboFigureVersion | null;
+    /** Absent from a server older than the panel. */
+    latestVariables?: HabboVariableVersion | null;
     furnitureData: GamedataFile;
     externalTexts: GamedataFile;
     productData: GamedataFile;
@@ -341,7 +343,7 @@ export const useCheckHabbo = () => {
     const refresh = useRefresh();
 
     return useMutation({
-        mutationFn: () => post<{ release: HabboRelease; isNew: boolean; texts: HabboTextVersion; textsAreNew: boolean; products: HabboProductVersion; productsAreNew: boolean; figures: HabboFigureVersion; figuresAreNew: boolean }>('/gamedata/habbo/check'),
+        mutationFn: () => post<{ release: HabboRelease; isNew: boolean; texts: HabboTextVersion; textsAreNew: boolean; products: HabboProductVersion; productsAreNew: boolean; figures: HabboFigureVersion; figuresAreNew: boolean; variablesAreNew?: boolean }>('/gamedata/habbo/check'),
         onSuccess: refresh,
     });
 };
@@ -598,6 +600,68 @@ export interface VariableImportPreview {
     /** Every variable the import would remove, listed or not. */
     removedCount: number;
 }
+
+/** A version of Habbo's external variables a check kept. */
+export interface HabboVariableVersion {
+    id: number;
+    domain: string;
+    hash: string;
+    variableCount: number;
+    foundAt: string;
+    checkedAt: string;
+    /** When any of it was last taken in; null until some is. */
+    importedAt: string | null;
+}
+
+/** What taking one of Habbo's variables in does: HabboVariableUpdateAction. */
+export const HABBO_VARIABLE_ACTIONS: Record<number, { name: string; tone: BadgeTone }> = {
+    0: { name: 'add', tone: 'green' },
+    1: { name: 'update', tone: 'accent' },
+    2: { name: 'remove', tone: 'red' },
+};
+
+/** One of Habbo's variables waiting to be taken in. */
+export interface HabboVariableUpdateItem {
+    key: string;
+    action: number;
+    /** The hotel's value as JSON; null when it has none. */
+    current: string | null;
+    /** Habbo's value as the hotel would keep it, JSON; null for a key Habbo removed. */
+    incoming: string | null;
+    /** Habbo's value as its file writes it; null for a key Habbo removed. */
+    habbo: string | null;
+}
+
+/** What Habbo's variables have that the hotel's don't: every key waiting. */
+export interface HabboVariableUpdatePreview {
+    version: HabboVariableVersion;
+    added: number;
+    updated: number;
+    removed: number;
+    /** Keys the hotel changed after taking Habbo's in, which Habbo hasn't changed since: not offered. */
+    kept: number;
+    /** Keys the hotel owns (a setting's, a file's, the reception's, the ignore list's, addresses): never offered. */
+    protected: number;
+    unchanged: number;
+    items: HabboVariableUpdateItem[];
+}
+
+export const useHabboVariableUpdate = (enabled: boolean) => useQuery({
+    queryKey: [ 'gamedata', 'variables', 'habbo-update' ],
+    queryFn: () => api<HabboVariableUpdatePreview>('/gamedata/variables/habbo/update'),
+    enabled,
+    ...PREVIEW_FRESHNESS,
+});
+
+/** Takes the keys picked in from a version of Habbo's variables; one change set. */
+export const useTakeHabboVariables = () => {
+    const refresh = useRefresh();
+
+    return useMutation({
+        mutationFn: ({ versionId, keys }: { versionId: number; keys: string[] }) => post<{ changeSet: ChangeSet | null }>(`/gamedata/variables/habbo/update/${versionId}`, { keys }),
+        onSuccess: refresh,
+    });
+};
 
 /** A client config to import, and whether the hotel's variables it lacks are removed. */
 export interface VariableImport {

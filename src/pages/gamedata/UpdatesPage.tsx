@@ -3,7 +3,7 @@ import { type ReactNode, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
 import { type AssetsStatus, type BundleKind, useAssetJob, useRelist, useSyncPreview } from '#/api/bundles';
-import { type GamedataStatus, useCheckHabbo, useFigureImportPreview, useImportPreview, useProductImportPreview, useTextImportPreview } from '#/api/gamedata';
+import { type GamedataStatus, useCheckHabbo, useFigureImportPreview, useHabboVariableUpdate, useImportPreview, useProductImportPreview, useTextImportPreview } from '#/api/gamedata';
 import { toast, toastError } from '#/components/toast';
 import { Badge, type BadgeTone, Button, ErrorNotice, Label, PageBody, PageHeader, Panel } from '#/components/ui';
 import { cx } from '#/lib/cx';
@@ -16,6 +16,7 @@ import { HabboFigures } from './FiguresTab';
 import { Loaded } from './frame';
 import { HabboFurniture } from './FurnitureTab';
 import { HabboClientPanel } from './HabboClientPanel';
+import { HabboVariables } from './HabboVariables';
 import { HistoryPanel } from './HistoryPanel';
 import { HabboProducts } from './ProductsTab';
 import { useGamedata } from './state';
@@ -61,6 +62,7 @@ const useCategories = (status: GamedataStatus | undefined, canManage: boolean): 
     const figures = useFigureImportPreview(!!status?.latestFigures);
     const products = useProductImportPreview(!!status?.latestProducts);
     const texts = useTextImportPreview(!!status?.latestTexts);
+    const variables = useHabboVariableUpdate(!!status?.latestVariables);
     const bundles = useSyncPreview(!!status);
 
     if (!status)
@@ -116,6 +118,14 @@ const useCategories = (status: GamedataStatus | undefined, canManage: boolean): 
             count: dataCount(status.latestTexts !== null, texts.data),
             note: status.latestTexts ? undefined : unchecked,
             content: <HabboTexts status={status} defaultOpen />,
+        },
+        {
+            id: 'variables',
+            label: 'Variables',
+            group: 'Gamedata',
+            count: status.latestVariables && variables.data ? variables.data.items.length : null,
+            note: status.latestVariables ? undefined : unchecked,
+            content: <HabboVariables status={status} defaultOpen />,
         },
         bundleCategory('furniture', 'furniture-bundles', 'Furniture'),
         bundleCategory('figure', 'figure-bundles', 'Clothing'),
@@ -276,6 +286,7 @@ const CheckButton = () => {
                     data.productsAreNew ? 'New product data.' : null,
                     data.textsAreNew ? 'New texts.' : null,
                     data.figuresAreNew ? 'New figure data.' : null,
+                    data.variablesAreNew ? 'New variables.' : null,
                 ].filter(Boolean).join(' ') || 'Nothing new: Habbo serves what was already found.'),
             })}
         >
@@ -289,7 +300,7 @@ const TABS = [ 'waiting', 'sources', 'history' ] as const;
 /**
  * Habbo updates: what Habbo has that the hotel hasn't taken in (each to review and take in, the
  * data rolled back from the history if need be), where it comes from, and the history of the
- * gamedata Habbo serves (the variables keep theirs on their own tab).
+ * gamedata Habbo serves (the variables' own edits are kept on their own tab).
  */
 export const UpdatesPage = () => {
     const state = useGamedata();

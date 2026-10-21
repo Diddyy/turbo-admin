@@ -1,11 +1,11 @@
-import { CheckSquare, EyeOff, PackagePlus, PackageSearch, Square, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { CheckSquare, EyeOff, FolderTree, PackagePlus, PackageSearch, Square, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { type AuditFacet, type AuditFurni, catalogCalls, type CatalogTree, type UnofferedScope, useCatalogEdit, useUnoffered } from '#/api/catalog';
+import { type AuditFacet, type AuditFurni, catalogCalls, type CatalogTree, unofferedIds, type UnofferedScope, useAddFurniPlan, useCatalogEdit, useUnoffered } from '#/api/catalog';
 import { Pagination } from '#/components/Pagination';
 import { SearchInput } from '#/components/SearchInput';
 import { toast, toastError } from '#/components/toast';
-import { Button, EmptyState, ErrorNotice, IconButton, Input, Label, Loading, Segmented, TextButton } from '#/components/ui';
+import { Button, EmptyState, ErrorNotice, IconButton, Input, Label, Loading, Segmented, Switch, TextButton } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 import { PageSelect, type Price, PriceFields } from './fields';
@@ -74,10 +74,38 @@ interface MissingFurniProps {
     onAdded?: (count: number) => void;
 }
 
+/** The pages picked furni would go on with sub pages, as the server sorts them by kind. */
+const SubPagesPlan = ({ pageId, ids }: { pageId: number; ids: number[] }) => {
+    const plan = useAddFurniPlan(pageId, ids, true);
+    const pages = plan.data?.pages ?? [];
+
+    if (plan.error)
+        return <ErrorNotice error={plan.error} />;
+
+    if (!plan.data)
+        return <span className="text-xs text-muted">Sorting them…</span>;
+
+    if (pages.length === 1 && pages[0]?.pageId === pageId)
+        return <span className="text-xs text-muted">All of one kind: they go on the page itself.</span>;
+
+    return (
+        <ul className={cx('flex flex-wrap gap-1.5 transition-opacity', plan.isFetching && 'opacity-60')}>
+            {pages.map(x => (
+                <li key={x.title} className="flex items-center gap-1 rounded-full bg-subtle px-2 py-0.5 text-xs">
+                    {x.title}
+                    <span className="font-mono text-[11px] text-muted tabular-nums">{x.count}</span>
+                    {x.pageId === null && <span className="text-[10px] text-accent uppercase">new</span>}
+                </li>
+            ))}
+        </ul>
+    );
+};
+
 /**
  * The furni the catalog doesn't sell: in no offer at all, or only where players can't see it.
- * Narrowed by name, furni line and furnidata category; picked by the tile, a page of them at a
- * time; and put on a page in one go, an offer each at one price - one step to undo.
+ * Narrowed by name, furni line and furnidata category; picked by the tile, a page of them or
+ * every one that matches at a time; and put on a page in one go, an offer each at one price, or
+ * sorted onto a page under it for each kind - one step to undo.
  */
 export const MissingFurni = ({ tree, pageId, onOpenPage, onAdded }: MissingFurniProps) => {
     const [ scope, setScope ] = useState<UnofferedScope>('missing');
@@ -86,9 +114,11 @@ export const MissingFurni = ({ tree, pageId, onOpenPage, onAdded }: MissingFurni
     const [ line, setLine ] = useState('');
     const [ category, setCategory ] = useState('');
     const [ page, setPage ] = useState(0);
-    const [ picked, setPicked ] = useState<Map<number, AuditFurni>>(() => new Map());
+    const [ picked, setPicked ] = useState<Set<number>>(() => new Set());
+    const [ pickingAll, setPickingAll ] = useState(false);
     const [ target, setTarget ] = useState<number | null>(pageId);
     const [ price, setPrice ] = useState<Price>({ costCredits: 3, costCurrency: 0, currencyTypeId: null });
+    const [ subPages, setSubPages ] = useState(false);
     const result = useUnoffered({ scope, q, line, category, page, size: PAGE_SIZE });
     const add = useCatalogEdit(catalogCalls.addFurni);
     const data = result.data;
@@ -120,10 +150,10 @@ export const MissingFurni = ({ tree, pageId, onOpenPage, onAdded }: MissingFurni
     };
 
     const toggle = (furni: AuditFurni) => setPicked((current) => {
-        const next = new Map(current);
+        const next = new Set(current);
 
         if (!next.delete(furni.id))
-            next.set(furni.id, furni);
+            next.add(furni.id);
 
         return next;
     });
@@ -131,15 +161,31 @@ export const MissingFurni = ({ tree, pageId, onOpenPage, onAdded }: MissingFurni
     const items = data?.items ?? [];
     const allPicked = items.length > 0 && items.every(x => picked.has(x.id));
     const targetPage = tree.pages.find(x => x.id === target);
+    const pickedIds = useMemo(() => [ ...picked ], [ picked ]);
+
+    // Every furni that matches, past the page shown: the server lists their ids.
+    const pickAll = async () => {
+        setPickingAll(true);
+
+        try {
+            const { ids } = await unofferedIds({ scope, q, line, category });
+
+            setPicked(current => new Set([ ...current, ...ids ]));
+        } catch (error) {
+            toastError(error);
+        } finally {
+            setPickingAll(false);
+        }
+    };
 
     const submit = () => {
         if (!target || picked.size === 0)
             return;
 
-        add.mutate([ target, { definitionIds: [ ...picked.keys() ], ...price, clubLevel: 0, canGift: true, visible: true } ], {
+        add.mutate([ target, { definitionIds: pickedIds, ...price, clubLevel: 0, canGift: true, visible: true, subPages } ], {
             onSuccess: (done) => {
-                toast(`Added ${done.done} furni to ${targetPage?.localization ?? 'the page'}. Publish to put them live.`);
-                setPicked(new Map());
+                toast(`Added ${done.done} furni ${subPages ? 'under' : 'to'} ${targetPage?.localization ?? 'the page'}. Publish to put them live.`);
+                setPicked(new Set());
                 onAdded?.(done.done);
             },
             onError: toastError,
@@ -189,19 +235,24 @@ export const MissingFurni = ({ tree, pageId, onOpenPage, onAdded }: MissingFurni
                     {items.length > 0 && tree.canManage && (
                         <TextButton
                             onClick={() => setPicked((current) => {
-                                const next = new Map(current);
+                                const next = new Set(current);
 
                                 for (const x of items) {
                                     if (allPicked)
                                         next.delete(x.id);
                                     else
-                                        next.set(x.id, x);
+                                        next.add(x.id);
                                 }
 
                                 return next;
                             })}
                         >
                             {allPicked ? 'Unpick these' : `Pick these ${items.length}`}
+                        </TextButton>
+                    )}
+                    {data && data.total > items.length && tree.canManage && (
+                        <TextButton disabled={pickingAll} onClick={() => void pickAll()}>
+                            {pickingAll ? 'Picking…' : `Pick all ${data.total.toLocaleString()}`}
                         </TextButton>
                     )}
                     <span className="ml-auto">
@@ -221,19 +272,31 @@ export const MissingFurni = ({ tree, pageId, onOpenPage, onAdded }: MissingFurni
                 </ul>
 
                 {tree.canManage && picked.size > 0 && (
-                    <div className="sticky bottom-3 z-20 flex flex-wrap items-center gap-2 rounded-xl border border-accent/50 bg-surface/95 p-2.5 shadow-xl backdrop-blur">
-                        <span className="flex items-center gap-1.5 px-1 text-sm font-medium">
-                            {picked.size} picked
-                            <IconButton label="Unpick them all" icon={<X />} small onClick={() => setPicked(new Map())} />
-                        </span>
-                        <span className="text-xs text-muted">add to</span>
-                        <PageSelect tree={tree} value={target} onChange={setTarget} className="flex-1 sm:w-56 sm:flex-none" />
-                        {target && <TextButton onClick={() => onOpenPage(target)}>open</TextButton>}
-                        <span className="text-xs text-muted">at</span>
-                        <PriceFields tree={tree} value={price} onChange={setPrice} />
-                        <Button icon={<PackagePlus />} disabled={!target || add.isPending || (price.costCurrency > 0 && !price.currencyTypeId)} onClick={submit} className="ml-auto">
-                            {add.isPending ? 'Adding…' : `Add ${picked.size}`}
-                        </Button>
+                    <div className="sticky bottom-3 z-20 flex flex-col gap-2 rounded-xl border border-accent/50 bg-surface/95 p-2.5 shadow-xl backdrop-blur">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="flex items-center gap-1.5 px-1 text-sm font-medium">
+                                {picked.size.toLocaleString()} picked
+                                <IconButton label="Unpick them all" icon={<X />} small onClick={() => setPicked(new Set())} />
+                            </span>
+                            <span className="text-xs text-muted">{subPages ? 'add under' : 'add to'}</span>
+                            <PageSelect tree={tree} value={target} onChange={setTarget} className="flex-1 sm:w-56 sm:flex-none" />
+                            {target && <TextButton onClick={() => onOpenPage(target)}>open</TextButton>}
+                            <span className="text-xs text-muted">at</span>
+                            <PriceFields tree={tree} value={price} onChange={setPrice} />
+                            <Button icon={subPages ? <FolderTree /> : <PackagePlus />} disabled={!target || add.isPending || (price.costCurrency > 0 && !price.currencyTypeId)} onClick={submit} className="ml-auto">
+                                {add.isPending ? 'Adding…' : `Add ${picked.size.toLocaleString()}`}
+                            </Button>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-2">
+                            <Switch
+                                label="Sort into sub pages by kind"
+                                hint="A page under it for each kind: pillow, marquee, … Kinds of fewer than 3 share one."
+                                checked={subPages}
+                                onChange={setSubPages}
+                                className="min-h-0 sm:w-80"
+                            />
+                            {subPages && target && <div className="min-w-0 flex-1"><SubPagesPlan pageId={target} ids={pickedIds} /></div>}
+                        </div>
                     </div>
                 )}
             </div>

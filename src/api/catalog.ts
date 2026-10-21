@@ -407,6 +407,15 @@ export interface AddFurniInput {
     clubLevel: number;
     canGift: boolean;
     visible: boolean;
+    /** Sort them onto a page under it for each kind of furni. */
+    subPages: boolean;
+}
+
+/** A page added furni would go on: one there already (`pageId`), or one to make. */
+export interface AddFurniPage {
+    title: string;
+    pageId: number | null;
+    count: number;
 }
 
 export interface BulkResult {
@@ -562,6 +571,18 @@ export const useCatalogBackups = () => useQuery({
 export const useUnoffered = (query: UnofferedQuery) => useQuery({
     queryKey: [ 'catalog', 'audit', 'unoffered', query ],
     queryFn: () => api<UnofferedResult>(`/catalog/audit/unoffered?${new URLSearchParams({ scope: query.scope, q: query.q, line: query.line, category: query.category, page: String(query.page), size: String(query.size) })}`),
+    placeholderData: previous => previous,
+});
+
+/** Every furni the unoffered list holds as narrowed, past its pages. */
+export const unofferedIds = (query: Omit<UnofferedQuery, 'page' | 'size'>) =>
+    api<{ ids: number[] }>(`/catalog/audit/unoffered/ids?${new URLSearchParams({ scope: query.scope, q: query.q, line: query.line, category: query.category })}`);
+
+/** The pages adding the furni with sub pages would put them on. */
+export const useAddFurniPlan = (pageId: number | null, definitionIds: number[], enabled: boolean) => useQuery({
+    queryKey: [ 'catalog', 'add-furni-plan', pageId, definitionIds ],
+    queryFn: () => post<{ pages: AddFurniPage[] }>(`/catalog/pages/${pageId}/furni/preview`, { definitionIds, subPages: true }),
+    enabled: enabled && pageId !== null && definitionIds.length > 0,
     placeholderData: previous => previous,
 });
 

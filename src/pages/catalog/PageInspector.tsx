@@ -1,4 +1,4 @@
-import { EyeOff, FolderPlus, Hammer, Layers, LayoutTemplate, RotateCcw, Save, Store, Trash2, X } from 'lucide-react';
+import { EyeOff, FolderPlus, Hammer, Layers, LayoutTemplate, Merge, RotateCcw, Save, Store, Trash2, X } from 'lucide-react';
 import { type FormEvent, type ReactNode, useEffect, useId, useState } from 'react';
 
 import { catalogImageUrl, useClientAssets } from '#/api/assets';
@@ -16,6 +16,7 @@ import { DISPLAY_LABELS, inBuildersClub } from './labels';
 import { LayoutPicker } from './LayoutPicker';
 import { isKnownLayout, layoutOf } from './layouts';
 import { LINK_KEYS, linkKeyNote } from './linkKeys';
+import { MergePagesDialog } from './MergePagesDialog';
 import { type PageDraft, pageDraftOf, withSlot } from './pageDraft';
 import type { SlotRef } from './PagePreview';
 import { PageIcon } from './PageTree';
@@ -84,6 +85,7 @@ export const PageInspector = ({ tree, page, draft, onDraft, focus, onOpen }: Pag
     const canManage = tree.canManage;
     const [ iconOpen, setIconOpen ] = useState(false);
     const [ layoutOpen, setLayoutOpen ] = useState(false);
+    const [ mergeOpen, setMergeOpen ] = useState(false);
     const linkKeysId = useId();
     const save = useCatalogEdit(catalogCalls.updatePage);
     const create = useCatalogEdit(catalogCalls.createPage);
@@ -237,6 +239,11 @@ export const PageInspector = ({ tree, page, draft, onDraft, focus, onOpen }: Pag
                                     Add a page under it
                                 </Button>
                                 {!isRoot && (
+                                    <Button variant="secondary" icon={<Merge />} onClick={() => setMergeOpen(true)}>
+                                        Merge with another page
+                                    </Button>
+                                )}
+                                {!isRoot && (
                                     <Button
                                         variant="danger"
                                         icon={<Trash2 />}
@@ -255,6 +262,7 @@ export const PageInspector = ({ tree, page, draft, onDraft, focus, onOpen }: Pag
                                 {!isRoot && page.offers.length > 0 && <p className="w-full text-xs text-muted">To delete the page, move or delete its offers first.</p>}
                             </div>
                             <p className="text-xs text-muted">A new page starts hidden, so it can be set up before anyone sees it. Drag a page in the tree to move it.</p>
+                            {mergeOpen && <MergePagesDialog tree={tree} pageIds={[ page.id ]} keepId={page.id} onClose={() => setMergeOpen(false)} onMerged={onOpen} />}
                         </Section>
                     )}
                 </div>

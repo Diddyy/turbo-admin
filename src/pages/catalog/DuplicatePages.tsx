@@ -1,9 +1,10 @@
 import { CheckCircle2, EyeOff, Merge } from 'lucide-react';
+import { useState } from 'react';
 
-import { catalogCalls, type CatalogTree, type DuplicatePage, type DuplicatePageItem, useCatalogEdit, useDuplicatePages } from '#/api/catalog';
-import { ask } from '#/components/confirm';
-import { toast, toastError } from '#/components/toast';
+import { type CatalogTree, type DuplicatePage, type DuplicatePageItem, useDuplicatePages } from '#/api/catalog';
 import { Badge, type BadgeTone, EmptyState, ErrorNotice, Loading, TextButton } from '#/components/ui';
+
+import { MergePagesDialog } from './MergePagesDialog';
 
 const DISPLAYS: Record<string, { label: string; tone: BadgeTone }> = {
     regular: { label: 'Normal', tone: 'neutral' },
@@ -14,7 +15,7 @@ const DISPLAYS: Record<string, { label: string; tone: BadgeTone }> = {
 
 const plural = (count: number, one: string, many: string) => `${count.toLocaleString()} ${count === 1 ? one : many}`;
 
-const PageRow = ({ page, canManage, busy, onOpen, onMerge }: { page: DuplicatePageItem; canManage: boolean; busy: boolean; onOpen: () => void; onMerge: () => void }) => {
+const PageRow = ({ page, canManage, onOpen, onMerge }: { page: DuplicatePageItem; canManage: boolean; onOpen: () => void; onMerge: () => void }) => {
     const display = DISPLAYS[page.display] ?? DISPLAYS.regular!;
 
     return (
@@ -34,7 +35,7 @@ const PageRow = ({ page, canManage, busy, onOpen, onMerge }: { page: DuplicatePa
                 {plural(page.offers, 'offer', 'offers')} · {plural(page.pages, 'page', 'pages')}
             </span>
             {canManage && (
-                <TextButton disabled={busy} onClick={onMerge} title="Move the others' offers and pages here, then delete them" className="min-h-10 px-2 sm:min-h-0">
+                <TextButton onClick={onMerge} title="Move the others' offers and pages here, then delete them" className="min-h-10 px-2 sm:min-h-0">
                     Merge into this
                 </TextButton>
             )}
@@ -45,28 +46,14 @@ const PageRow = ({ page, canManage, busy, onOpen, onMerge }: { page: DuplicatePa
 /**
  * The names more than one page has, as two imports made apart leave a page of Habbo's, once for
  * each catalogue: each page with where it is, which catalogue shows it and what it holds. Merging
- * into one moves the others' offers and pages to it and deletes them, as one step to undo; the
- * page kept is shown in each catalogue one of them was.
+ * into one moves the others' offers and pages to it and deletes them, as one step to undo, keeping
+ * the offer of the page picked where two sell the same; the page kept is shown in each catalogue
+ * one of them was.
  */
 export const DuplicatePages = ({ tree, onOpen }: { tree: CatalogTree; onOpen: (pageId: number) => void }) => {
     const duplicates = useDuplicatePages();
-    const merge = useCatalogEdit(catalogCalls.mergePages);
+    const [ merging, setMerging ] = useState<{ group: DuplicatePage; keep: DuplicatePageItem } | null>(null);
     const items = duplicates.data?.items ?? [];
-
-    const doMerge = (group: DuplicatePage, keep: DuplicatePageItem) => {
-        const others = group.pages.filter(x => x.pageId !== keep.pageId);
-
-        ask({
-            title: `Merge ${plural(others.length, 'page', 'pages')} named "${group.name}" into page ${keep.pageId}?`,
-            body: 'Their offers and the pages under them move to it, an offer it sells already is deleted, and they are deleted. It is shown in each catalogue one of them was. You can undo it.',
-            confirm: 'Merge',
-        }, () => {
-            merge.mutate([ keep.pageId, others.map(x => x.pageId) ], {
-                onSuccess: result => toast(`Merged: ${plural(result.offersMoved, 'offer', 'offers')} moved, ${plural(result.offersDropped, 'offer', 'offers')} it had already deleted, ${plural(result.pagesMoved, 'page', 'pages')} moved under it.`),
-                onError: toastError,
-            });
-        });
-    };
 
     return (
         <section className="flex flex-col gap-3">
@@ -92,9 +79,8 @@ export const DuplicatePages = ({ tree, onOpen }: { tree: CatalogTree; onOpen: (p
                                     key={page.pageId}
                                     page={page}
                                     canManage={tree.canManage}
-                                    busy={merge.isPending}
                                     onOpen={() => onOpen(page.pageId)}
-                                    onMerge={() => doMerge(group, page)}
+                                    onMerge={() => setMerging({ group, keep: page })}
                                 />
                             ))}
                         </ul>
@@ -102,6 +88,14 @@ export const DuplicatePages = ({ tree, onOpen }: { tree: CatalogTree; onOpen: (p
                 ))}
             </ul>
             {items.length > 200 && <p className="text-center text-xs text-muted">Showing 200 of {items.length}.</p>}
+            {merging && (
+                <MergePagesDialog
+                    tree={tree}
+                    pageIds={merging.group.pages.map(x => x.pageId)}
+                    keepId={merging.keep.pageId}
+                    onClose={() => setMerging(null)}
+                />
+            )}
         </section>
     );
 };

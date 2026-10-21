@@ -390,6 +390,32 @@ export interface DuplicatePage {
     pages: DuplicatePageItem[];
 }
 
+/** An offer of the pages a merge takes, where it is and what it costs. */
+export interface PageMergeOffer {
+    offerId: number;
+    pageId: number;
+    costCredits: number;
+    costCurrency: number;
+    currencyTypeId: number | null;
+}
+
+/** A thing more than one of the merged pages sells: the offer that stays, and those deleted. */
+export interface PageMergeDuplicate {
+    name: string;
+    kept: PageMergeOffer;
+    dropped: PageMergeOffer[];
+}
+
+/** What a merge would do; `display` is how the page kept would be shown. */
+export interface PageMergePlan {
+    offersMoved: number;
+    offersDropped: number;
+    pagesMoved: number;
+    pagesDeleted: number;
+    display: string;
+    duplicates: PageMergeDuplicate[];
+}
+
 export interface PageMergeResult {
     offersMoved: number;
     offersDropped: number;
@@ -586,6 +612,14 @@ export const useAddFurniPlan = (pageId: number | null, definitionIds: number[], 
     placeholderData: previous => previous,
 });
 
+/** What merging the pages into `keepId` would do, the offers of `priorityPageId` staying where two sell the same thing. */
+export const usePageMergePlan = (keepId: number | null, pageIds: number[], priorityPageId: number | null) => useQuery({
+    queryKey: [ 'catalog', 'merge-plan', keepId, pageIds, priorityPageId ],
+    queryFn: () => post<PageMergePlan>(`/catalog/pages/${keepId}/merge/preview`, { pageIds, priorityPageId }),
+    enabled: keepId !== null && pageIds.some(x => x !== keepId),
+    placeholderData: previous => previous,
+});
+
 export const useDuplicatePages = () => useQuery({
     queryKey: [ 'catalog', 'audit', 'duplicate-pages' ],
     queryFn: () => api<{ total: number; items: DuplicatePage[] }>('/catalog/audit/duplicate-pages'),
@@ -619,7 +653,7 @@ export const catalogCalls = {
     addFurni: (pageId: number, input: AddFurniInput) => post<BulkResult>(`/catalog/pages/${pageId}/furni`, input),
     deleteOffers: (offerIds: number[]) => post<BulkResult>('/catalog/offers/delete', { offerIds }),
     createFrontPage: () => post<Saved>('/catalog/frontpage'),
-    mergePages: (keepId: number, pageIds: number[]) => post<PageMergeResult>(`/catalog/pages/${keepId}/merge`, { pageIds }),
+    mergePages: (keepId: number, pageIds: number[], priorityPageId: number | null = null) => post<PageMergeResult>(`/catalog/pages/${keepId}/merge`, { pageIds, priorityPageId }),
     undo: () => post<CatalogHistory>('/catalog/undo'),
     redo: () => post<CatalogHistory>('/catalog/redo'),
     discard: () => post<CatalogHistory>('/catalog/discard'),

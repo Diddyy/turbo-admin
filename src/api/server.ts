@@ -17,6 +17,10 @@ export interface ServerRestartStatus {
     exitCode: number;
     /** The longest countdown allowed, in minutes. */
     maxMinutes: number;
+    /** Whether players see a countdown notice while a restart counts down (`Turbo:Operations:RestartNotice`). */
+    notice: boolean;
+    /** Where the notice links to: the restart's own link while one counts down, else the hotel's default; empty for nowhere. */
+    noticeLink: string;
 }
 
 /** Asked again every few seconds while a restart is under way, so the panel sees it go and come back. */
@@ -34,6 +38,7 @@ export const restartState = (status: ServerRestartStatus | undefined) =>
             ? `Restarts at ${new Date(status.atUtc).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
             : null;
 
-export const restartServer = (minutes: number, message?: string) => post<ServerRestartStatus>('/server/restart', { minutes, message });
+/** `link`: where the countdown notice links to (a web address or a client link); left out, the hotel's default. */
+export const restartServer = (minutes: number, message?: string, link?: string) => post<ServerRestartStatus>('/server/restart', { minutes, message, link });
 
 export const cancelRestart = () => remove<ServerRestartStatus>('/server/restart');

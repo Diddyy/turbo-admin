@@ -7,8 +7,9 @@ import { ask } from '#/components/confirm';
 import { ListToolbar } from '#/components/ListToolbar';
 import { RestartServer } from '#/components/RestartServer';
 import { SearchInput } from '#/components/SearchInput';
-import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, PageBody, PageHeader, Panel, Segmented, Select, Switch, Textarea, WarningNotice } from '#/components/ui';
+import { Badge, Button, EmptyState, ErrorNotice, Input, Label, Labeled, Loading, PageBody, PageHeader, Panel, Select, Switch, Textarea, WarningNotice } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import { useFillHeight } from '#/lib/fillHeight';
 import { usePathTab } from '#/lib/tabs';
 import { fromNow } from '#/lib/time';
 import { OpenRow } from '#/pages/gamedata/parts';
@@ -215,13 +216,37 @@ const SettingEditor = ({ setting, canManage }: { setting: ServerSetting; canMana
     );
 };
 
-/** Every setting, by section: found by name, path, text or value. */
+/** A section as the list names it: `Turbo:OnlineRewards` is Online Rewards, `Logging:TurboConsole` Logging · Turbo Console. */
+const titleOf = (section: string) => section.replace(/^Turbo:/, '').split(':').map(part => part.replace(/([a-z0-9])([A-Z])/g, '$1 $2')).join(' · ');
+
+/** A section in the list: its name, how many of its settings are shown, and a dot when one waits on a restart. */
+const SectionButton = ({ section, settings, active, onClick }: { section: string; settings: ServerSetting[]; active: boolean; onClick: () => void }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        aria-current={active}
+        title={section}
+        className={cx(
+            'flex min-h-10 w-full items-center justify-between gap-2 rounded-lg px-3 text-left text-sm transition-colors sm:min-h-8',
+            active ? 'bg-accent-soft font-medium text-accent' : 'hover:bg-subtle',
+        )}
+    >
+        <span className="truncate">{titleOf(section)}</span>
+        <span className="flex shrink-0 items-center gap-1.5">
+            {settings.some(x => x.pendingRestart) && <span className="size-1.5 rounded-full bg-warn" title="Waits on a restart" />}
+            <span className="text-xs text-muted tabular-nums">{settings.length}</span>
+        </span>
+    </button>
+);
+
+/** Every setting, by section: the sections listed on the left, the one picked open on the right; found by name, path, text or value. */
 const SettingsTab = () => {
-    const [ params ] = useSearchParams();
+    const [ params, setParams ] = useSearchParams();
     const [ text, setText ] = useState(() => params.get('q') ?? '');
     const [ filter, setFilter ] = useState('all');
     const [ open, setOpen ] = useState<string | null>(() => params.get('open'));
     const { data, error } = useSettings();
+    const fillList = useFillHeight<HTMLElement>();
 
     const found = useMemo(() => {
         const words = text.trim().toLowerCase();
@@ -238,6 +263,18 @@ const SettingsTab = () => {
 
         return [ ...bySection.entries() ];
     }, [ found ]);
+
+    // The section picked, kept in the address; a setting linked open picks its own. When the search
+    // leaves the picked one nothing to show, the first that has something is shown instead.
+    const picked = params.get('section') ?? data?.settings.find(x => x.path === open)?.section ?? null;
+    const [ shownName, shownSettings ] = sections.find(([ section ]) => section === picked) ?? sections[0] ?? [];
+    const pick = (section: string) => setParams((current) => {
+        const next = new URLSearchParams(current);
+
+        next.set('section', section);
+
+        return next;
+    }, { replace: true });
 
     const waiting = data?.settings.filter(x => x.pendingRestart).length ?? 0;
 
@@ -258,48 +295,64 @@ const SettingsTab = () => {
                     </div>
                 </WarningNotice>
             )}
-            <Panel className="overflow-clip">
-                <ListToolbar watch={[ text, filter ]}>
-                    <SearchInput value={text} onValueChange={setText} placeholder="Name, text or value" aria-label="Find settings" className="min-w-48 flex-1 sm:max-w-96" />
-                    <div className="w-full sm:w-96"><Segmented label="Show" value={filter} onChange={setFilter} options={FILTERS} /></div>
-                </ListToolbar>
-                {sections.length === 0 && <EmptyState>No setting matches.</EmptyState>}
-            </Panel>
-            {sections.map(([ section, settings ]) => (
-                <Panel
-                    key={section}
-                    title={section}
-                    description={settings[0]?.plugin ? <>From the plugin <Link to="/plugins" className="font-mono underline-offset-2 hover:underline">{settings[0]?.plugin}</Link>: listed while it is loaded, and applied as it reads them.</> : undefined}
-                    actions={settings[0]?.plugin ? <Badge>plugin</Badge> : undefined}
-                    className="overflow-clip"
-                >
-                    <ul className="divide-y divide-line">
-                        {settings.map(setting => (
-                            <OpenRow
-                                key={setting.path}
-                                open={open === setting.path}
-                                onToggle={() => setOpen(open === setting.path ? null : setting.path)}
-                                summary={(
-                                    <div className="grid items-center gap-x-4 gap-y-1 sm:grid-cols-[minmax(12rem,20rem)_1fr_minmax(0,16rem)]">
-                                        <span className="flex min-w-0 items-center gap-1.5 font-mono text-[13px]">
-                                            <span className="truncate">{nameOf(setting)}</span>
-                                            {setting.startup && <Lock className="size-3.5 shrink-0 text-muted" aria-label="Changed in appsettings.json or the environment" />}
-                                        </span>
-                                        <ValueText setting={setting} />
-                                        <span className={cx('flex flex-wrap gap-1.5 sm:justify-end')}>
-                                            {setting.pendingRestart && <Badge tone="amber">after restart</Badge>}
-                                            {setting.live && <Badge tone="green">applies now</Badge>}
-                                            <SourceBadge setting={setting} />
-                                        </span>
-                                    </div>
-                                )}
-                            >
-                                <SettingEditor key={`${setting.value}|${setting.source}`} setting={setting} canManage={data.canManage} />
-                            </OpenRow>
+            <div className="grid items-start gap-4 lg:grid-cols-[17rem_minmax(0,1fr)]">
+                <Panel ref={fillList} className="flex flex-col overflow-clip lg:sticky lg:top-4 lg:max-h-(--fill-height)">
+                    <div className="flex flex-col gap-2 border-b border-line p-3">
+                        <SearchInput value={text} onValueChange={setText} placeholder="Name, text or value" aria-label="Find settings" />
+                        <Select value={filter} onChange={event => setFilter(event.target.value)} aria-label="Show" className="w-full">
+                            {FILTERS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                        </Select>
+                    </div>
+                    {sections.length === 0 && <EmptyState>No setting matches.</EmptyState>}
+                    <nav aria-label="Sections" className="flex max-h-[40dvh] min-h-0 flex-col gap-3 overflow-y-auto p-2 lg:max-h-none">
+                        {([ [ 'Server', false ], [ 'Plugins', true ] ] as const).map(([ group, plugins ]) => sections.some(([ , settings ]) => !!settings[0]?.plugin === plugins) && (
+                            <div key={group} className="flex flex-col gap-0.5">
+                                <Label className="px-3 pt-1 pb-1">{group}</Label>
+                                {sections.filter(([ , settings ]) => !!settings[0]?.plugin === plugins).map(([ section, settings ]) => (
+                                    <SectionButton key={section} section={section} settings={settings} active={section === shownName} onClick={() => pick(section)} />
+                                ))}
+                            </div>
                         ))}
-                    </ul>
+                    </nav>
                 </Panel>
-            ))}
+                {shownName && shownSettings && (
+                    <Panel
+                        key={shownName}
+                        title={titleOf(shownName)}
+                        description={shownSettings[0]?.plugin
+                            ? <>From the plugin <Link to="/plugins" className="font-mono underline-offset-2 hover:underline">{shownSettings[0]?.plugin}</Link>: listed while it is loaded, and applied as it reads them.</>
+                            : <span className="font-mono">{shownName}</span>}
+                        actions={shownSettings[0]?.plugin ? <Badge>plugin</Badge> : undefined}
+                        className="overflow-clip"
+                    >
+                        <ul className="divide-y divide-line">
+                            {shownSettings.map(setting => (
+                                <OpenRow
+                                    key={setting.path}
+                                    open={open === setting.path}
+                                    onToggle={() => setOpen(open === setting.path ? null : setting.path)}
+                                    summary={(
+                                        <div className="grid items-center gap-x-4 gap-y-1 sm:grid-cols-[minmax(12rem,20rem)_1fr_minmax(0,16rem)]">
+                                            <span className="flex min-w-0 items-center gap-1.5 font-mono text-[13px]">
+                                                <span className="truncate">{nameOf(setting)}</span>
+                                                {setting.startup && <Lock className="size-3.5 shrink-0 text-muted" aria-label="Changed in appsettings.json or the environment" />}
+                                            </span>
+                                            <ValueText setting={setting} />
+                                            <span className={cx('flex flex-wrap gap-1.5 sm:justify-end')}>
+                                                {setting.pendingRestart && <Badge tone="amber">after restart</Badge>}
+                                                {setting.live && <Badge tone="green">applies now</Badge>}
+                                                <SourceBadge setting={setting} />
+                                            </span>
+                                        </div>
+                                    )}
+                                >
+                                    <SettingEditor key={`${setting.value}|${setting.source}`} setting={setting} canManage={data.canManage} />
+                                </OpenRow>
+                            ))}
+                        </ul>
+                    </Panel>
+                )}
+            </div>
         </>
     );
 };

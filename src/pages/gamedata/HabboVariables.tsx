@@ -49,18 +49,21 @@ export const HabboVariables = ({ status, defaultOpen }: { status: GamedataStatus
     const { data: preview, error } = useHabboVariableUpdate(version !== null);
     const take = useTakeHabboVariables();
     const [ text, setText ] = useState('');
-    // The keys left out of the next take-in: every key waiting is picked until it is unticked.
-    const [ unpicked, setUnpicked ] = useState<ReadonlySet<string>>(() => new Set());
+    // What staff ticked or unticked. Untouched, a key Habbo changed is picked and one it added or removed is not: a quick
+    // take-in follows Habbo's new values (a season's currency, a campaign page) but never switches on a feature flag the
+    // hotel never had, whose server side it may lack, nor drops one of the hotel's keys.
+    const [ choices, setChoices ] = useState<ReadonlyMap<string, boolean>>(() => new Map());
     const waiting = preview?.items ?? [];
-    const picked = waiting.filter(x => !unpicked.has(x.key));
+    const isPicked = (item: HabboVariableUpdateItem) => choices.get(item.key) ?? item.action === 1;
+    const picked = waiting.filter(isPicked);
     const words = text.trim().toLowerCase();
     const shown = words ? waiting.filter(x => matches(x, words)) : waiting;
     const groups = Map.groupBy(shown, x => groupOf(x.key));
 
-    const pick = (keys: string[], on: boolean) => setUnpicked((was) => {
-        const next = new Set(was);
+    const pick = (keys: string[], on: boolean) => setChoices((was) => {
+        const next = new Map(was);
 
-        keys.forEach(key => on ? next.delete(key) : next.add(key));
+        keys.forEach(key => next.set(key, on));
 
         return next;
     });
@@ -92,7 +95,7 @@ export const HabboVariables = ({ status, defaultOpen }: { status: GamedataStatus
                 { versionId: preview.version.id, keys: picked.map(x => x.key) },
                 {
                     onSuccess: (data) => {
-                        setUnpicked(new Set());
+                        setChoices(new Map());
                         toast(data.changeSet ? `Took in ${picked.length.toLocaleString()} of Habbo's variables.` : 'Nothing was taken in: the hotel has them already.');
                     },
                 },
@@ -116,13 +119,13 @@ export const HabboVariables = ({ status, defaultOpen }: { status: GamedataStatus
                     <div className="bg-subtle/40 px-4 py-1.5">
                         <Checkbox
                             label={<span className="font-mono text-xs">{group}.* <span className="text-muted">({items.length})</span></span>}
-                            checked={items.every(x => !unpicked.has(x.key))}
+                            checked={items.every(isPicked)}
                             disabled={!status.canManage}
                             onChange={on => pick(items.map(x => x.key), on)}
                         />
                     </div>
                     <ul className="divide-y divide-line">
-                        {items.map(item => <VariableItem key={item.key} item={item} picked={!unpicked.has(item.key)} canManage={status.canManage} onPick={on => pick([ item.key ], on)} />)}
+                        {items.map(item => <VariableItem key={item.key} item={item} picked={isPicked(item)} canManage={status.canManage} onPick={on => pick([ item.key ], on)} />)}
                     </ul>
                 </li>
             ))}

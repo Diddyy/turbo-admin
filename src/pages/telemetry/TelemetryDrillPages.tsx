@@ -105,7 +105,7 @@ export const TelemetryRoomPage = () => {
                 <HeaderLink to={`/rooms/${roomId}`} icon={<House />}>Open the room</HeaderLink>
             </PageHeader>
             <PageBody className="flex flex-col gap-4 lg:gap-5">
-                <RangePicker days={days} setDays={setDays} />
+                <div className="flex"><RangePicker days={days} setDays={setDays} /></div>
                 {error && <ErrorNotice error={error} />}
                 {isPending && <Loading />}
                 {data && (
@@ -158,7 +158,7 @@ export const TelemetryPlayerPage = () => {
                 <HeaderLink to={`/players/${playerId}`} icon={<UserRound />}>Open the player</HeaderLink>
             </PageHeader>
             <PageBody className="flex flex-col gap-4 lg:gap-5">
-                <RangePicker days={days} setDays={setDays} />
+                <div className="flex"><RangePicker days={days} setDays={setDays} /></div>
                 {error && <ErrorNotice error={error} />}
                 {isPending && <Loading />}
                 {data && (

@@ -150,7 +150,7 @@ export const Backups = ({ tree }: { tree: CatalogTree }) => {
                             Reset the catalog
                         </span>
                         <p className="text-xs text-muted">
-                            Takes away every page but the root, and every offer, product and featured item, to start again or import a catalog into. It is backed up first, can be undone, and goes live when you publish. Refused while an offer sells a limited series or Builders Club furni was placed from one.
+                            Takes away every page but the root, and every offer, product and featured item, to start again or import a catalog into. It is backed up first, can be undone, and goes live when you publish. Refused while an offer sells a limited series.
                         </p>
                     </div>
                     <Button variant="danger" icon={<Eraser />} disabled={busy} onClick={doReset}>

@@ -28,6 +28,7 @@ import { GroupsPage as GuildsPage } from '#/pages/groups/GroupsPage';
 import { HotelViewPage } from '#/pages/hotel-view/HotelViewPage';
 import { MessagesPage } from '#/pages/MessagesPage';
 import { NoticesPage } from '#/pages/notices/NoticesPage';
+import { OnlineRewardsPage } from '#/pages/online-rewards/OnlineRewardsPage';
 import { GroupPage } from '#/pages/permissions/GroupPage';
 import { GroupsPage } from '#/pages/permissions/GroupsPage';
 import { LogPage, NodesPage, SearchPage } from '#/pages/permissions/LookupPages';
@@ -94,6 +95,7 @@ export const App = () => (
             <Route path="reward-tracks" element={<RewardTracksPage />} />
             <Route path="reward-tracks/import" element={<RewardTracksPage importing />} />
             <Route path="reward-tracks/:id/:tab?" element={<RewardTracksPage />} />
+            <Route path="online-rewards" element={<OnlineRewardsPage />} />
             <Route path="content/:tab?" element={<ContentPage />} />
             <Route path="settings/:tab?" element={<SettingsPage />} />
             <Route path="plugins" element={<PluginsPage />} />

@@ -1,4 +1,4 @@
-import { Activity, Armchair, BellRing, Bug, ChartColumn, CloudDownload, Coins, Disc3, DoorOpen, Flag, FunnelX, Gauge, History, House, KeyRound, Landmark, Languages, Mail, MessagesSquare, Milestone, MonitorSmartphone, PackagePlus, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, UserRound, Users } from 'lucide-react';
+import { Activity, Armchair, BellRing, Bug, ChartColumn, CloudDownload, Coins, Disc3, DoorOpen, Flag, FunnelX, Gauge, History, House, KeyRound, Landmark, Languages, Mail, MessagesSquare, Milestone, MonitorSmartphone, PackagePlus, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, Timer, UserRound, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router';
 
@@ -41,6 +41,7 @@ const PAGES = {
     hotelView: { to: '/hotel-view', label: 'Hotel view', icon: <Landmark />, end: false, key: 'v', needs: 'canViewGamedata' },
     notices: { to: '/notices', label: 'Notices', icon: <BellRing />, end: false, needs: 'canViewGamedata' },
     rewardTracks: { to: '/reward-tracks', label: 'Reward tracks', icon: <Milestone />, end: false, key: 'w', needs: 'canManageRewardTracks' },
+    onlineRewards: { to: '/online-rewards', label: 'Online rewards', icon: <Timer />, end: false, needs: 'canViewSettings' },
     content: { to: '/content', label: 'Content', icon: <Puzzle />, end: false, key: 't', needs: 'canViewContent' },
     updates: { to: '/gamedata/updates', label: 'Habbo updates', icon: <CloudDownload />, end: false, key: 'g', needs: 'canViewGamedata' },
     library: { to: '/gamedata/library', label: 'Library', icon: <Armchair />, end: false, key: 'f', needs: 'canViewGamedata' },
@@ -110,6 +111,7 @@ const SECTIONS: NavSection[] = [
             { label: 'Hotel view', icon: <Landmark />, pages: [ 'hotelView' ], hint: 'The reception players land in' },
             { label: 'Notices', icon: <BellRing />, pages: [ 'notices' ], hint: 'The new feature notices under the purse: words, look, links and order' },
             { label: 'Reward tracks', icon: <Milestone />, pages: [ 'rewardTracks' ], hint: 'Progression tracks: tasks, prizes and premium' },
+            { label: 'Online rewards', icon: <Timer />, pages: [ 'onlineRewards' ], hint: 'Currency paid to players for time online' },
             { label: 'Content', icon: <Puzzle />, pages: [ 'content' ], hint: 'Achievements, badges, pets, chat styles' },
         ],
     },

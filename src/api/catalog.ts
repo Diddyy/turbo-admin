@@ -433,15 +433,19 @@ export interface AddFurniInput {
     clubLevel: number;
     canGift: boolean;
     visible: boolean;
-    /** Sort them onto a page under it for each kind of furni. */
-    subPages: boolean;
+    /** Sort them onto pages under it; null puts them all on it. */
+    sortBy: AddFurniSort | null;
 }
 
-/** A page added furni would go on: one there already (`pageId`), or one to make. */
+/** How added furni are sorted onto pages: by kind, by colour, or by kind and then each kind by colour. */
+export type AddFurniSort = 'kind' | 'colour' | 'kindColour';
+
+/** A page added furni would go on: one there already (`pageId`), or one to make; `count` takes in the pages under it. */
 export interface AddFurniPage {
     title: string;
     pageId: number | null;
     count: number;
+    pages: AddFurniPage[];
 }
 
 export interface BulkResult {
@@ -604,11 +608,11 @@ export const useUnoffered = (query: UnofferedQuery) => useQuery({
 export const unofferedIds = (query: Omit<UnofferedQuery, 'page' | 'size'>) =>
     api<{ ids: number[] }>(`/catalog/audit/unoffered/ids?${new URLSearchParams({ scope: query.scope, q: query.q, line: query.line, category: query.category })}`);
 
-/** The pages adding the furni with sub pages would put them on. */
-export const useAddFurniPlan = (pageId: number | null, definitionIds: number[], enabled: boolean) => useQuery({
-    queryKey: [ 'catalog', 'add-furni-plan', pageId, definitionIds ],
-    queryFn: () => post<{ pages: AddFurniPage[] }>(`/catalog/pages/${pageId}/furni/preview`, { definitionIds, subPages: true }),
-    enabled: enabled && pageId !== null && definitionIds.length > 0,
+/** The pages adding the furni, sorted so, would put them on. */
+export const useAddFurniPlan = (pageId: number | null, definitionIds: number[], sortBy: AddFurniSort | null) => useQuery({
+    queryKey: [ 'catalog', 'add-furni-plan', pageId, definitionIds, sortBy ],
+    queryFn: () => post<{ pages: AddFurniPage[] }>(`/catalog/pages/${pageId}/furni/preview`, { definitionIds, sortBy }),
+    enabled: sortBy !== null && pageId !== null && definitionIds.length > 0,
     placeholderData: previous => previous,
 });
 

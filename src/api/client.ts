@@ -72,7 +72,59 @@ export const api = async <T>(path: string, init: RequestInit = {}): Promise<T> =
     if (response.status === 204)
         return undefined as T;
 
+    if (response.status === 202) {
+        const started = (await response.json()) as Partial<JobStarted>;
+
+        if (typeof started.poll === 'string')
+            return answerOf<T>(started.poll);
+
+        return started as T;
+    }
+
     return (await response.json()) as T;
+};
+
+/** Work that outlasted its request: where to ask after it. */
+interface JobStarted {
+    job: string;
+    title: string;
+    poll: string;
+}
+
+/** A job as the server reports it; once done, what its request would have answered. */
+interface Job {
+    id: string;
+    title: string;
+    done: boolean;
+    answerStatus: number | null;
+    answer: unknown;
+}
+
+/** How long to wait between asking after a job. */
+const JOB_POLL_MS = 1500;
+
+/**
+ * Asks after a job until it is done, then answers as its request would have: the body, or the
+ * error. Each ask is short, so a proxy's timeout never cuts long work off.
+ */
+const answerOf = async <T>(poll: string): Promise<T> => {
+    for (;;) {
+        await new Promise(resolve => setTimeout(resolve, JOB_POLL_MS));
+
+        const job = await api<Job>(poll);
+
+        if (!job.done)
+            continue;
+
+        const status = job.answerStatus ?? 200;
+
+        if (status >= 200 && status < 300)
+            return (status === 204 ? undefined : job.answer) as T;
+
+        const message = (job.answer as { message?: unknown } | null)?.message;
+
+        throw new ApiError(status, typeof message === 'string' ? message : MESSAGES[status] ?? `The server answered ${status}.`);
+    }
 };
 
 /**

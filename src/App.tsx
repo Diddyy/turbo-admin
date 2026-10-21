@@ -91,7 +91,7 @@ export const App = () => (
             {/* Products, texts and variables: the files the client reads, each by its name. */}
             <Route path="gamedata/:tab" element={<TextsPage />} />
             <Route path="hotel-view/:group?/:view?" element={<HotelViewPage />} />
-            <Route path="notices" element={<NoticesPage />} />
+            <Route path="notices/:key?" element={<NoticesPage />} />
             <Route path="reward-tracks" element={<RewardTracksPage />} />
             <Route path="reward-tracks/import" element={<RewardTracksPage importing />} />
             <Route path="reward-tracks/:id/:tab?" element={<RewardTracksPage />} />

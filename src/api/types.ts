@@ -110,8 +110,17 @@ export interface AccountPasskey {
     lastUsedAtUtc: string | null;
 }
 
+/** A panel session of the caller's; `current` is the one this browser is signed in with. */
+export interface AccountSession {
+    id: number;
+    signedInAtUtc: string;
+    expiresAtUtc: string;
+    current: boolean;
+}
+
 export interface AccountResponse {
     passkeys: AccountPasskey[];
+    sessions: AccountSession[];
 }
 
 export interface PasskeyLinkResponse {

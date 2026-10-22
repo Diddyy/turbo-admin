@@ -20,6 +20,8 @@ export interface CatalogPageNode {
     display: PageDisplay;
     sortOrder: number;
     offerCount: number;
+    /** A heading with no page of its own, as Habbo's "Hot now": it only opens the pages under it. */
+    folderOnly: boolean;
 }
 
 export interface CatalogCurrency {
@@ -120,6 +122,7 @@ export interface CatalogPageDetail {
     textData: string[];
     display: PageDisplay;
     offers: CatalogOffer[];
+    folderOnly: boolean;
 }
 
 export interface CatalogFurniture {
@@ -138,6 +141,8 @@ export interface CatalogPageInput {
     imageData: string[];
     textData: string[];
     display: PageDisplay;
+    /** Left out, a saved page keeps what it was and a new one is a page. */
+    folderOnly?: boolean;
 }
 
 export interface CatalogOfferInput {

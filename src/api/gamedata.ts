@@ -454,6 +454,42 @@ export const useUpdateDefinition = (id: number) => {
     });
 };
 
+/** A definition as a furniture bundle's own data says it would be, to edit before it is made. */
+export interface FurnitureDraft {
+    bundle: string;
+    /** 0 floor, 1 wall: wall when its logic or visualization is one only wall items have. */
+    productType: number;
+    /** The fields to make it with, by furnidata and server key, as a JSON object. */
+    fields: string;
+    /** What the bundle's asset data said (logic, visualization, states, size, directions, colours), as JSON. */
+    file: string;
+    /** Its colours past the plain one: each can be a classname*N definition. */
+    colors: number[];
+    /** The definitions already drawn from the bundle. */
+    existing: { id: number; productType: number; className: string }[];
+}
+
+export interface FurnitureCreated {
+    /** The ids made, the plain definition first. */
+    ids: number[];
+    definition: FurnitureDefinition;
+}
+
+export const useFurnitureDraft = (bundle: string | null) => useQuery({
+    queryKey: [ 'gamedata', 'furniture', 'draft', bundle ],
+    queryFn: () => api<FurnitureDraft>(`/gamedata/furniture/draft/${encodeURIComponent(bundle!)}`),
+    enabled: bundle !== null,
+});
+
+export const useCreateDefinitions = () => {
+    const refresh = useRefresh();
+
+    return useMutation({
+        mutationFn: (input: { type: 'floor' | 'wall'; fields: Record<string, unknown>; colors: number[] }) => post<FurnitureCreated>('/gamedata/furniture', input),
+        onSuccess: refresh,
+    });
+};
+
 export interface HabboValuesPreview {
     /** Definitions whose value is not Habbo's, by furnidata key. */
     byField: Record<string, number>;

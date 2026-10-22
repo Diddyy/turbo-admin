@@ -10,6 +10,7 @@ import { BundleDetail } from '#/pages/assets/BundleDetail';
 import { formatBytes } from '#/pages/assets/format';
 
 import { configJson, useConfigHandoff } from './configHandoff';
+import { NewFurnitureDialog } from './NewFurnitureDialog';
 
 interface Entry {
     id: number;
@@ -32,7 +33,15 @@ const NOT_TAKEN: Record<GamedataFileKind, string> = {
 
 const kindName = (kind: BundleKind) => BUNDLE_KINDS.find(x => x.value === kind)!.one;
 
-const Outcome = ({ entry, onOpen, onReview }: { entry: Entry; onOpen: (bundle: { kind: BundleKind; name: string }) => void; onReview: (file: File) => void }) => {
+interface OutcomeProps {
+    entry: Entry;
+    onOpen: (bundle: { kind: BundleKind; name: string }) => void;
+    onReview: (file: File) => void;
+    /** Makes a furniture definition from the bundle; none when one replaces a definition's bundle. */
+    onMake?: (name: string) => void;
+}
+
+const Outcome = ({ entry, onOpen, onReview, onMake }: OutcomeProps) => {
     const result = entry.result;
 
     if (entry.state === 'waiting')
@@ -51,6 +60,11 @@ const Outcome = ({ entry, onOpen, onReview }: { entry: Entry; onOpen: (bundle: {
                 <span className="font-mono">{result.bundle.name}</span>
                 {!result.bundle.used && <span className="text-warn">nothing in the hotel uses it yet</span>}
                 <button type="button" onClick={() => onOpen(result.bundle)} className="font-medium text-accent hover:underline">Open</button>
+                {onMake && result.bundle.kind === 'furniture' && (
+                    <button type="button" onClick={() => onMake(result.bundle.name)} className="font-medium text-accent hover:underline">
+                        {result.bundle.used ? 'Make another definition' : 'Make a definition'}
+                    </button>
+                )}
             </span>
         );
 
@@ -75,8 +89,9 @@ const Outcome = ({ entry, onOpen, onReview }: { entry: Entry; onOpen: (bundle: {
 
 /**
  * The one upload for gamedata and assets: drop any files, and each is read for what it is. A
- * Flash library (.swf, .hab) or a .nitro is kept as the bundle its content says - furniture, a
- * pet, an effect or clothing - and a gamedata file is recognised and pointed to where its content
+ * Flash library (.swf, .hab) or a .nitro (of either layout) is kept as the bundle its content
+ * says - furniture, a pet, an effect or clothing; furniture can be made a definition from its own
+ * data - and a gamedata file is recognised and pointed to where its content
  * is changed. A file that says what it is no way is a warning, not a guess. `name` keeps the one
  * file under that bundle name instead of its file's, to replace a definition's bundle.
  */
@@ -84,6 +99,7 @@ export const UploadDialog = ({ open, onClose, name }: { open: boolean; onClose: 
     const [ entries, setEntries ] = useState<Entry[]>([]);
     const [ over, setOver ] = useState(false);
     const [ opened, setOpened ] = useState<{ kind: BundleKind; name: string } | null>(null);
+    const [ making, setMaking ] = useState<string | null>(null);
     const upload = useUploadFile();
     const next = useRef(1);
     const queue = useRef<Promise<void>>(Promise.resolve());
@@ -182,7 +198,7 @@ export const UploadDialog = ({ open, onClose, name }: { open: boolean; onClose: 
                                         <span className="min-w-0 truncate font-mono text-[13px]" title={entry.file.name}>{entry.file.name}</span>
                                         <span className="shrink-0 font-mono text-[11px] text-muted tabular-nums">{formatBytes(entry.file.size)}</span>
                                     </div>
-                                    <Outcome entry={entry} onOpen={setOpened} onReview={review} />
+                                    <Outcome entry={entry} onOpen={setOpened} onReview={review} onMake={name ? undefined : setMaking} />
                                 </li>
                             ))}
                         </ul>
@@ -198,6 +214,7 @@ export const UploadDialog = ({ open, onClose, name }: { open: boolean; onClose: 
                 </div>
             </Modal>
             <BundleDetail bundle={opened} canManage onClose={() => setOpened(null)} />
+            <NewFurnitureDialog bundle={making} onClose={() => setMaking(null)} />
         </>
     );
 };

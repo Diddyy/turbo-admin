@@ -6,19 +6,20 @@ import { Modal } from '#/components/Modal';
 import { toast } from '#/components/toast';
 import { Button, Checkbox, ErrorNotice, Field, Labeled, Segmented, Switch } from '#/components/ui';
 
-const blank: AssetTargetInput = { name: '', protocol: 'sftp', host: '', port: 0, user: '', password: '', remotePath: '', publicUrl: '', allowSelfSigned: false };
+const blank: AssetTargetInput = { name: '', protocol: 'sftp', host: '', port: 0, user: '', password: '', remotePath: '', publicUrl: '', allowSelfSigned: false, cloudflareZoneId: '', cloudflareToken: '' };
 
 const inputOf = (target: AssetTarget | null): AssetTargetInput => target
-    ? { name: target.name, protocol: target.protocol, host: target.host, port: target.port, user: target.user, password: '', remotePath: target.remotePath, publicUrl: target.publicUrl, allowSelfSigned: target.allowSelfSigned }
+    ? { name: target.name, protocol: target.protocol, host: target.host, port: target.port, user: target.user, password: '', remotePath: target.remotePath, publicUrl: target.publicUrl, allowSelfSigned: target.allowSelfSigned, cloudflareZoneId: target.cloudflareZoneId, cloudflareToken: '' }
     : blank;
 
 /**
- * Adds a publish target, or edits one (`target`). The saved password is never sent back: left
- * empty it is kept, and it can be cleared on purpose.
+ * Adds a publish target, or edits one (`target`). The saved password and Cloudflare token are never
+ * sent back: left empty they are kept, and they can be cleared on purpose.
  */
 export const TargetForm = ({ target, onClose }: { target: AssetTarget | null; onClose: () => void }) => {
     const [ input, setInput ] = useState(() => inputOf(target));
     const [ clearPassword, setClearPassword ] = useState(false);
+    const [ clearToken, setClearToken ] = useState(false);
     const save = useSaveTarget();
     const remote = input.protocol !== 'folder';
     const set = (change: Partial<AssetTargetInput>) => setInput(current => ({ ...current, ...change }));
@@ -35,6 +36,8 @@ export const TargetForm = ({ target, onClose }: { target: AssetTarget | null; on
             remotePath: input.remotePath.trim(),
             publicUrl: input.publicUrl.trim(),
             allowSelfSigned: input.protocol === 'ftps' && input.allowSelfSigned,
+            cloudflareZoneId: input.cloudflareZoneId.trim(),
+            cloudflareToken: target === null ? input.cloudflareToken : clearToken ? '' : input.cloudflareToken ? input.cloudflareToken : null,
         };
 
         save.mutate({ id: target?.id ?? null, input: body }, {
@@ -133,6 +136,46 @@ export const TargetForm = ({ target, onClose }: { target: AssetTarget | null; on
                         onChange={allowSelfSigned => set({ allowSelfSigned })}
                     />
                 )}
+
+                <fieldset className="flex flex-col gap-3 border-t border-line pt-4">
+                    <legend className="mb-1 text-sm font-medium">Cloudflare</legend>
+                    <p className="-mt-1 text-[13px] text-muted">Optional. After each publish, Cloudflare is asked to purge exactly the addresses sent, so a file that was missing is not served from its cache as missing.</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        <Field
+                            label="Zone ID"
+                            name="target-cloudflare-zone"
+                            value={input.cloudflareZoneId}
+                            onChange={event => set({ cloudflareZoneId: event.target.value })}
+                            placeholder="32 letters and digits"
+                            hint="On the zone's Overview page. Needs the public URL."
+                            autoComplete="off"
+                            className="w-full font-mono"
+                        />
+                        <div className="flex flex-col gap-1.5">
+                            <Field
+                                label="API token"
+                                name="target-cloudflare-token"
+                                type="password"
+                                autoComplete="new-password"
+                                value={input.cloudflareToken ?? ''}
+                                disabled={clearToken}
+                                onChange={event => set({ cloudflareToken: event.target.value })}
+                                placeholder={target?.hasCloudflareToken ? 'Leave empty to keep' : ''}
+                                hint={target?.hasCloudflareToken ? 'Leave empty to keep the saved one.' : 'One allowed to purge the zone\'s cache.'}
+                            />
+                            {target?.hasCloudflareToken && (
+                                <Checkbox
+                                    label="Clear the saved token"
+                                    checked={clearToken}
+                                    onChange={(checked) => {
+                                        setClearToken(checked);
+                                        set({ cloudflareToken: '' });
+                                    }}
+                                />
+                            )}
+                        </div>
+                    </div>
+                </fieldset>
 
                 {save.error && <ErrorNotice error={save.error} />}
 

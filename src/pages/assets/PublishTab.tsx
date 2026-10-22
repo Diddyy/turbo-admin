@@ -23,9 +23,9 @@ const addressOf = (target: AssetTarget) => {
     return `${user}${target.host}:${port}${target.remotePath.startsWith('/') ? '' : '/'}${target.remotePath}`;
 };
 
-/** What a publish did, in a line. */
+/** What a publish did, in a line; with how many addresses Cloudflare purged after it, when any were. */
 const counts = (entry: AssetPublishEntry) =>
-    `${entry.uploaded.toLocaleString()} sent, ${entry.skipped.toLocaleString()} skipped, ${entry.deleted.toLocaleString()} deleted, ${formatBytes(entry.bytes)}`;
+    `${entry.uploaded.toLocaleString()} sent, ${entry.skipped.toLocaleString()} skipped, ${entry.deleted.toLocaleString()} deleted, ${formatBytes(entry.bytes)}${entry.purged > 0 ? `, ${entry.purged.toLocaleString()} purged from Cloudflare` : ''}`;
 
 const HistoryModal = ({ target, onClose }: { target: AssetTarget | null; onClose: () => void }) => {
     const { data, error } = useTargetHistory(target?.id ?? null);
@@ -47,6 +47,7 @@ const HistoryModal = ({ target, onClose }: { target: AssetTarget | null; onClose
                             </div>
                             <span className="font-mono text-xs text-muted">{counts(entry)}</span>
                             {entry.error && <span className="text-xs text-bad">{entry.error}</span>}
+                            {entry.purgeError && <span className="text-xs text-warn">{`Cloudflare purge failed: ${entry.purgeError}`}</span>}
                         </li>
                     ))}
                 </ul>
@@ -121,9 +122,16 @@ const TargetCard = ({ target, canManage, busy, onEdit, onHistory }: { target: As
                                     </span>
                                     <span className="font-mono text-xs text-muted">{counts(last)}</span>
                                     {last.error && <span className="text-xs text-bad">{last.error}</span>}
+                                    {last.purgeError && <span className="text-xs text-warn">{`Cloudflare purge failed: ${last.purgeError}`}</span>}
                                 </span>
                             )
                         : <span className="text-muted">Never</span>}
+                </dd>
+                <dt className="text-muted">Cloudflare</dt>
+                <dd className="min-w-0 truncate font-mono text-xs max-sm:-mt-1.5">
+                    {target.cloudflareZoneId
+                        ? (target.hasCloudflareToken ? `purges zone ${target.cloudflareZoneId}` : <span className="text-warn">{`zone ${target.cloudflareZoneId}, no token: nothing is purged`}</span>)
+                        : <span className="font-sans text-muted">not purged</span>}
                 </dd>
                 {target.protocol === 'sftp' && (
                     <>

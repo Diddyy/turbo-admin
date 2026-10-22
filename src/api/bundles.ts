@@ -128,6 +128,10 @@ export interface AssetPublishEntry {
     deleted: number;
     bytes: number;
     error: string | null;
+    /** Addresses Cloudflare was asked to purge after it. */
+    purged: number;
+    /** Why the Cloudflare purge failed, when it did. */
+    purgeError: string | null;
 }
 
 export interface AssetTarget {
@@ -141,6 +145,10 @@ export interface AssetTarget {
     remotePath: string;
     publicUrl: string;
     allowSelfSigned: boolean;
+    /** The Cloudflare zone purged after a publish; empty when it purges none. */
+    cloudflareZoneId: string;
+    /** Whether it has a Cloudflare API token (never the token). */
+    hasCloudflareToken: boolean;
     /** The SFTP host key trusted on first connection, once there has been one. */
     hostKey: string | null;
     /** How many bundles it lacks or holds an older copy of. */
@@ -159,6 +167,10 @@ export interface AssetTargetInput {
     remotePath: string;
     publicUrl: string;
     allowSelfSigned: boolean;
+    /** Empty: no purge after a publish. */
+    cloudflareZoneId: string;
+    /** Null keeps the saved one; empty clears it. */
+    cloudflareToken: string | null;
 }
 
 const JOB_KEY = [ 'asset-job' ];
@@ -365,8 +377,12 @@ const send = async (path: string, init: RequestInit) => {
     return response;
 };
 
-/** Sends a form with files as the signed-in player; the browser sets its boundary. */
-export const postForm = async <T>(path: string, form: FormData) => (await (await send(path, { method: 'POST', body: form })).json()) as T;
+/** Sends a form with files as the signed-in player; the browser sets its boundary. A 204 answers nothing. */
+export const postForm = async <T>(path: string, form: FormData) => {
+    const response = await send(path, { method: 'POST', body: form });
+
+    return (response.status === 204 ? undefined : await response.json()) as T;
+};
 
 /** A gamedata file an upload was found to be, by what it holds. */
 export type GamedataFileKind = 'furnidata' | 'productdata' | 'figuredata' | 'figuremap' | 'effectmap' | 'texts' | 'variables';

@@ -53,7 +53,7 @@ export const ResortPageDialog = ({ tree, pageId, onClose }: { tree: CatalogTree;
                                 )}
                             </div>
                         ))}
-                <p className="text-xs text-muted">The offers move as they are, prices and all. A page of a title there already takes its offers. You can undo it.</p>
+                <p className="text-xs text-muted">The offers move as they are, prices and all. A new page takes this page's layout, header, teaser and texts; a page of a title there already takes its offers as it is. You can undo it.</p>
                 <div className="flex justify-end gap-2 border-t border-line pt-3">
                     <Button variant="secondary" onClick={onClose}>Cancel</Button>
                     <Button icon={<FolderTree />} disabled={pages.length === 0 || resort.isPending} onClick={submit}>

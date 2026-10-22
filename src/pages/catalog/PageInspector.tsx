@@ -6,7 +6,7 @@ import { catalogCalls, type CatalogPageDetail, type CatalogTree, type PageDispla
 import { findImage, useAllCatalogImages } from '#/api/catalogImages';
 import { ask } from '#/components/confirm';
 import { toast } from '#/components/toast';
-import { Button, ErrorNotice, Field, IconButton, Input, Label, Labeled, Textarea } from '#/components/ui';
+import { Button, ErrorNotice, Field, IconButton, Input, Label, Labeled, Switch, Textarea } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 import { CatalogImageThumb, CHECKS } from './CatalogImageThumb';
@@ -205,6 +205,17 @@ export const PageInspector = ({ tree, page, draft, onDraft, focus, onOpen }: Pag
                             {inBuildersClub(draft.display) && !isTab && ' The pages above it are shown in the Builders Club catalog too, to lead to it, without their own offers.'}
                             {isTab && canManage && ' A tab can\'t be in the Builders Club catalog, which has no tabs.'}
                         </p>
+                        {!isRoot && !isTab && (
+                            <Switch
+                                label="Folder only"
+                                checked={draft.folderOnly ?? false}
+                                onChange={on => set('folderOnly', on)}
+                                disabled={!canManage}
+                                hint={draft.folderOnly
+                                    ? 'Clicking it opens and closes the pages under it and keeps the open page on show, as Habbo\'s "Hot now". Its layout and offers are never shown.'
+                                    : 'Turn on for a heading that only holds pages, with no page of its own.'}
+                            />
+                        )}
                     </Section>
 
                     <Section title="Layout">

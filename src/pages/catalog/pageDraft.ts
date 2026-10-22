@@ -11,6 +11,7 @@ export const pageDraftOf = (page: CatalogPageDetail): PageDraft => ({
     imageData: page.imageData,
     textData: page.textData,
     display: page.display,
+    folderOnly: page.folderOnly,
 });
 
 /** A list with one place set, padded to reach it, without empty places left trailing. */

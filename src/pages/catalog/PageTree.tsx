@@ -1,7 +1,7 @@
 import { useDndContext } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { ChevronRight, ChevronsDownUp, ChevronsUpDown, EyeOff, FolderPlus, GripVertical, Hammer, Plus, Star } from 'lucide-react';
+import { ChevronRight, ChevronsDownUp, ChevronsUpDown, EyeOff, FolderOpen, FolderPlus, GripVertical, Hammer, Plus, Star } from 'lucide-react';
 import { type KeyboardEventHandler, type ReactNode, useState } from 'react';
 
 import { catalogIconUrl, useClientAssets } from '#/api/assets';
@@ -40,10 +40,11 @@ const Highlight = ({ text, needle }: { text: string; needle: string }) => {
     );
 };
 
-/** A page's marks: the front page, hidden, in the Builders Club catalog. */
+/** A page's marks: the front page, folder only, hidden, in the Builders Club catalog. */
 const Marks = ({ page }: { page: CatalogPageNode }) => (
     <>
         {page.layout === FRONT_PAGE_LAYOUT && <span title="The front page"><Star className="size-3.5 shrink-0 text-coin" aria-label="front page" /></span>}
+        {page.folderOnly && <span title="Folder only: opens the pages under it"><FolderOpen className="size-3.5 shrink-0 text-muted" aria-label="folder only" /></span>}
         {page.display === 'invisible' && <span title="Hidden"><EyeOff className="size-3.5 shrink-0 text-muted" aria-label="hidden" /></span>}
         {inBuildersClub(page.display) && <span title={DISPLAY_LABELS[page.display]}><Hammer className="size-3.5 shrink-0 text-muted" aria-label={DISPLAY_LABELS[page.display]} /></span>}
     </>

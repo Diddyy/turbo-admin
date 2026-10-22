@@ -1,10 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { KeyRound, Trash2 } from 'lucide-react';
+import { KeyRound, LogOut, Trash2 } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 
 import { post, remove } from '#/api/client';
 import { useAccount } from '#/api/queries';
-import type { AccountPasskey } from '#/api/types';
+import type { AccountPasskey, AccountSession } from '#/api/types';
 import { useSession } from '#/auth/session';
 import { type Ceremony, createPasskey, getPasskey, passkeysSupported } from '#/auth/webauthn';
 import { confirmAsync } from '#/components/confirm';
@@ -48,6 +48,44 @@ const PasskeyRow = ({ passkey, isLast, onRemoved }: { passkey: AccountPasskey; i
             <Button variant="ghost" icon={<Trash2 />} onClick={handleRemove} disabled={busy || isLast}>
                 Remove
             </Button>
+        </li>
+    );
+};
+
+const SessionRow = ({ session, onEnded }: { session: AccountSession; onEnded: () => void }) => {
+    const [ error, setError ] = useState<unknown>(null);
+    const [ busy, setBusy ] = useState(false);
+
+    const handleEnd = async () => {
+        if (!await confirmAsync({ title: 'Sign this session out?', body: 'Whoever is using it will have to sign in again with a passkey.', confirm: 'Sign out' }))
+            return;
+
+        setBusy(true);
+        setError(null);
+
+        try {
+            await remove(`/account/sessions/${session.id}`);
+            onEnded();
+        } catch (reason) {
+            setError(reason);
+            setBusy(false);
+        }
+    };
+
+    return (
+        <li className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+            <div>
+                <div className="font-medium">{session.current ? 'This browser' : 'Another browser'}</div>
+                <div className="text-xs text-muted">
+                    Signed in {formatDate(session.signedInAtUtc)}, ends {formatDate(session.expiresAtUtc)}
+                </div>
+                {error !== null && <div className="mt-2"><ErrorNotice error={error} /></div>}
+            </div>
+            {!session.current && (
+                <Button variant="ghost" icon={<LogOut />} onClick={handleEnd} disabled={busy}>
+                    Sign out
+                </Button>
+            )}
         </li>
     );
 };
@@ -103,7 +141,7 @@ const AddPasskey = ({ onAdded }: { onAdded: () => void }) => {
     );
 };
 
-/** The signed-in player's passkeys: their only way to sign in. */
+/** The signed-in player's passkeys, their only way to sign in, and where they are signed in. */
 export const AccountPage = () => {
     const account = useAccount();
     const queryClient = useQueryClient();
@@ -117,7 +155,7 @@ export const AccountPage = () => {
                 {account.isPending && <Loading />}
                 {account.error && <ErrorNotice error={account.error} />}
                 {account.data && (
-                    <div className="max-w-2xl">
+                    <div className="max-w-2xl space-y-4">
                         <Panel title="Passkeys" description="How you sign in. Keep more than one, so losing a device does not lock you out.">
                             {account.data.passkeys.length === 0
                                 ? <EmptyState>You have no passkeys yet. Add one below so you can sign in again.</EmptyState>
@@ -134,6 +172,13 @@ export const AccountPage = () => {
                                         </ul>
                                     )}
                             <AddPasskey onAdded={refresh} />
+                        </Panel>
+                        <Panel title="Sessions" description="Where you are signed in. A session lasts until it ends or you sign it out, through server restarts.">
+                            <ul className="divide-y divide-line">
+                                {account.data.sessions.toSorted((a, b) => Number(b.current) - Number(a.current)).map(session => (
+                                    <SessionRow key={session.id} session={session} onEnded={refresh} />
+                                ))}
+                            </ul>
                         </Panel>
                     </div>
                 )}

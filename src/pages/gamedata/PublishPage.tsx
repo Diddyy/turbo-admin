@@ -1,6 +1,8 @@
+import { useBrokenAssets } from '#/api/brokenAssets';
 import { useAssetJob } from '#/api/bundles';
 import { PageBody, PageHeader } from '#/components/ui';
 import { usePathTab } from '#/lib/tabs';
+import { BrokenAssets } from '#/pages/assets/BrokenAssets';
 import { useFoundChecks } from '#/pages/assets/checkLists';
 import { Checks } from '#/pages/assets/Checks';
 import { JobPanel } from '#/pages/assets/JobPanel';
@@ -10,17 +12,20 @@ import { ClientFiles } from './ClientFiles';
 import { Loaded, RunningJob } from './frame';
 import { useGamedata } from './state';
 
-const TABS = [ 'targets', 'files', 'checks' ] as const;
+const TABS = [ 'targets', 'files', 'checks', 'broken' ] as const;
 
 /**
  * Getting it to players: the targets the bundles are published to, the gamedata files the client
- * loads (built from the database), and the checks of the bundles against what the hotel has.
+ * loads (built from the database), the checks of the bundles against what the hotel has, and
+ * everything players can't load.
  */
 export const PublishPage = () => {
     const state = useGamedata();
     const [ tab, toTab ] = usePathTab(TABS);
     const { data: job } = useAssetJob();
     const { items: found } = useFoundChecks();
+    const { data: broken } = useBrokenAssets();
+    const brokenCount = broken?.sources.reduce((sum, source) => sum + source.count, 0) ?? 0;
     const running = job?.status === 'running';
 
     if (toTab)
@@ -36,6 +41,7 @@ export const PublishPage = () => {
                         { value: 'targets', label: 'Targets', to: '/gamedata/publish/targets' },
                         { value: 'files', label: 'Client files', to: '/gamedata/publish/files' },
                         { value: 'checks', label: 'Checks', to: '/gamedata/publish/checks', ...(found.length > 0 ? { count: found.length } : {}) },
+                        { value: 'broken', label: 'Broken assets', to: '/gamedata/publish/broken', ...(brokenCount > 0 ? { count: brokenCount } : {}) },
                     ],
                     value: tab,
                 }}
@@ -49,6 +55,7 @@ export const PublishPage = () => {
                             {tab === 'targets' && <PublishTab canManage={assets.canManage} busy={running} />}
                             {tab === 'files' && <ClientFiles status={status} />}
                             {tab === 'checks' && <Checks />}
+                            {tab === 'broken' && <BrokenAssets canManage={assets.canManage} busy={running} />}
                         </>
                     )}
                 </Loaded>

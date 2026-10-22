@@ -150,7 +150,7 @@ export type PluginUninstallMode = 'keep-data' | 'delete-data';
 
 /** One thing of a plugin's data: a table (`count` its rows), a setting overridden in the panel (`detail` its value, null for a secret) or a grant (`count` assignments, `detail` who). */
 export interface PluginDataItem {
-    kind: 'table' | 'setting' | 'grant';
+    kind: 'table' | 'setting' | 'grant' | 'variable' | 'text';
     name: string;
     count: number;
     detail: string | null;

@@ -15,9 +15,11 @@ const KINDS: Record<PluginDataItem['kind'], string> = {
     table: 'Tables',
     setting: 'Settings set in the panel',
     grant: 'Permission grants',
+    variable: 'Gamedata variables it added',
+    text: 'Texts it added',
 };
 
-/** How much of one item: a table's rows, a grant's holders, a setting's value. */
+/** How much of one item: a table's rows, a grant's holders, a setting's value, a variable's or text's value. */
 const amount = (item: PluginDataItem) => {
     if (item.kind === 'table')
         return `${item.count.toLocaleString()} ${item.count === 1 ? 'row' : 'rows'}`;

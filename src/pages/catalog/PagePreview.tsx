@@ -217,7 +217,8 @@ export const PagePreview = ({ tree, page, draft, featured, selectedOffer, onSele
                 )}
                 {body}
                 {spec.code === RECOLORABLE_LAYOUT && <RecolorablePalette offers={page.offers} selectedOffer={selectedOffer} display={draft.display} />}
-                {!sells && spec.kind !== 'featured' && page.offers.length > 0 && (
+                {/* A club or gifts page is filled by the client, but its first membership or gift is made here: its grid shows even while empty. */}
+                {!sells && spec.kind !== 'featured' && (page.offers.length > 0 || ((spec.kind === 'club' || spec.kind === 'gifts') && tree.canManage)) && (
                     <div className="flex flex-col gap-2 border-t border-line pt-3">
                         <span className="text-xs font-medium text-muted">Offers on this page ({page.offers.length})</span>
                         <OfferGrid tree={tree} offers={page.offers} selectedOffer={selectedOffer} flagged={flagged} onSelectOffer={onSelectOffer} onAddOffer={onAddOffer} dim />

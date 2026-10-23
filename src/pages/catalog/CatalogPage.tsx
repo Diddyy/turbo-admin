@@ -69,7 +69,12 @@ import { TreeResizer } from './TreeResizer';
 import { useTreeWidth } from './treeWidth';
 
 /** What a new offer starts as on a page of this layout. */
-const startOf = (layout: string): OfferStart => (layout === CLUB_BUY ? 'membership' : layout === CLUB_GIFTS ? 'gift' : 'item');
+/** What a new offer on a page with this layout starts as: a membership on any club shop (club_buy, vip_buy, loyalty_vip_buy), a gift with the gifts. */
+const startOf = (layout: string): OfferStart => {
+    const kind = layoutOf(layout).kind;
+
+    return kind === 'club' ? 'membership' : kind === 'gifts' ? 'gift' : 'item';
+};
 
 /** What is being dragged: a page from the tree, or an offer from the page. */
 type Dragging = { kind: 'page'; id: number } | { kind: 'offer'; id: number };

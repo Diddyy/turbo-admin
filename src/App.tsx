@@ -8,6 +8,7 @@ import { ToTab } from '#/components/ToTab';
 import { Loading } from '#/components/ui';
 import { Shell } from '#/layout/Shell';
 import { AccountPage } from '#/pages/AccountPage';
+import { CampaignsPage } from '#/pages/campaigns/CampaignsPage';
 import { CatalogPage } from '#/pages/catalog/CatalogPage';
 import { DiscountsPage } from '#/pages/catalog/DiscountsPage';
 import { SongsPage } from '#/pages/catalog/SongsPage';
@@ -103,6 +104,7 @@ export const App = () => (
             <Route path="reward-tracks/import" element={<RewardTracksPage importing />} />
             <Route path="reward-tracks/:id/:tab?" element={<RewardTracksPage />} />
             <Route path="online-rewards" element={<OnlineRewardsPage />} />
+            <Route path="campaigns/:id?" element={<CampaignsPage />} />
             <Route path="content/:tab?" element={<ContentPage />} />
             <Route path="settings/:tab?" element={<SettingsPage />} />
             <Route path="plugins" element={<PluginsPage />} />

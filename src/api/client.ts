@@ -9,10 +9,13 @@ export const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '');
 
 export class ApiError extends Error {
     readonly status: number;
+    /** The server's whole answer, for an endpoint that says more than its message (the field it is about). */
+    readonly body: Record<string, unknown> | null;
 
-    constructor(status: number, message: string) {
+    constructor(status: number, message: string, body: Record<string, unknown> | null = null) {
         super(message);
         this.status = status;
+        this.body = body;
     }
 }
 
@@ -26,14 +29,14 @@ export const MESSAGES: Record<number, string> = {
     500: 'The server ran into a problem. It is in the server log.',
 };
 
-/** The server's own explanation, when it gave one (`{ "message": "..." }`). */
-const messageOf = async (response: Response) => {
+/** The server's own explanation, when it gave one (`{ "message": "..." }`), and the rest it said. */
+const explanationOf = async (response: Response) => {
     try {
-        const body = (await response.json()) as { message?: unknown };
+        const body = (await response.json()) as Record<string, unknown>;
 
-        return typeof body.message === 'string' ? body.message : null;
+        return { message: typeof body.message === 'string' ? body.message : null, body };
     } catch {
-        return null;
+        return { message: null, body: null };
     }
 };
 
@@ -64,9 +67,9 @@ export const api = async <T>(path: string, init: RequestInit = {}): Promise<T> =
         useSession.getState().signOut();
 
     if (!response.ok) {
-        const message = (await messageOf(response)) ?? MESSAGES[response.status] ?? `The server answered ${response.status}.`;
+        const answer = await explanationOf(response);
 
-        throw new ApiError(response.status, message);
+        throw new ApiError(response.status, answer.message ?? MESSAGES[response.status] ?? `The server answered ${response.status}.`, answer.body);
     }
 
     if (response.status === 204)
@@ -149,7 +152,7 @@ export const apiBlob = async (path: string, body?: unknown): Promise<Blob> => {
         useSession.getState().signOut();
 
     if (!response.ok)
-        throw new ApiError(response.status, (await messageOf(response)) ?? MESSAGES[response.status] ?? `The server answered ${response.status}.`);
+        throw new ApiError(response.status, (await explanationOf(response)).message ?? MESSAGES[response.status] ?? `The server answered ${response.status}.`);
 
     return response.blob();
 };

@@ -47,6 +47,8 @@ export interface MeResponse {
     /** Holds `admin.messages.view`: may read players' private messages. */
     canViewMessages: boolean;
     canViewTelemetry: boolean;
+    /** Holds `admin.campaigns.manage`: may see and change the campaign calendars. */
+    canManageCampaigns: boolean;
 }
 
 export interface DashboardRoom {

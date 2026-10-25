@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 
 import { Badge, EmptyState, IconButton, Switch, Td, Th } from '#/components/ui';
 
-import { AUDIENCE_OPTIONS, CONDITION_REWARD_TRACK, DEFAULT_COLOR, type HabboStatus, hiddenReason, type Notice, NOTICE_TYPES, parseColor, splitCondition } from './model';
+import { AUDIENCE_OPTIONS, CONDITION_REWARD_TRACK, type HabboStatus, hiddenReason, type Notice, splitCondition } from './model';
 import { NoticePreview } from './NoticePreview';
 
 const HABBO_BADGE: Record<HabboStatus, ReactNode> = {
@@ -12,16 +12,21 @@ const HABBO_BADGE: Record<HabboStatus, ReactNode> = {
     ours: <Badge>not on Habbo</Badge>,
 };
 
-/** From when to when it shows, as the variables write the server's time. */
+/** From when to when it shows, as the variables write the server's time, and whether it is past or yet to come. */
 const When = ({ notice }: { notice: Notice }) => {
     const { show_from: from, expiry } = notice.fields;
+    const hidden = hiddenReason(notice);
 
     if (!from && !expiry) return <span className="text-xs text-muted">Always</span>;
 
     return (
-        <span className="flex flex-col font-mono text-xs whitespace-nowrap">
-            <span>{from || 'now'}</span>
-            <span><span className="text-muted">→</span> {expiry || 'no end'}</span>
+        <span className="flex flex-col items-start gap-1">
+            <span className="flex flex-col font-mono text-xs whitespace-nowrap">
+                <span>{from || 'now'}</span>
+                <span><span className="text-muted">→</span> {expiry || 'no end'}</span>
+            </span>
+            {hidden === 'expired' && <Badge tone="amber">expired</Badge>}
+            {hidden === 'not yet' && <Badge tone="amber">not yet</Badge>}
         </span>
     );
 };
@@ -41,7 +46,7 @@ const Who = ({ notice }: { notice: Notice }) => {
 
 /**
  * Notices as rows, each opening its own editor: as the column docks them, and where each stands
- * (unsaved, new, out of its dates, without words, against Habbo's). `ordered`, the shown ones,
+ * (unsaved, new, without words, against Habbo's; out of its dates under when). `ordered`, the shown ones,
  * with arrows to move one; the switch shows or hides one.
  */
 export const NoticeTable = ({ notices, ordered, empty, dirty, isNew, habboOf, disabled, onOpen, onMove, onShow }: {
@@ -65,8 +70,6 @@ export const NoticeTable = ({ notices, ordered, empty, dirty, isNew, habboOf, di
                     <tr>
                         {ordered && <Th className="w-0">Order</Th>}
                         <Th className="w-0">Notice</Th>
-                        <Th>Style</Th>
-                        <Th>Click opens</Th>
                         <Th>When (server time)</Th>
                         <Th>Who sees it</Th>
                         <Th className="w-0">Shown</Th>
@@ -74,9 +77,7 @@ export const NoticeTable = ({ notices, ordered, empty, dirty, isNew, habboOf, di
                 </thead>
                 <tbody className="[&>tr:last-child>td]:border-b-0" data-testid={ordered ? 'shown-notices' : 'hidden-notices'}>
                     {notices.map((notice, index) => {
-                        const hidden = hiddenReason(notice);
                         const habbo = habboOf(notice);
-                        const link = notice.fields.internal_link || notice.fields.external_link;
 
                         return (
                             <tr key={notice.key} onClick={() => onOpen(notice.key)} className="cursor-pointer hover:bg-subtle/60">
@@ -98,20 +99,11 @@ export const NoticeTable = ({ notices, ordered, empty, dirty, isNew, habboOf, di
                                         <span className="flex flex-wrap gap-1">
                                             {isNew(notice.key) && <Badge tone="accent">new</Badge>}
                                             {dirty(notice.key) && <Badge tone="accent">unsaved</Badge>}
-                                            {hidden === 'expired' && <Badge tone="amber">expired</Badge>}
-                                            {hidden === 'not yet' && <Badge tone="amber">not yet</Badge>}
                                             {!notice.texts.desc && <Badge tone="amber">no words</Badge>}
                                             {habbo && HABBO_BADGE[habbo]}
                                         </span>
                                     </button>
                                 </Td>
-                                <Td>
-                                    <span className="flex items-center gap-2 text-xs whitespace-nowrap">
-                                        <span className="size-3.5 shrink-0 rounded border border-black/10" style={{ background: parseColor(notice.fields.color) ?? DEFAULT_COLOR }} />
-                                        {NOTICE_TYPES.find(x => x.value === (notice.fields.type || 'normal'))?.label ?? notice.fields.type}
-                                    </span>
-                                </Td>
-                                <Td>{link ? <span className="block max-w-48 truncate font-mono text-xs" title={link}>{link}</span> : <span className="text-xs text-muted">Nothing</span>}</Td>
                                 <Td><When notice={notice} /></Td>
                                 <Td><Who notice={notice} /></Td>
                                 <Td>

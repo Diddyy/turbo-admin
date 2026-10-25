@@ -2,12 +2,12 @@ import { CheckCircle2, CloudDownload, ExternalLink, EyeOff, RotateCcw, Send, Upl
 import { useRef, useState } from 'react';
 import { Link } from 'react-router';
 
-import { type BrokenAsset, type BrokenAssetSource, useBrokenAssets, useIgnoreBrokenAsset, useUploadBadgePicture } from '#/api/brokenAssets';
+import { type BrokenAsset, type BrokenAssetSource, useBrokenAssets, useIgnoreBrokenAssets, useUploadBadgePicture } from '#/api/brokenAssets';
 import { useStartSync } from '#/api/bundles';
 import { useFetchCatalogPictures, useUploadCatalogImage } from '#/api/catalogImages';
 import { Modal } from '#/components/Modal';
 import { toast, toastError } from '#/components/toast';
-import { Badge, Button, EmptyState, ErrorNotice, Loading, Panel, Segmented, Textarea } from '#/components/ui';
+import { Badge, Button, Checkbox, EmptyState, ErrorNotice, Loading, Panel, Segmented, Textarea } from '#/components/ui';
 import { cx } from '#/lib/cx';
 import { fromNow } from '#/lib/time';
 import { UploadDialog } from '#/pages/gamedata/UploadDialog';
@@ -17,25 +17,67 @@ const SHOWS = [ { value: 'open', label: 'To fix' }, { value: 'ignored', label: '
 /** What a picture is uploaded as here: a badge's and a catalog picture have their own uploads, a library goes through the one for any file. */
 const pictureKinds = new Set([ 'badge', 'catalog-image' ]);
 
-const IgnoreDialog = ({ asset, onClose }: { asset: BrokenAsset; onClose: () => void }) => {
+const idOf = (asset: BrokenAsset) => `${asset.source}:${asset.key}`;
+
+const plural = (count: number, one: string) => `${count.toLocaleString()} ${one}${count === 1 ? '' : 's'}`;
+
+/**
+ * Takes broken assets from Habbo: catalog pictures by name, the rest by a sync, which takes all of
+ * them at once. Both are asset jobs and one runs at a time, so with pictures among them only the
+ * pictures are taken now. `onStarted` is told which were.
+ */
+const useTakeFromHabbo = () => {
+    const sync = useStartSync();
+    const fetchPictures = useFetchCatalogPictures();
+
+    const take = (assets: BrokenAsset[], onStarted?: (taken: BrokenAsset[]) => void) => {
+        const fromHabbo = assets.filter(x => x.actions.includes('habbo'));
+        const pictures = fromHabbo.filter(x => x.kind === 'catalog-image' && x.name);
+
+        if (pictures.length > 0) {
+            const rest = fromHabbo.length - pictures.length;
+
+            fetchPictures.mutate(pictures.map(x => x.name!), {
+                onSuccess: () => {
+                    toast(`Taking ${pictures.length === 1 ? pictures[0]?.name : plural(pictures.length, 'picture')} from Habbo.${rest > 0 ? ` Take the other ${rest.toLocaleString()} once that is done.` : ''}`);
+                    onStarted?.(pictures);
+                },
+                onError: toastError,
+            });
+        } else if (fromHabbo.length > 0) {
+            sync.mutate(undefined, {
+                onSuccess: () => {
+                    toast('A sync from Habbo started.');
+                    onStarted?.(fromHabbo);
+                },
+                onError: toastError,
+            });
+        }
+    };
+
+    return { take, pending: sync.isPending || fetchPictures.isPending };
+};
+
+const IgnoreDialog = ({ assets, onClose, onIgnored }: { assets: BrokenAsset[]; onClose: () => void; onIgnored?: () => void }) => {
     const [ note, setNote ] = useState('');
-    const ignore = useIgnoreBrokenAsset();
+    const ignore = useIgnoreBrokenAssets();
 
     return (
-        <Modal open onClose={onClose} title={`Ignore ${asset.title}?`} className="sm:h-fit! sm:max-w-lg">
+        <Modal open onClose={onClose} title={assets.length === 1 ? `Ignore ${assets[0]?.title}?` : `Ignore ${plural(assets.length, 'asset')}?`} className="sm:h-fit! sm:max-w-lg">
             <form
                 className="flex flex-col gap-4 p-4 sm:p-5"
                 onSubmit={(event) => {
                     event.preventDefault();
-                    ignore.mutate({ asset, note }, {
+                    ignore.mutate({ assets, note }, {
                         onSuccess: () => {
-                            toast('Ignored.');
+                            toast(assets.length === 1 ? 'Ignored.' : `Ignored ${plural(assets.length, 'asset')}.`);
+                            onIgnored?.();
                             onClose();
                         },
                     });
                 }}
             >
-                <p className="text-sm text-muted">It stays listed under Ignored, with why, until it is brought back.</p>
+                <p className="text-sm text-muted">{assets.length === 1 ? 'It stays' : 'They stay'} listed under Ignored, with why, until brought back.</p>
                 <Textarea name="ignore-note" rows={3} maxLength={512} value={note} onChange={event => setNote(event.target.value)} placeholder="Why: retired badge, page not shown, ..." autoFocus />
                 {ignore.error && <ErrorNotice error={ignore.error} />}
                 <div className="flex justify-end gap-2 border-t border-line pt-4">
@@ -47,19 +89,14 @@ const IgnoreDialog = ({ asset, onClose }: { asset: BrokenAsset; onClose: () => v
     );
 };
 
-/** One broken asset: what it is, why, and the fixes that apply. */
-const Row = ({ asset, canManage, busy, onIgnore, onUploadLibrary }: { asset: BrokenAsset; canManage: boolean; busy: boolean; onIgnore: () => void; onUploadLibrary: () => void }) => {
+/** One broken asset: what it is, why, and the fixes that apply; ticked, it is one of those done at once. */
+const Row = ({ asset, canManage, busy, selected, onSelect, onIgnore, onUploadLibrary }: { asset: BrokenAsset; canManage: boolean; busy: boolean; selected: boolean; onSelect: (selected: boolean) => void; onIgnore: () => void; onUploadLibrary: () => void }) => {
     const file = useRef<HTMLInputElement>(null);
-    const sync = useStartSync();
-    const fetchPictures = useFetchCatalogPictures();
+    const fromHabbo = useTakeFromHabbo();
     const uploadPicture = useUploadCatalogImage();
     const uploadBadge = useUploadBadgePicture();
-    const bringBack = useIgnoreBrokenAsset();
+    const bringBack = useIgnoreBrokenAssets();
     const uploading = uploadPicture.isPending || uploadBadge.isPending;
-
-    const takeFromHabbo = () => asset.kind === 'catalog-image' && asset.name
-        ? fetchPictures.mutate([ asset.name ], { onSuccess: () => toast(`Taking ${asset.name} from Habbo.`), onError: toastError })
-        : sync.mutate(undefined, { onSuccess: () => toast('A sync from Habbo started.'), onError: toastError });
 
     const upload = () => (asset.kind && pictureKinds.has(asset.kind) ? file.current?.click() : onUploadLibrary());
 
@@ -76,30 +113,33 @@ const Row = ({ asset, canManage, busy, onIgnore, onUploadLibrary }: { asset: Bro
     };
 
     return (
-        <li className={cx('flex flex-col gap-1.5 px-4 py-3 sm:flex-row sm:items-start sm:gap-4', asset.ignored && 'opacity-75')}>
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <div className="flex min-w-0 flex-wrap items-center gap-2">
-                    <span className="min-w-0 truncate font-mono text-[13px] font-medium" title={asset.title}>{asset.title}</span>
-                    {asset.kind && <Badge>{asset.kind}</Badge>}
-                    {asset.count > 1 && <Badge tone="amber">{`x${asset.count.toLocaleString()}`}</Badge>}
-                    {asset.link && (
-                        <a href={asset.link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-accent hover:underline">
-                            Client error <ExternalLink className="size-3" />
-                        </a>
+        <li className={cx('flex flex-col gap-1.5 px-4 py-3 sm:flex-row sm:items-start sm:gap-4', asset.ignored && 'opacity-75', selected && 'bg-accent/5')}>
+            <div className="flex min-w-0 flex-1 items-start gap-3">
+                {canManage && <Checkbox label={<span className="sr-only">{`Select ${asset.title}`}</span>} checked={selected} onChange={onSelect} />}
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <span className="min-w-0 truncate font-mono text-[13px] font-medium" title={asset.title}>{asset.title}</span>
+                        {asset.kind && <Badge>{asset.kind}</Badge>}
+                        {asset.count > 1 && <Badge tone="amber">{`x${asset.count.toLocaleString()}`}</Badge>}
+                        {asset.link && (
+                            <a href={asset.link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-accent hover:underline">
+                                Client error <ExternalLink className="size-3" />
+                            </a>
+                        )}
+                    </div>
+                    <p className="text-[13px] text-muted">{asset.detail}</p>
+                    {asset.ignored && (
+                        <p className="text-xs text-muted">
+                            {`Ignored ${fromNow(asset.ignored.ignoredAt)}${asset.ignored.playerName ? ` by ${asset.ignored.playerName}` : ''}`}
+                            {asset.ignored.note && <>: <span className="text-fg">{asset.ignored.note}</span></>}
+                        </p>
                     )}
                 </div>
-                <p className="text-[13px] text-muted">{asset.detail}</p>
-                {asset.ignored && (
-                    <p className="text-xs text-muted">
-                        {`Ignored ${fromNow(asset.ignored.ignoredAt)}${asset.ignored.playerName ? ` by ${asset.ignored.playerName}` : ''}`}
-                        {asset.ignored.note && <>: <span className="text-fg">{asset.ignored.note}</span></>}
-                    </p>
-                )}
             </div>
             {canManage && (
-                <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+                <div className="flex shrink-0 flex-wrap items-center gap-1.5 max-sm:pl-7">
                     {!asset.ignored && asset.actions.includes('habbo') && (
-                        <Button variant="secondary" icon={<CloudDownload />} className="h-8 px-2.5 text-xs" disabled={busy || sync.isPending || fetchPictures.isPending} onClick={takeFromHabbo}>
+                        <Button variant="secondary" icon={<CloudDownload />} className="h-8 px-2.5 text-xs" disabled={busy || fromHabbo.pending} onClick={() => fromHabbo.take([ asset ])}>
                             Take from Habbo
                         </Button>
                     )}
@@ -130,7 +170,7 @@ const Row = ({ asset, canManage, busy, onIgnore, onUploadLibrary }: { asset: Bro
                                     icon={<RotateCcw />}
                                     className="h-8 px-2.5 text-xs"
                                     disabled={bringBack.isPending}
-                                    onClick={() => bringBack.mutate({ asset, note: null }, { onSuccess: () => toast('Brought back.'), onError: toastError })}
+                                    onClick={() => bringBack.mutate({ assets: [ asset ], note: null }, { onSuccess: () => toast('Brought back.'), onError: toastError })}
                                 >
                                     Bring back
                                 </Button>
@@ -168,20 +208,91 @@ const SourceChip = ({ source, active, onPick }: { source: BrokenAssetSource; act
     </li>
 );
 
+/** The ticked ones, done at once: taken from Habbo or ignored with one note, or brought back. */
+const Selection = ({ items, selected, show, busy, onSelectAll, onIgnore, onDone }: {
+    items: BrokenAsset[];
+    selected: BrokenAsset[];
+    show: string;
+    busy: boolean;
+    onSelectAll: (all: boolean) => void;
+    onIgnore: () => void;
+    onDone: (assets: BrokenAsset[]) => void;
+}) => {
+    const fromHabbo = useTakeFromHabbo();
+    const bringBack = useIgnoreBrokenAssets();
+    const takeable = selected.filter(x => x.actions.includes('habbo'));
+    const all = selected.length === items.length;
+
+    return (
+        <div className="flex min-h-12 flex-wrap items-center gap-x-4 gap-y-2 border-b border-line px-4 py-2">
+            <Checkbox label={all ? `All ${items.length.toLocaleString()} selected` : selected.length > 0 ? `${selected.length.toLocaleString()} of ${items.length.toLocaleString()} selected` : `Select all ${items.length.toLocaleString()}`} checked={all} onChange={onSelectAll} />
+            {selected.length > 0 && (
+                <div className="ml-auto flex flex-wrap items-center gap-1.5">
+                    {show === 'open'
+                        ? (
+                                <>
+                                    {takeable.length > 0 && (
+                                        <Button variant="secondary" icon={<CloudDownload />} className="h-8 px-2.5 text-xs" disabled={busy || fromHabbo.pending} onClick={() => fromHabbo.take(takeable, onDone)}>
+                                            {`Take ${takeable.length.toLocaleString()} from Habbo`}
+                                        </Button>
+                                    )}
+                                    <Button variant="secondary" icon={<EyeOff />} className="h-8 px-2.5 text-xs" onClick={onIgnore}>{`Ignore ${selected.length.toLocaleString()}`}</Button>
+                                </>
+                            )
+                        : (
+                                <Button
+                                    variant="secondary"
+                                    icon={<RotateCcw />}
+                                    className="h-8 px-2.5 text-xs"
+                                    disabled={bringBack.isPending}
+                                    onClick={() => bringBack.mutate({ assets: selected, note: null }, {
+                                        onSuccess: () => {
+                                            toast(`Brought back ${plural(selected.length, 'asset')}.`);
+                                            onDone(selected);
+                                        },
+                                        onError: toastError,
+                                    })}
+                                >
+                                    {`Bring back ${selected.length.toLocaleString()}`}
+                                </Button>
+                            )}
+                    <Button variant="ghost" className="h-8 px-2.5 text-xs" onClick={() => onSelectAll(false)}>Clear</Button>
+                </div>
+            )}
+        </div>
+    );
+};
+
 /**
  * Everything players can't load, in one list: the addresses their clients were refused (while the
  * client errors plugin is loaded), what the checks found, the catalog pictures pages show that the
  * hotel lacks and the badges players hold with no picture. Each with the fixes that apply, or
- * ignored with a note.
+ * ignored with a note; ticked, several are fixed, ignored or brought back at once.
  */
 export const BrokenAssets = ({ canManage, busy }: { canManage: boolean; busy: boolean }) => {
     const { data, error } = useBrokenAssets();
     const [ show, setShow ] = useState('open');
-    const [ ignoring, setIgnoring ] = useState<BrokenAsset | null>(null);
+    const [ ignoring, setIgnoring ] = useState<BrokenAsset[] | null>(null);
     const [ uploading, setUploading ] = useState<string | null>(null);
     const [ only, setOnly ] = useState<string | null>(null);
     const [ limit, setLimit ] = useState(PAGE);
+    const [ ticked, setTicked ] = useState<ReadonlySet<string>>(new Set());
     const items = (data?.items ?? []).filter(x => (show === 'ignored') === !!x.ignored && (!only || x.source === only));
+    // Only those in view count: a tick left on one filtered out, or gone from the list, does nothing.
+    const selected = items.filter(x => ticked.has(idOf(x)));
+
+    const tick = (assets: BrokenAsset[], on: boolean) => setTicked((current) => {
+        const next = new Set(current);
+
+        for (const asset of assets) {
+            if (on)
+                next.add(idOf(asset));
+            else
+                next.delete(idOf(asset));
+        }
+
+        return next;
+    });
 
     return (
         <>
@@ -195,6 +306,7 @@ export const BrokenAssets = ({ canManage, busy }: { canManage: boolean; busy: bo
                         onChange={(value) => {
                             setShow(value);
                             setLimit(PAGE);
+                            setTicked(new Set());
                         }}
                         options={SHOWS}
                     />
@@ -222,15 +334,28 @@ export const BrokenAssets = ({ canManage, busy }: { canManage: boolean; busy: bo
                         ? <p className="flex items-center gap-2 px-4 py-6 text-sm text-good"><CheckCircle2 className="size-4" /> Nothing is broken.</p>
                         : <EmptyState>Nothing is ignored.</EmptyState>
                 )}
+                {items.length > 0 && canManage && (
+                    <Selection
+                        items={items}
+                        selected={selected}
+                        show={show}
+                        busy={busy}
+                        onSelectAll={all => (all ? tick(items, true) : setTicked(new Set()))}
+                        onIgnore={() => setIgnoring(selected)}
+                        onDone={assets => tick(assets, false)}
+                    />
+                )}
                 {items.length > 0 && (
                     <ul className="divide-y divide-line">
                         {items.slice(0, limit).map(asset => (
                             <Row
-                                key={`${asset.source}:${asset.key}`}
+                                key={idOf(asset)}
                                 asset={asset}
                                 canManage={canManage}
                                 busy={busy}
-                                onIgnore={() => setIgnoring(asset)}
+                                selected={ticked.has(idOf(asset))}
+                                onSelect={on => tick([ asset ], on)}
+                                onIgnore={() => setIgnoring([ asset ])}
                                 onUploadLibrary={() => setUploading(asset.name)}
                             />
                         ))}
@@ -244,7 +369,7 @@ export const BrokenAssets = ({ canManage, busy }: { canManage: boolean; busy: bo
                 )}
             </Panel>
 
-            {ignoring && <IgnoreDialog asset={ignoring} onClose={() => setIgnoring(null)} />}
+            {ignoring && <IgnoreDialog assets={ignoring} onClose={() => setIgnoring(null)} onIgnored={() => tick(ignoring, false)} />}
             <UploadDialog open={uploading !== null} name={uploading ?? undefined} onClose={() => setUploading(null)} />
         </>
     );

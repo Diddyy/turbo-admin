@@ -50,13 +50,13 @@ const useRefresh = () => {
     return () => void queryClient.invalidateQueries({ queryKey: KEY });
 };
 
-/** Ignores a broken asset with why; with `note` null, brings it back. */
-export const useIgnoreBrokenAsset = () => {
+/** Ignores broken assets with one why, all or none; with `note` null, brings them back. */
+export const useIgnoreBrokenAssets = () => {
     const refresh = useRefresh();
 
     return useMutation({
-        mutationFn: ({ asset, note }: { asset: BrokenAsset; note: string | null }) =>
-            post<void>(note === null ? '/assets/broken/unignore' : '/assets/broken/ignore', { source: asset.source, key: asset.key, note }),
+        mutationFn: ({ assets, note }: { assets: BrokenAsset[]; note: string | null }) =>
+            post<void>(note === null ? '/assets/broken/unignore' : '/assets/broken/ignore', { assets: assets.map(({ source, key }) => ({ source, key })), note }),
         onSuccess: refresh,
     });
 };

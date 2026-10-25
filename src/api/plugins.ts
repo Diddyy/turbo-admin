@@ -108,6 +108,42 @@ export interface PluginActionResponse {
 const PLUGINS_KEY = [ 'plugins' ];
 
 /** The plugins, read again every second while a check or update runs. */
+/** One thing a plugin registers: its kind (`command`, `client-module`, `template-patch`, `override`...), its name and a detail. */
+export interface PluginContribution {
+    kind: string;
+    name: string;
+    detail: string | null;
+}
+
+/** What players' clients report of a plugin's client half: `module.refused`, `module.failed`, `patch.unmatched`, `patch.conflict`, `patch.applied`. */
+export interface PluginClientIssue {
+    kind: string;
+    /** The module's URL, or the template's id. */
+    subject: string;
+    message: string;
+    /** How many players' clients said so. */
+    clients: number;
+    lastReportedUtc: string;
+}
+
+/** Everything a plugin contributes: what its last load registered (a failed one: up to where it failed). */
+export interface PluginContributions {
+    key: string;
+    name: string | null;
+    state: PluginState;
+    error: string | null;
+    items: PluginContribution[];
+    /** Each a sentence: a name another live plugin registers too, or a patch clash clients report. */
+    conflicts: string[];
+    clientIssues: PluginClientIssue[];
+}
+
+/** The extension inspector for one plugin; read while its row is open. */
+export const usePluginContributions = (key: string) => useQuery({
+    queryKey: [ ...PLUGINS_KEY, key, 'contributions' ],
+    queryFn: () => api<PluginContributions>(`/plugins/${encodeURIComponent(key)}/contributions`),
+});
+
 export const usePlugins = () => useQuery({
     queryKey: PLUGINS_KEY,
     queryFn: () => api<PluginsResponse>('/plugins'),

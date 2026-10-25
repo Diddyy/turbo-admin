@@ -1,8 +1,9 @@
 import { Download, ExternalLink, History, Link2, Pencil, Power, PowerOff, RefreshCw, ScanSearch, Trash2, Unlink, Upload } from 'lucide-react';
 import { useState } from 'react';
 
-import { type Plugin, type PluginActionResponse, type PluginSource, type PluginSourceActionResponse, type PluginState, useCheckPluginSource, useInstallPlugin, usePlugins, useReloadPlugin, useRemovePluginSource, useRescanPlugins, useRollbackPlugin, useSetPluginEnabled, useUpdatePluginSource } from '#/api/plugins';
+import { type Plugin, type PluginActionResponse, type PluginSource, type PluginSourceActionResponse, type PluginState, useCheckPluginSource, useInstallPlugin, usePluginContributions, usePlugins, useReloadPlugin, useRemovePluginSource, useRescanPlugins, useRollbackPlugin, useSetPluginEnabled, useUpdatePluginSource } from '#/api/plugins';
 import { ask } from '#/components/confirm';
+import { Tabs } from '#/components/Tabs';
 import { toast, toastError } from '#/components/toast';
 import { Badge, type BadgeTone, Button, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Panel, WarningNotice } from '#/components/ui';
 import { useHubTabs } from '#/layout/nav';
@@ -38,6 +39,88 @@ const Items = ({ items }: { items: (string | number)[] }) =>
     items.length === 0
         ? <span className="text-muted">none</span>
         : <span className="flex flex-wrap gap-1.5">{items.map(item => <code key={item} className="rounded bg-subtle px-1.5 py-0.5 text-xs">{item}</code>)}</span>;
+
+/** What clients report, in words. */
+const ISSUE_LABELS: Record<string, string> = {
+    'module.refused': 'module refused',
+    'module.failed': 'module threw',
+    'patch.unmatched': 'patch matched nothing',
+    'patch.conflict': 'patch clash',
+    'patch.applied': 'patch applied',
+};
+
+/**
+ * The extension inspector's tabs on an open plugin: everything it contributes by kind, with the
+ * names another live plugin registers too; and what players' clients report of its client half.
+ */
+const PluginInspector = ({ pluginKey }: { pluginKey: string }) => {
+    const [ tab, setTab ] = useState('contributions');
+    const contributions = usePluginContributions(pluginKey);
+    const data = contributions.data;
+    const kinds = new Map<string, { name: string; detail: string | null }[]>();
+
+    for (const item of data?.items ?? []) kinds.set(item.kind, [ ...(kinds.get(item.kind) ?? []), item ]);
+
+    const problems = (data?.clientIssues ?? []).filter(issue => issue.kind !== 'patch.applied').length;
+
+    return (
+        <div className="flex flex-col gap-2">
+            <Tabs
+                value={tab}
+                onChange={setTab}
+                label="Inspector"
+                tabs={[
+                    { value: 'contributions', label: 'Contributions', count: data?.items.length, title: 'What its last load registered' },
+                    { value: 'clients', label: 'Client reports', count: problems || undefined, title: 'What players\' clients report of its client half' },
+                ]}
+            />
+            {contributions.isLoading && <Loading />}
+            {contributions.error && <ErrorNotice error={contributions.error} />}
+            {data && tab === 'contributions' && (
+                <div className="flex flex-col gap-2 text-xs">
+                    {data.conflicts.map(conflict => <WarningNotice key={conflict}>{conflict}</WarningNotice>)}
+                    {kinds.size === 0
+                        ? <span className="text-muted">It registers nothing{data.state === 'failed' ? ' (its load failed before anything was registered)' : ''}.</span>
+                        : (
+                                <dl className="grid gap-x-4 gap-y-1.5 sm:grid-cols-[9rem_1fr]">
+                                    {[ ...kinds ].map(([ kind, items ]) => (
+                                        <div key={kind} className="contents">
+                                            <dt className={cx('text-muted', kind === 'override' && 'font-medium text-amber-700')}>{kind}</dt>
+                                            <dd className="flex flex-wrap gap-1.5">
+                                                {items.map(item => (
+                                                    <code key={`${item.name} ${item.detail ?? ''}`} className="rounded bg-subtle px-1.5 py-0.5" title={item.detail ?? undefined}>
+                                                        {item.name}
+                                                        {item.detail && <span className="ml-1 text-muted">{item.detail}</span>}
+                                                    </code>
+                                                ))}
+                                            </dd>
+                                        </div>
+                                    ))}
+                                </dl>
+                            )}
+                </div>
+            )}
+            {data && tab === 'clients' && (
+                data.clientIssues.length === 0
+                    ? <span className="text-xs text-muted">No client has reported anything since the server started.</span>
+                    : (
+                            <ul className="flex flex-col gap-1.5 text-xs">
+                                {data.clientIssues.map(issue => (
+                                    <li key={`${issue.kind} ${issue.subject} ${issue.message}`} className="flex flex-col gap-0.5">
+                                        <span className="flex flex-wrap items-center gap-2">
+                                            <Badge tone={issue.kind === 'patch.applied' ? 'green' : issue.kind === 'patch.conflict' ? 'amber' : 'red'}>{ISSUE_LABELS[issue.kind] ?? issue.kind}</Badge>
+                                            <code className="break-all">{issue.subject}</code>
+                                            <span className="text-muted" title={issue.lastReportedUtc}>{issue.clients} {issue.clients === 1 ? 'player' : 'players'}, {fromNow(issue.lastReportedUtc)}</span>
+                                        </span>
+                                        <span className="break-words">{issue.message}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )
+            )}
+        </div>
+    );
+};
 
 /** A plugin open: its manifest, what it added, why it failed, and what may be done with it. */
 const PluginDetail = ({ plugin, source, canManage, canInstall, canUninstall }: { plugin: Plugin; source: PluginSource | undefined; canManage: boolean; canInstall: boolean; canUninstall: boolean }) => {
@@ -154,6 +237,7 @@ const PluginDetail = ({ plugin, source, canManage, canInstall, canUninstall }: {
                     )}
                 </div>
             )}
+            {known && <PluginInspector pluginKey={plugin.key} />}
             {uninstalling && <PluginUninstall pluginKey={plugin.key} onClose={() => setUninstalling(false)} />}
         </div>
     );

@@ -533,7 +533,7 @@ export interface ImportRequest {
     publish: boolean;
 }
 
-/** Habbo's catalogues to take in from G-Earth packet logs of its client: the normal catalogue's, the Builders Club's, or both. */
+/** Habbo's catalogues to take in from packet logs of its client: the normal catalogue's, the Builders Club's, or both. */
 export interface LogImportRequest {
     normal: File | null;
     buildersClub: File | null;

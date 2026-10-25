@@ -164,7 +164,7 @@ const LogInput = ({ label, file, onPick }: { label: string; file: File | null; o
 );
 
 /**
- * Taking Habbo's catalogues in from what its client was sent: G-Earth packet logs of the normal
+ * Taking Habbo's catalogues in from what its client was sent: packet logs of the normal
  * catalogue, the Builders Club, or both (its index and each page opened), or a JSON capture of
  * the Builders Club. Planned first - the pages and offers to add and bring in line, and what is
  * left out and why - and nothing changes until it is imported, as one step to undo.
@@ -268,7 +268,7 @@ export const ImportCapture = ({ tree }: { tree: CatalogTree }) => {
 
                 {source === 'logs' && (
                     <>
-                        <p className="text-xs leading-relaxed text-muted">From G-Earth's packet logger: open the catalogue, then each page to take in, and save the log. Give either catalogue's log, or both; the normal catalogue is made first.</p>
+                        <p className="text-xs leading-relaxed text-muted">From a packet logger: open the catalogue, then each page to take in, and save the log. Give either catalogue's log, or both; the normal catalogue is made first.</p>
                         <LogInput label="Normal catalogue log" file={normalLog} onPick={pickLog(setNormalLog)} />
                         <LogInput label="Builders Club log" file={buildersLog} onPick={pickLog(setBuildersLog)} />
                     </>

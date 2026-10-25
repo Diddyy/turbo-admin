@@ -1,9 +1,9 @@
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
 import { useMe } from '#/api/queries';
-import { type ReportCursor, type ReportFilter, useReports } from '#/api/reports';
+import { type ReportFilter, useReports } from '#/api/reports';
 import { ListToolbar } from '#/components/ListToolbar';
 import { PhoneLabel, Row, RowList } from '#/components/RowList';
 import { SearchInput } from '#/components/SearchInput';
@@ -11,6 +11,7 @@ import { Button, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Panel, 
 import { useHubTabs } from '#/layout/nav';
 import { cx } from '#/lib/cx';
 import { plural } from '#/lib/plural';
+import { type ListOrder, listQuery, orderOf, pageOf, type Sorting } from '#/lib/sort';
 import { fromNow } from '#/lib/time';
 import { formatDateTime } from '#/pages/rooms/labels';
 
@@ -28,53 +29,37 @@ const filterOf = (params: URLSearchParams): ReportFilter => ({
     player: params.get('player') ?? '',
 });
 
-const cursorOf = (params: URLSearchParams): ReportCursor => ({
-    before: Number(params.get('before')) || undefined,
-    after: Number(params.get('after')) || undefined,
-});
-
 /**
  * The calls for help players send, newest first: the open ones (picked or not) by default, the
  * closed ones or all, narrowed to a player who sent them or is named in them. Each opens on a page
- * of its own to read and close, as the client's mod tool does. The filter lives in the address,
- * so a player's page can link to the reports about them.
+ * of its own to read and close, as the client's mod tool does. Sorted by when they were sent or by
+ * their state. The filter, the page and the order live in the address, so a player's page can link
+ * to the reports about them.
  */
 export const ReportsPage = () => {
     const tabs = useHubTabs('moderation');
     const me = useMe().data;
     const [ params, setParams ] = useSearchParams();
     const filter = filterOf(params);
-    const cursor = cursorOf(params);
+    const page = pageOf(params);
+    const order = orderOf(params);
     const [ player, setPlayer ] = useState(filter.player);
-    const reports = useReports(filter, cursor);
+    const reports = useReports(filter, page, order);
     const entries = reports.data?.entries ?? [];
     const linked = me?.canViewPlayers ?? false;
+    const pageSize = reports.data?.pageSize ?? 1;
 
-    const go = (next: ReportFilter, nextCursor: ReportCursor = {}) => {
-        const search = new URLSearchParams();
+    /** Another filter, page or order; open, the default, is left out of the address. */
+    const go = (next: ReportFilter, nextPage = 1, nextOrder: ListOrder | null = order) =>
+        setParams(listQuery({ ...next, state: next.state === 'open' ? '' : next.state }, nextPage, nextOrder));
 
-        if (next.state !== 'open')
-            search.set('state', next.state);
-
-        if (next.player)
-            search.set('player', next.player);
-
-        if (nextCursor.before)
-            search.set('before', String(nextCursor.before));
-
-        if (nextCursor.after)
-            search.set('after', String(nextCursor.after));
-
-        setParams(search);
-    };
+    const sorting: Sorting = { order: order ?? reports.data?.order, onSort: next => go(filter, 1, next) };
 
     const handleSubmit = (event: FormEvent) => {
         event.preventDefault();
         go({ ...filter, player: player.trim() });
     };
 
-    const first = entries[0];
-    const last = entries[entries.length - 1];
     const counts = reports.data;
 
     return (
@@ -86,7 +71,15 @@ export const ReportsPage = () => {
             />
             <PageBody>
                 <Panel className="overflow-clip">
-                    <ListToolbar watch={[ filter.state, filter.player, cursor.before, cursor.after ]}>
+                    <ListToolbar
+                        watch={[ filter.state, filter.player, page, order ]}
+                        page={{
+                            offset: (page - 1) * pageSize,
+                            limit: pageSize,
+                            total: reports.data?.total,
+                            onChange: offset => go(filter, Math.floor(offset / pageSize) + 1),
+                        }}
+                    >
                         <Segmented label="Which reports" value={filter.state} onChange={state => go({ ...filter, state: state as ReportFilter['state'] })} options={STATES} />
                         <form onSubmit={handleSubmit} className="flex min-w-0 flex-1 items-center gap-2">
                             <SearchInput
@@ -110,15 +103,6 @@ export const ReportsPage = () => {
                                 </Button>
                             )}
                         </form>
-                        <nav aria-label="Pages" className="ml-auto flex items-center gap-1">
-                            <Button variant="ghost" icon={<ChevronLeft />} disabled={!reports.data?.hasNewer || !first} onClick={() => first && go(filter, { after: first.id })}>
-                                Newer
-                            </Button>
-                            <Button variant="ghost" disabled={!reports.data?.hasOlder || !last} onClick={() => last && go(filter, { before: last.id })}>
-                                Older
-                                <ChevronRight />
-                            </Button>
-                        </nav>
                     </ListToolbar>
 
                     {reports.error && <div className="p-4"><ErrorNotice error={reports.error} /></div>}
@@ -135,7 +119,8 @@ export const ReportsPage = () => {
                                 <div className={cx('transition-opacity', reports.isFetching && 'opacity-60')}>
                                     <RowList
                                         columns="max-content minmax(0,1.2fr) minmax(0,9rem) minmax(0,9rem) minmax(0,2fr) max-content"
-                                        headers={[ { label: 'Sent' }, { label: 'Topic' }, { label: 'About' }, { label: 'From' }, { label: 'Message' }, { label: 'State' } ]}
+                                        headers={[ { label: 'Sent', sort: 'sent', first: 'desc' }, { label: 'Topic' }, { label: 'About' }, { label: 'From' }, { label: 'Message' }, { label: 'State', sort: 'state' } ]}
+                                        sorting={sorting}
                                     >
                                         {entries.map(report => (
                                             <Row key={report.id}>

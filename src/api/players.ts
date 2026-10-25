@@ -1,5 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
+import { type ListOrder, orderParams } from '#/lib/sort';
+
 import { api, post, remove } from './client';
 import { liveInterval } from './live';
 import type { RunCommandResponse } from './types';
@@ -24,6 +26,7 @@ export interface PlayerListResponse {
     total: number;
     page: number;
     pageSize: number;
+    order: ListOrder;
     onlineNow: number;
     players: PlayerListItem[];
 }
@@ -80,9 +83,9 @@ export interface PlayerDetailResponse {
     tradeLocked: PlayerRestriction | null;
 }
 
-export const usePlayerSearch = (text: string, by: PlayerSearchMode, online: boolean, page: number) => useQuery({
-    queryKey: [ 'players', by, text, online, page ],
-    queryFn: () => api<PlayerListResponse>(`/players?${new URLSearchParams({ q: text, by, online: String(online), page: String(page) })}`),
+export const usePlayerSearch = (text: string, by: PlayerSearchMode, online: boolean, page: number, order: ListOrder | null) => useQuery({
+    queryKey: [ 'players', by, text, online, page, order ],
+    queryFn: () => api<PlayerListResponse>(`/players?${new URLSearchParams({ q: text, by, online: String(online), page: String(page), ...orderParams(order) })}`),
     // The list keeps showing the last page while the next one loads.
     placeholderData: keepPreviousData,
 });

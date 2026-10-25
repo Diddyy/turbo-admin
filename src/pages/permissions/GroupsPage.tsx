@@ -2,12 +2,29 @@ import { Plus } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 
-import { groupCalls, useGroups, usePermissionChange } from '#/api/permissions';
-import { PhoneLabel, Row, RowList } from '#/components/RowList';
+import { groupCalls, type GroupListItem, useGroups, usePermissionChange } from '#/api/permissions';
+import { PhoneLabel, Row, SortedRowList } from '#/components/RowList';
 import { Badge, Button, EmptyState, ErrorNotice, Field, Loading, PageBody, Panel } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import type { SortKeys } from '#/lib/sort';
 
 import { PermissionsHeader } from './common';
+
+const GROUP_COLUMNS = [
+    { label: 'Group', sort: 'name' },
+    { label: 'Weight', className: 'text-right', sort: 'weight', first: 'desc' as const },
+    { label: 'Inherits', sort: 'inherits' },
+    { label: 'Nodes', className: 'text-right', sort: 'nodes', first: 'desc' as const },
+    { label: 'Meta', className: 'text-right', sort: 'meta', first: 'desc' as const },
+];
+
+const GROUP_KEYS: SortKeys<GroupListItem> = {
+    name: x => x.displayName,
+    weight: x => x.weight,
+    inherits: x => x.parents.join(', '),
+    nodes: x => x.nodeCount,
+    meta: x => x.metaCount,
+};
 
 const NewGroup = ({ maxWeight }: { maxWeight: number }) => {
     const navigate = useNavigate();
@@ -75,11 +92,14 @@ export const GroupsPage = () => {
                             {data.groups.length === 0
                                 ? <EmptyState>There are no groups.</EmptyState>
                                 : (
-                                        <RowList
+                                        <SortedRowList
                                             columns="minmax(0,1fr) 4rem minmax(0,1fr) 4rem 4rem"
-                                            headers={[ { label: 'Group' }, { label: 'Weight', className: 'text-right' }, { label: 'Inherits' }, { label: 'Nodes', className: 'text-right' }, { label: 'Meta', className: 'text-right' } ]}
+                                            headers={GROUP_COLUMNS}
+                                            rows={data.groups}
+                                            keys={GROUP_KEYS}
+                                            initial={{ sort: 'weight', dir: 'desc' }}
                                         >
-                                            {data.groups.map(group => (
+                                            {group => (
                                                 <Row key={group.id} className="text-muted sm:text-ink">
                                                     <span>
                                                         <Link to={`/permissions/groups/${encodeURIComponent(group.name)}`} className="font-medium text-ink hover:text-accent">
@@ -95,8 +115,8 @@ export const GroupsPage = () => {
                                                     <span className="text-xs tabular-nums sm:text-right sm:text-sm">{group.nodeCount}<PhoneLabel>{group.nodeCount === 1 ? ' node' : ' nodes'}</PhoneLabel></span>
                                                     <span className="text-xs tabular-nums sm:text-right sm:text-sm">{group.metaCount}<PhoneLabel> meta</PhoneLabel></span>
                                                 </Row>
-                                            ))}
-                                        </RowList>
+                                            )}
+                                        </SortedRowList>
                                     )}
                         </Panel>
                         {data.canManage && data.yourWeight > 0 && <div><NewGroup maxWeight={data.yourWeight} /></div>}

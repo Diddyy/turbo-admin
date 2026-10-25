@@ -6,7 +6,6 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { endpointOf, type PluginAction, pluginBlob, type PluginBlock, type PluginColumn, type PluginField, type PluginList, type PluginPages, usePluginCall, usePluginData, usePluginPages } from '#/api/pluginPages';
 import { ask } from '#/components/confirm';
 import { ListToolbar } from '#/components/ListToolbar';
-import { Pagination } from '#/components/Pagination';
 import { toast, toastError } from '#/components/toast';
 import { Badge, Button, Checkbox, EmptyState, ErrorNotice, Input, Kv, Labeled, Loading, PageBody, PageHeader, Panel, Select, Stat, Td, Textarea, Th, WarningNotice } from '#/components/ui';
 import { fromNow } from '#/lib/time';
@@ -104,17 +103,19 @@ const TableBlock = ({ block, context }: { block: PluginBlock; context: Context }
 
     return (
         <Panel title={block.title ?? undefined} className="overflow-clip">
-            {(block.filters?.length ?? 0) > 0 && (
-                <ListToolbar watch={[ filters ]}>
-                    {block.filters!.map(field => field.type === 'select'
-                        ? (
-                                <Select key={field.key} aria-label={field.label} value={filters[field.key] ?? ''} onChange={event => filter(field.key, event.target.value)} className="w-40">
-                                    {(field.options ?? []).map(option => <option key={option} value={option}>{option === '' ? `Any ${field.label.toLowerCase()}` : option}</option>)}
-                                </Select>
-                            )
-                        : <Input key={field.key} aria-label={field.label} placeholder={field.label} value={filters[field.key] ?? ''} onChange={event => filter(field.key, event.target.value)} className="min-w-48 flex-1 sm:max-w-80" />)}
-                </ListToolbar>
-            )}
+            {/* Its filters and its pages in one bar, as every list's are. */}
+            <ListToolbar
+                watch={[ filters, page ]}
+                page={data && { offset: page * data.pageSize, limit: data.pageSize, total: data.total, onChange: offset => setPage(Math.floor(offset / data.pageSize)) }}
+            >
+                {block.filters?.map(field => field.type === 'select'
+                    ? (
+                            <Select key={field.key} aria-label={field.label} value={filters[field.key] ?? ''} onChange={event => filter(field.key, event.target.value)} className="w-40">
+                                {(field.options ?? []).map(option => <option key={option} value={option}>{option === '' ? `Any ${field.label.toLowerCase()}` : option}</option>)}
+                            </Select>
+                        )
+                    : <Input key={field.key} aria-label={field.label} placeholder={field.label} value={filters[field.key] ?? ''} onChange={event => filter(field.key, event.target.value)} className="min-w-48 flex-1 sm:max-w-80" />)}
+            </ListToolbar>
             {error && <div className="p-4"><ErrorNotice error={error} /></div>}
             {!error && !data && <Loading />}
             {data && data.items.length === 0 && <EmptyState>{isFetching ? 'Looking...' : 'Nothing here.'}</EmptyState>}
@@ -138,7 +139,6 @@ const TableBlock = ({ block, context }: { block: PluginBlock; context: Context }
                     </table>
                 </div>
             )}
-            {data && data.total > data.pageSize && <Pagination offset={page * data.pageSize} limit={data.pageSize} total={data.total} onChange={offset => setPage(Math.floor(offset / data.pageSize))} />}
         </Panel>
     );
 };

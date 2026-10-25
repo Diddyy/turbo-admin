@@ -1,5 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
+import { type ListOrder, listQuery } from '#/lib/sort';
+
 import { api } from './client';
 
 /** A private message. A Habbicon sent instead of text has no message and its id. Names are null for a player who is gone. */
@@ -16,11 +18,14 @@ export interface MessageLogEntry {
     delivered: boolean;
 }
 
-/** A run of the log, newest first. Paged by message, not counted: there is no total. */
+/** A page of the log in `order`, counted only so far, as the chat log is. */
 export interface MessageLogResponse {
+    total: number;
+    /** The server stopped counting at `total` (10,000): there are more. */
+    totalCapped: boolean;
+    page: number;
     pageSize: number;
-    hasOlder: boolean;
-    hasNewer: boolean;
+    order: ListOrder;
     entries: MessageLogEntry[];
 }
 
@@ -33,27 +38,8 @@ export interface MessageLogFilter {
     text: string;
 }
 
-export interface MessageLogCursor {
-    before?: number;
-    after?: number;
-}
-
-export const useMessageLog = (filter: MessageLogFilter, cursor: MessageLogCursor) => {
-    const query = new URLSearchParams();
-
-    for (const [ key, value ] of Object.entries(filter))
-        if (value)
-            query.set(key, value);
-
-    if (cursor.before)
-        query.set('before', String(cursor.before));
-
-    if (cursor.after)
-        query.set('after', String(cursor.after));
-
-    return useQuery({
-        queryKey: [ 'messages', filter, cursor ],
-        queryFn: () => api<MessageLogResponse>(`/messages?${query}`),
-        placeholderData: keepPreviousData,
-    });
-};
+export const useMessageLog = (filter: MessageLogFilter, page: number, order: ListOrder | null) => useQuery({
+    queryKey: [ 'messages', filter, page, order ],
+    queryFn: () => api<MessageLogResponse>(`/messages?${listQuery(filter, page, order)}`),
+    placeholderData: keepPreviousData,
+});

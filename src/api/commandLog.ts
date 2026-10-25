@@ -1,5 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
+import { type ListOrder, listQuery } from '#/lib/sort';
+
 import { api } from './client';
 
 /** Where a logged command came from; `null` is a command typed in a room's chat. */
@@ -25,6 +27,7 @@ export interface CommandLogResponse {
     total: number;
     page: number;
     pageSize: number;
+    order: ListOrder;
     entries: CommandLogEntry[];
 }
 
@@ -39,9 +42,9 @@ export interface CommandLogFilter {
 /** How often the log is asked again while open: commands typed in rooms are written in batches. */
 const REFRESH_MS = 30_000;
 
-export const useCommandLog = (filter: CommandLogFilter, page: number) => useQuery({
-    queryKey: [ 'command-log', filter, page ],
-    queryFn: () => api<CommandLogResponse>(`/command-log?${new URLSearchParams({ ...filter, page: String(page) })}`),
+export const useCommandLog = (filter: CommandLogFilter, page: number, order: ListOrder | null) => useQuery({
+    queryKey: [ 'command-log', filter, page, order ],
+    queryFn: () => api<CommandLogResponse>(`/command-log?${listQuery(filter, page, order)}`),
     placeholderData: keepPreviousData,
     refetchInterval: REFRESH_MS,
 });

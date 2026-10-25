@@ -90,7 +90,7 @@ const NO_FILTER = { player: '', command: '', outcome: '', source: '' };
 
 /** The last few commands staff and the console ran, newest first: what has been done lately, a click from the whole log. */
 const RecentCommands = () => {
-    const { data, error } = useCommandLog(NO_FILTER, 1);
+    const { data, error } = useCommandLog(NO_FILTER, 1, null);
     const canViewPlayers = useMe().data?.canViewPlayers ?? false;
     const entries = data?.entries.slice(0, 6);
 

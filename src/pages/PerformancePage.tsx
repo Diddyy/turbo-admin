@@ -2,9 +2,10 @@ import { type ReactNode, useState } from 'react';
 
 import { type PerformancePoint, type PerformanceStage, usePerformance } from '#/api/performance';
 import { type ChartPoint, type ChartSeries, ChartTable, LineChart } from '#/components/LineChart';
-import { PhoneLabel, Row, RowList } from '#/components/RowList';
+import { PhoneLabel, Row, SortedRowList } from '#/components/RowList';
 import { EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Panel, Segmented, Stat } from '#/components/ui';
 import { useHubTabs } from '#/layout/nav';
+import type { SortKeys } from '#/lib/sort';
 
 const RANGES = [
     { value: '1', label: '1 hour' },
@@ -81,12 +82,20 @@ const pointsOf = (points: PerformancePoint[], ...pick: ((point: PerformancePoint
     points.map(point => ({ at: new Date(point.atUtc).getTime(), values: pick.map(f => f(point)) }));
 
 const STAGE_COLUMNS = [
-    { label: 'Operation' },
-    { label: 'Times', className: 'text-right' },
-    { label: 'Median', className: 'text-right' },
-    { label: 'p95', className: 'text-right' },
-    { label: 'Longest', className: 'text-right' },
+    { label: 'Operation', sort: 'operation' },
+    { label: 'Times', className: 'text-right', sort: 'times', first: 'desc' as const },
+    { label: 'Median', className: 'text-right', sort: 'median', first: 'desc' as const },
+    { label: 'p95', className: 'text-right', sort: 'p95', first: 'desc' as const },
+    { label: 'Longest', className: 'text-right', sort: 'longest', first: 'desc' as const },
 ];
+
+const STAGE_KEYS: SortKeys<PerformanceStage> = {
+    operation: x => STAGES[x.stage] ?? x.stage,
+    times: x => x.count,
+    median: x => x.p50Ms,
+    p95: x => x.p95Ms,
+    longest: x => x.maxMs,
+};
 
 /** One figure of an operation: a column of the table from a tablet up, a labelled figure in its row on a phone. */
 const StageFigure = ({ label, children }: { label: string; children: ReactNode }) => (
@@ -101,8 +110,8 @@ const StageTable = ({ stages }: { stages: PerformanceStage[] }) => (
     stages.length === 0
         ? <EmptyState>Nothing has been measured in this range yet.</EmptyState>
         : (
-                <RowList columns="minmax(0,1fr) repeat(4,auto)" headers={STAGE_COLUMNS}>
-                    {stages.map(stage => (
+                <SortedRowList columns="minmax(0,1fr) repeat(4,auto)" headers={STAGE_COLUMNS} rows={stages} keys={STAGE_KEYS} initial={{ sort: 'times', dir: 'desc' }}>
+                    {stage => (
                         <Row key={stage.stage}>
                             <div>
                                 <div className="font-medium">{STAGES[stage.stage] ?? stage.stage}</div>
@@ -113,8 +122,8 @@ const StageTable = ({ stages }: { stages: PerformanceStage[] }) => (
                             <StageFigure label="p95">{ms(stage.p95Ms)}</StageFigure>
                             <StageFigure label="Longest">{ms(stage.maxMs)}</StageFigure>
                         </Row>
-                    ))}
-                </RowList>
+                    )}
+                </SortedRowList>
             )
 );
 

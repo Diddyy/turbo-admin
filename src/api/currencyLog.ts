@@ -1,5 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
+import { type ListOrder, listQuery } from '#/lib/sort';
+
 import { api } from './client';
 
 /**
@@ -24,10 +26,14 @@ export interface CurrencyLogEntry {
     otherPlaceId: number | null;
 }
 
+/** A page of the log in `order`, counted only so far, as the chat log is. */
 export interface CurrencyLogResponse {
+    total: number;
+    /** The server stopped counting at `total` (10,000): there are more. */
+    totalCapped: boolean;
+    page: number;
     pageSize: number;
-    hasOlder: boolean;
-    hasNewer: boolean;
+    order: ListOrder;
     /** Whether the ledger is being kept now: movements recorded, and the ledger on. */
     recording: boolean;
     currencies: { typeId: number; name: string }[];
@@ -44,27 +50,8 @@ export interface CurrencyLogFilter {
     cause: string;
 }
 
-export interface CurrencyLogCursor {
-    before?: number;
-    after?: number;
-}
-
-export const useCurrencyLog = (filter: CurrencyLogFilter, cursor: CurrencyLogCursor) => {
-    const query = new URLSearchParams();
-
-    for (const [ key, value ] of Object.entries(filter))
-        if (value)
-            query.set(key, value);
-
-    if (cursor.before)
-        query.set('before', String(cursor.before));
-
-    if (cursor.after)
-        query.set('after', String(cursor.after));
-
-    return useQuery({
-        queryKey: [ 'currency-log', filter, cursor ],
-        queryFn: () => api<CurrencyLogResponse>(`/currency-log?${query}`),
-        placeholderData: keepPreviousData,
-    });
-};
+export const useCurrencyLog = (filter: CurrencyLogFilter, page: number, order: ListOrder | null) => useQuery({
+    queryKey: [ 'currency-log', filter, page, order ],
+    queryFn: () => api<CurrencyLogResponse>(`/currency-log?${listQuery(filter, page, order)}`),
+    placeholderData: keepPreviousData,
+});

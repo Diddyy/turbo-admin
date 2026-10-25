@@ -10,7 +10,7 @@ import { Input } from '#/components/ui';
 export const PlayerPicker = ({ onPick, disabled }: { onPick: (player: { id: number; name: string }) => void; disabled?: boolean }) => {
     const [ text, setText ] = useState('');
     const byId = /^\d+$/.test(text.trim());
-    const { data, error } = usePlayerSearch(text.trim(), byId ? 'id' : 'name', false, 0);
+    const { data, error } = usePlayerSearch(text.trim(), byId ? 'id' : 'name', false, 0, null);
     const found = text.trim() ? data?.players.slice(0, 8) ?? [] : [];
 
     return (

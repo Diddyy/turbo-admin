@@ -8,9 +8,11 @@ import { PhoneLabel, Row, RowList } from '#/components/RowList';
 import type { TabItem } from '#/components/Tabs';
 import { Badge, EmptyState, Labeled, PageHeader, Select } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import { type Sorting, useSortedRows } from '#/lib/sort';
 import { fromNow } from '#/lib/time';
 import { formatDateTime } from '#/pages/rooms/labels';
 
+import { ACTIONS, AUDIT_KEYS, AUDIT_NEWEST } from './audit';
 import { DURATIONS, targetLink } from './links';
 
 export type Section = 'groups' | 'players' | 'search' | 'nodes' | 'passkeys';
@@ -105,32 +107,24 @@ export const UnsetButton = ({ label, icon, className, ...button }: ButtonHTMLAtt
     </button>
 );
 
-const ACTIONS: Record<string, string> = {
-    NodeSet: 'set node',
-    NodeUnset: 'unset node',
-    MetaSet: 'set meta',
-    MetaUnset: 'unset meta',
-    GroupAdded: 'added to group',
-    GroupRemoved: 'removed from group',
-    ParentAdded: 'added parent',
-    ParentRemoved: 'removed parent',
-    GroupCreated: 'created group',
-    GroupDeleted: 'deleted group',
-    GroupReweighted: 'reweighted',
-    GroupRenamed: 'renamed',
-    Expired: 'expired',
-};
+/**
+ * Permission changes, newest first until a header sorts them otherwise: when, by whom, about whom,
+ * and what. A page that shows the log a page at a time sorts the whole log itself (`useSortedRows`
+ * with `AUDIT_KEYS`) and passes its `sorting` with the page's entries.
+ */
+export const AuditTable = ({ entries, showTarget = true, sorting }: { entries: AuditEntry[]; showTarget?: boolean; sorting?: Sorting }) => {
+    const [ sorted, own ] = useSortedRows(entries, AUDIT_KEYS, AUDIT_NEWEST);
+    const rows = sorting ? entries : sorted;
 
-/** Permission changes, newest first: when, by whom, about whom, and what. */
-export const AuditTable = ({ entries, showTarget = true }: { entries: AuditEntry[]; showTarget?: boolean }) =>
-    entries.length === 0
+    return rows.length === 0
         ? <EmptyState>No changes recorded.</EmptyState>
         : (
                 <RowList
                     columns={showTarget ? 'max-content minmax(0,1fr) minmax(0,2fr) max-content' : 'max-content minmax(0,2fr) max-content'}
-                    headers={[ { label: 'When' }, ...(showTarget ? [ { label: 'About' } ] : []), { label: 'Change' }, { label: 'By' } ]}
+                    headers={[ { label: 'When', sort: 'when', first: 'desc' }, ...(showTarget ? [ { label: 'About', sort: 'about' } ] : []), { label: 'Change', sort: 'change' }, { label: 'By', sort: 'by' } ]}
+                    sorting={sorting ?? own}
                 >
-                    {entries.map((entry, index) => (
+                    {rows.map((entry, index) => (
                         <Row key={index}>
                             <span className="text-xs whitespace-nowrap text-muted sm:text-sm" title={formatDateTime(entry.atUtc)}>{fromNow(entry.atUtc)}</span>
                             {showTarget && (
@@ -164,3 +158,4 @@ export const AuditTable = ({ entries, showTarget = true }: { entries: AuditEntry
                     ))}
                 </RowList>
             );
+};

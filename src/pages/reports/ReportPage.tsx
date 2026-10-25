@@ -3,18 +3,27 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 
 import { useMe } from '#/api/queries';
-import { type CloseReason, type ReportDetailResponse, type ReportHistory, useReport, useReportAction } from '#/api/reports';
+import { type CloseReason, type ReportDetailResponse, type ReportHistory, type ReportItem, useReport, useReportAction } from '#/api/reports';
 import { ask } from '#/components/confirm';
-import { PhoneLabel, Row, RowList } from '#/components/RowList';
+import { PhoneLabel, Row, RowList, SortedRowList } from '#/components/RowList';
 import { toast, toastError } from '#/components/toast';
 import { Badge, Button, Checkbox, EmptyState, ErrorNotice, Kv, Loading, PageBody, PageHeader, Panel, TextLink } from '#/components/ui';
 import { cx } from '#/lib/cx';
 import { plural } from '#/lib/plural';
+import type { SortKeys } from '#/lib/sort';
 import { fromNow } from '#/lib/time';
 import { formatDateTime } from '#/pages/rooms/labels';
 
 import { CLOSE_REASONS, sanctionLabel, SOURCES } from './labels';
 import { PlayerLink, StateBadge } from './parts';
+
+/** The other open reports, sorted as the reports list sorts them: open before picked before closed. */
+const RELATED_KEYS: SortKeys<ReportItem> = {
+    sent: x => Date.parse(x.atUtc),
+    topic: x => x.topic,
+    from: x => x.reporterName,
+    state: x => ({ open: 0, picked: 1, closed: 2 })[x.state],
+};
 
 /** A chat line's time of day: the lines of one report are minutes apart. */
 const timeOf = (utc: string) => new Date(utc).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -185,16 +194,22 @@ export const ReportPage = () => {
 
                             {detail.related.length > 0 && (
                                 <Panel className="overflow-clip" title={`Other open reports about ${item.reportedName ?? 'them'}`}>
-                                    <RowList columns="max-content minmax(0,1fr) minmax(0,9rem) max-content" headers={[ { label: 'Sent' }, { label: 'Topic' }, { label: 'From' }, { label: 'State' } ]}>
-                                        {detail.related.map(other => (
+                                    <SortedRowList
+                                        columns="max-content minmax(0,1fr) minmax(0,9rem) max-content"
+                                        headers={[ { label: 'Sent', sort: 'sent', first: 'desc' }, { label: 'Topic', sort: 'topic' }, { label: 'From', sort: 'from' }, { label: 'State', sort: 'state' } ]}
+                                        rows={detail.related}
+                                        keys={RELATED_KEYS}
+                                        initial={{ sort: 'sent', dir: 'desc' }}
+                                    >
+                                        {other => (
                                             <Row key={other.id}>
                                                 <span className="text-xs whitespace-nowrap text-muted sm:text-sm" title={formatDateTime(other.atUtc)}>{fromNow(other.atUtc)}</span>
                                                 <Link to={`/reports/${other.id}`} className="truncate font-medium hover:text-accent">{other.topic}</Link>
                                                 <span className="truncate"><PhoneLabel>from </PhoneLabel><PlayerLink id={other.reporterId} name={other.reporterName} linked={linked} /></span>
                                                 <span className="max-sm:ml-auto"><StateBadge report={other} me={me?.id} /></span>
                                             </Row>
-                                        ))}
-                                    </RowList>
+                                        )}
+                                    </SortedRowList>
                                 </Panel>
                             )}
                         </div>

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { type ListOrder, orderParams } from '#/lib/sort';
 import type { ChatStyleRegPoints } from '#/preview/chatBubble';
 
 import { type AssetBundle, postForm } from './bundles';
@@ -273,9 +274,9 @@ export interface GroupColor {
     color: string;
 }
 
-export const useGroups = (text: string, page: number) => useQuery({
-    queryKey: [ 'content', 'groups', text, page ],
-    queryFn: () => api<{ groups: GroupItem[]; total: number; pageSize: number }>(`/content/groups?${new URLSearchParams({ q: text, page: String(page) })}`),
+export const useGroups = (text: string, page: number, order: ListOrder | null) => useQuery({
+    queryKey: [ 'content', 'groups', text, page, order ],
+    queryFn: () => api<{ groups: GroupItem[]; total: number; pageSize: number; order: ListOrder }>(`/content/groups?${new URLSearchParams({ q: text, page: String(page), ...orderParams(order) })}`),
     placeholderData: previous => previous,
 });
 

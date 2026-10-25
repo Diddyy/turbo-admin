@@ -1,30 +1,49 @@
 import { Link, useSearchParams } from 'react-router';
 
-import { type ClientHealthFilter, useClientHealth } from '#/api/telemetry';
-import { Row, RowList } from '#/components/RowList';
+import { type ClientHealthDevice, type ClientHealthFilter, type ClientHealthRoom, useClientHealth } from '#/api/telemetry';
+import { Row, RowList, SortedRowList } from '#/components/RowList';
 import { EmptyState, ErrorNotice, Input, Loading, PageBody, PageHeader, Panel, Select, Stat } from '#/components/ui';
 import { useHubTabs } from '#/layout/nav';
+import type { SortKeys } from '#/lib/sort';
 
 import { dayPoints, fps, LOGIN_STEPS, megabytes, ms, NO_LAG_HINT, NO_LATENCY_HINT, NO_PERFORMANCE_HINT, NO_ROOM_FPS_HINT, number, SERIES_1, SERIES_2, useDayRange } from './format';
 import { DayChartCard, Figure, RangePicker } from './shared';
 
 const DEVICE_COLUMNS = [
-    { label: 'Browser' },
-    { label: 'Reports', className: 'text-right' },
-    { label: 'FPS median', className: 'text-right' },
-    { label: 'FPS p95', className: 'text-right' },
-    { label: 'Memory', className: 'text-right' },
-    { label: 'Latency', className: 'text-right' },
-    { label: 'Slow frames', className: 'text-right' },
+    { label: 'Browser', sort: 'browser' },
+    { label: 'Reports', className: 'text-right', sort: 'reports', first: 'desc' as const },
+    { label: 'FPS median', className: 'text-right', sort: 'fps', first: 'desc' as const },
+    { label: 'FPS p95', className: 'text-right', sort: 'fps95', first: 'desc' as const },
+    { label: 'Memory', className: 'text-right', sort: 'memory', first: 'desc' as const },
+    { label: 'Latency', className: 'text-right', sort: 'latency', first: 'desc' as const },
+    { label: 'Slow frames', className: 'text-right', sort: 'slow', first: 'desc' as const },
 ];
 
+const DEVICE_KEYS: SortKeys<ClientHealthDevice> = {
+    browser: x => `${x.browser} ${x.os} ${x.device}`,
+    reports: x => x.reports,
+    fps: x => x.fpsP50 || null,
+    fps95: x => x.fpsP95 || null,
+    memory: x => (x.reports ? x.memoryP50Mb : null),
+    latency: x => (x.latencyReports ? x.latencyP50Ms : null),
+    slow: x => x.slowUpdates,
+};
+
 const ROOM_COLUMNS = [
-    { label: 'Room' },
-    { label: 'Chat lag', className: 'text-right' },
-    { label: 'FPS median', className: 'text-right' },
-    { label: 'Latency', className: 'text-right' },
-    { label: 'Player days', className: 'text-right' },
+    { label: 'Room', sort: 'room' },
+    { label: 'Chat lag', className: 'text-right', sort: 'lag', first: 'desc' as const },
+    { label: 'FPS median', className: 'text-right', sort: 'fps', first: 'desc' as const },
+    { label: 'Latency', className: 'text-right', sort: 'latency', first: 'desc' as const },
+    { label: 'Player days', className: 'text-right', sort: 'players', first: 'desc' as const },
 ];
+
+const ROOM_KEYS: SortKeys<ClientHealthRoom> = {
+    room: x => x.roomName ?? `Room ${x.roomId}`,
+    lag: x => x.lagWarnings,
+    fps: x => (x.fpsSamples ? x.fpsP50 : null),
+    latency: x => (x.latencyReports ? x.latencyP50Ms : null),
+    players: x => x.playerDays,
+};
 
 const LOGIN_COLUMNS = [
     { label: 'Step' },
@@ -160,8 +179,8 @@ export const ClientHealthPage = () => {
                             {data.devices.length === 0
                                 ? <EmptyState>{NO_PERFORMANCE_HINT}</EmptyState>
                                 : (
-                                        <RowList columns="minmax(0,1fr) repeat(6,auto)" headers={DEVICE_COLUMNS}>
-                                            {data.devices.map(x => (
+                                        <SortedRowList columns="minmax(0,1fr) repeat(6,auto)" headers={DEVICE_COLUMNS} rows={data.devices} keys={DEVICE_KEYS} initial={{ sort: 'reports', dir: 'desc' }}>
+                                            {x => (
                                                 <Row key={`${x.browser}/${x.os}/${x.device}`}>
                                                     <div>
                                                         <div className="font-medium">{x.browser}</div>
@@ -174,8 +193,8 @@ export const ClientHealthPage = () => {
                                                     <Figure label="Latency">{x.latencyReports ? ms(x.latencyP50Ms) : '-'}</Figure>
                                                     <Figure label="Slow frames">{number(x.slowUpdates)}</Figure>
                                                 </Row>
-                                            ))}
-                                        </RowList>
+                                            )}
+                                        </SortedRowList>
                                     )}
                         </Panel>
 
@@ -184,8 +203,8 @@ export const ClientHealthPage = () => {
                                 {data.rooms.length === 0
                                     ? <EmptyState>No room reported anything in this range.</EmptyState>
                                     : (
-                                            <RowList columns="minmax(0,1fr) repeat(4,auto)" headers={ROOM_COLUMNS}>
-                                                {data.rooms.map(x => (
+                                            <SortedRowList columns="minmax(0,1fr) repeat(4,auto)" headers={ROOM_COLUMNS} rows={data.rooms} keys={ROOM_KEYS} initial={{ sort: 'lag', dir: 'desc' }}>
+                                                {x => (
                                                     <Row key={x.roomId}>
                                                         <Link to={`/client-health/rooms/${x.roomId}?${params}`} className="min-w-0 hover:underline">
                                                             <div className="truncate font-medium">{x.roomName ?? `Room ${x.roomId}`}</div>
@@ -196,8 +215,8 @@ export const ClientHealthPage = () => {
                                                         <Figure label="Latency">{x.latencyReports ? ms(x.latencyP50Ms) : '-'}</Figure>
                                                         <Figure label="Player days">{number(x.playerDays)}</Figure>
                                                     </Row>
-                                                ))}
-                                            </RowList>
+                                                )}
+                                            </SortedRowList>
                                         )}
                             </Panel>
                             <Panel title="Logins, as the server sees them" description="How many connections reached each step, and how long after the socket opened. Habbo's client tells its own steps only to its web page, so these are the server's.">

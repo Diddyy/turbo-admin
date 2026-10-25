@@ -1,5 +1,7 @@
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query';
 
+import { type ListOrder, orderParams } from '#/lib/sort';
+
 import { api, post, put } from './client';
 import { liveInterval } from './live';
 import type { AccountResponse, CommandInfo, DashboardResponse, MeResponse, RoomDetailResponse, RoomListResponse, RoomSearchMode, RunCommandResponse } from './types';
@@ -33,9 +35,9 @@ export const useAccount = () => useQuery({
     queryFn: () => api<AccountResponse>('/account'),
 });
 
-export const useRoomSearch = (text: string, by: RoomSearchMode, page: number) => useQuery({
-    queryKey: [ 'rooms', by, text, page ],
-    queryFn: () => api<RoomListResponse>(`/rooms?${new URLSearchParams({ q: text, by, page: String(page) })}`),
+export const useRoomSearch = (text: string, by: RoomSearchMode, page: number, order: ListOrder | null) => useQuery({
+    queryKey: [ 'rooms', by, text, page, order ],
+    queryFn: () => api<RoomListResponse>(`/rooms?${new URLSearchParams({ q: text, by, page: String(page), ...orderParams(order) })}`),
     // The table keeps showing the last page while the next one loads.
     placeholderData: keepPreviousData,
 });

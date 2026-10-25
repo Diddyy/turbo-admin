@@ -23,7 +23,7 @@ const sticks = () => window.matchMedia('(min-width: 64rem)').matches;
  */
 export const ListToolbar = ({ children, page, watch }: {
     children?: ReactNode;
-    page?: { offset: number; limit: number; total: number | undefined; onChange: (offset: number) => void };
+    page?: { offset: number; limit: number; total: number | undefined; capped?: boolean; onChange: (offset: number) => void };
     watch: readonly unknown[];
 }) => {
     const start = useRef<HTMLDivElement>(null);
@@ -85,7 +85,7 @@ export const ListToolbar = ({ children, page, watch }: {
                     <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 [&>*]:max-w-full">{children}</div>
                     {page && page.total !== undefined && (
                         <div className="ml-auto flex h-10 shrink-0 items-center sm:h-8">
-                            <Pagination offset={page.offset} limit={page.limit} total={page.total} onChange={page.onChange} />
+                            <Pagination offset={page.offset} limit={page.limit} total={page.total} capped={page.capped} onChange={page.onChange} />
                         </div>
                     )}
                 </div>

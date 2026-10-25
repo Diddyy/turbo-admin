@@ -517,9 +517,18 @@ export const useTakeHabboValues = () => {
     });
 };
 
+/** A page of a history, newest first, and how many sets it holds in all. */
+export interface HistoryPage {
+    sets: ChangeSet[];
+    total: number;
+    /** From 0. */
+    page: number;
+    pageSize: number;
+}
+
 export const useHistory = (scope: HistoryScope, page: number) => useQuery({
     queryKey: [ 'gamedata', 'history', scope, page ],
-    queryFn: () => api<ChangeSet[]>(`/gamedata/history?page=${page}${HISTORY_RECORDS[scope].map(x => `&type=${x}`).join('')}`),
+    queryFn: () => api<HistoryPage>(`/gamedata/history?page=${page}${HISTORY_RECORDS[scope].map(x => `&type=${x}`).join('')}`),
     placeholderData: keepPreviousData,
 });
 

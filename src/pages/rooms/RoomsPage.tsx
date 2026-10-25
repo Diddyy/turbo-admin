@@ -5,8 +5,10 @@ import { useMe, useRoomSearch } from '#/api/queries';
 import type { RoomSearchMode } from '#/api/types';
 import { ListToolbar } from '#/components/ListToolbar';
 import { SearchInput } from '#/components/SearchInput';
+import { PhoneSort } from '#/components/SortHeader';
 import { Badge, type BadgeTone, Button, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Panel, Select, Td, Th } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import { type ListOrder, orderOf, orderParams, pageOf, type Sorting } from '#/lib/sort';
 import { fromNow } from '#/lib/time';
 
 import { doorModeLabel, formatDateTime } from './labels';
@@ -29,22 +31,34 @@ const MODES: { value: RoomSearchMode; label: string; placeholder: string }[] = [
 const modeOf = (value: string | null): RoomSearchMode =>
     MODES.some(x => x.value === value) ? (value as RoomSearchMode) : 'name';
 
+/** The columns the list sorts by, as the server names them; not players, who are live. */
+const SORT_COLUMNS = [
+    { label: 'Room', sort: 'name' },
+    { label: 'Owner', sort: 'owner' },
+    { label: 'Access', sort: 'access' },
+    { label: 'Last active', sort: 'active', first: 'desc' },
+] as const;
+
 /**
- * Every room, invisible ones too, by name, owner or id. The search lives in the address, so a
- * search can be shared, and Back from a room returns to it.
+ * Every room, invisible ones too, by name, owner or id, most recently active first unless sorted
+ * otherwise. The search and its order live in the address, so a search can be shared, and Back
+ * from a room returns to it.
  */
 export const RoomsPage = () => {
     const [ params, setParams ] = useSearchParams();
     const text = params.get('q') ?? '';
     const by = modeOf(params.get('by'));
-    const page = Math.max(1, Number(params.get('page')) || 1);
+    const page = pageOf(params);
+    const order = orderOf(params);
     const [ draft, setDraft ] = useState(text);
     const [ draftBy, setDraftBy ] = useState(by);
-    const search = useRoomSearch(text, by, page);
+    const search = useRoomSearch(text, by, page, order);
     const canViewPlayers = useMe().data?.canViewPlayers ?? false;
 
-    const go = (next: { q?: string; by?: RoomSearchMode; page?: number }) =>
-        setParams({ q: next.q ?? text, by: next.by ?? by, page: String(next.page ?? page) });
+    const go = (next: { q?: string; by?: RoomSearchMode; page?: number }, nextOrder: ListOrder | null = order) =>
+        setParams({ q: next.q ?? text, by: next.by ?? by, page: String(next.page ?? page), ...orderParams(nextOrder) });
+
+    const sorting: Sorting = { order: order ?? search.data?.order, onSort: next => go({ page: 1 }, next) };
 
     const handleSubmit = (event: FormEvent) => {
         event.preventDefault();
@@ -56,13 +70,13 @@ export const RoomsPage = () => {
             <PageHeader
                 title="Rooms"
                 description={search.data
-                    ? `${search.data.total.toLocaleString()} ${search.data.total === 1 ? 'room' : 'rooms'}${text ? ` matching "${text}"` : ', most recently active first'}`
+                    ? `${search.data.total.toLocaleString()} ${search.data.total === 1 ? 'room' : 'rooms'}${text ? ` matching "${text}"` : ''}`
                     : 'Every room, invisible ones too'}
             />
             <PageBody>
                 <Panel className="overflow-clip">
                     <ListToolbar
-                        watch={[ text, by, page ]}
+                        watch={[ text, by, page, order ]}
                         page={{
                             offset: (page - 1) * (search.data?.pageSize ?? 1),
                             limit: search.data?.pageSize ?? 1,
@@ -95,6 +109,7 @@ export const RoomsPage = () => {
                                 : (
                                         <div className={cx('transition-opacity', search.isFetching && 'opacity-60')}>
                                             {/* A phone: one tappable row per room. */}
+                                            <PhoneSort columns={[ ...SORT_COLUMNS ]} sorting={sorting} />
                                             <ul className="sm:hidden">
                                                 {search.data.rooms.map(room => (
                                                     <li key={room.id} className="border-t border-line first:border-t-0">
@@ -114,11 +129,11 @@ export const RoomsPage = () => {
                                                 <table className="w-full text-sm">
                                                     <thead>
                                                         <tr>
-                                                            <Th>Room</Th>
-                                                            <Th>Owner</Th>
-                                                            <Th>Access</Th>
+                                                            <Th sort="name" sorting={sorting}>Room</Th>
+                                                            <Th sort="owner" sorting={sorting}>Owner</Th>
+                                                            <Th sort="access" sorting={sorting}>Access</Th>
                                                             <Th className="text-right">Players</Th>
-                                                            <Th>Last active</Th>
+                                                            <Th sort="active" first="desc" sorting={sorting}>Last active</Th>
                                                         </tr>
                                                     </thead>
                                                     <tbody className="[&>tr:last-child>td]:border-b-0">

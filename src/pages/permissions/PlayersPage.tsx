@@ -1,12 +1,16 @@
 import { type FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 
-import { findPlayer, useStaff } from '#/api/permissions';
-import { Row, RowList } from '#/components/RowList';
+import { findPlayer, type StaffMember, useStaff } from '#/api/permissions';
+import { Row, SortedRowList } from '#/components/RowList';
 import { SearchInput } from '#/components/SearchInput';
 import { Badge, Button, EmptyState, ErrorNotice, Loading, PageBody, Panel } from '#/components/ui';
+import type { SortKeys } from '#/lib/sort';
 
 import { Expiry, PermissionsHeader } from './common';
+
+/** A member by name, or by the heaviest group they are in. */
+const STAFF_KEYS: SortKeys<StaffMember> = { name: x => x.name, groups: x => x.groups[0]?.weight };
 
 /** Finding any player's permissions by name, and everyone in a group besides default. */
 export const PlayersPage = () => {
@@ -49,8 +53,14 @@ export const PlayersPage = () => {
                     {staff.data && (staff.data.length === 0
                         ? <EmptyState>Nobody is in a group besides default.</EmptyState>
                         : (
-                                <RowList columns="minmax(0,14rem) minmax(0,1fr)" headers={[ { label: 'Player' }, { label: 'Groups' } ]}>
-                                    {staff.data.map(member => (
+                                <SortedRowList
+                                    columns="minmax(0,14rem) minmax(0,1fr)"
+                                    headers={[ { label: 'Player', sort: 'name' }, { label: 'Groups', sort: 'groups', first: 'desc' } ]}
+                                    rows={staff.data}
+                                    keys={STAFF_KEYS}
+                                    initial={{ sort: 'groups', dir: 'desc' }}
+                                >
+                                    {member => (
                                         <Row key={member.id}>
                                             <Link to={`/permissions/players/${member.id}`} className="font-medium hover:text-accent">{member.name}</Link>
                                             <span className="flex flex-wrap gap-1.5">
@@ -62,8 +72,8 @@ export const PlayersPage = () => {
                                                 ))}
                                             </span>
                                         </Row>
-                                    ))}
-                                </RowList>
+                                    )}
+                                </SortedRowList>
                             ))}
                 </Panel>
             </PageBody>

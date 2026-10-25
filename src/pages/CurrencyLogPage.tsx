@@ -1,8 +1,8 @@
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
-import { type CurrencyLogCursor, type CurrencyLogEntry, type CurrencyLogFilter, useCurrencyLog } from '#/api/currencyLog';
+import { type CurrencyLogEntry, type CurrencyLogFilter, useCurrencyLog } from '#/api/currencyLog';
 import { ListToolbar } from '#/components/ListToolbar';
 import { LogFilters } from '#/components/LogFilters';
 import { PhoneLabel, Row, RowList } from '#/components/RowList';
@@ -10,6 +10,7 @@ import { SearchInput } from '#/components/SearchInput';
 import { Button, EmptyState, ErrorNotice, Input, Loading, PageBody, PageHeader, Panel, Select, Stat, WarningNotice } from '#/components/ui';
 import { useHubTabs } from '#/layout/nav';
 import { cx } from '#/lib/cx';
+import { type ListOrder, listQuery, orderOf, pageOf, type Sorting } from '#/lib/sort';
 import { fromNow } from '#/lib/time';
 import { formatDateTime } from '#/pages/rooms/labels';
 
@@ -39,13 +40,8 @@ const filterOf = (params: URLSearchParams): CurrencyLogFilter => ({
     cause: params.get('cause') ?? '',
 });
 
-const cursorOf = (params: URLSearchParams): CurrencyLogCursor => ({
-    before: Number(params.get('before')) || undefined,
-    after: Number(params.get('after')) || undefined,
-});
-
 /**
- * Every change to a wallet the server's ledger kept, newest first: whose, how much in or out,
+ * Every change to a wallet the server's ledger kept, newest first or oldest first: whose, how much in or out,
  * why (its cause, and what it names), who did it and the other side. Narrowed to a player (with
  * what came in and went out of each currency), a currency or a cause. Says so when the ledger is
  * not being kept, as movements are not recorded.
@@ -54,36 +50,26 @@ export const CurrencyLogPage = () => {
     const tabs = useHubTabs('logs');
     const [ params, setParams ] = useSearchParams();
     const filter = filterOf(params);
-    const cursor = cursorOf(params);
+    const page = pageOf(params);
+    const order = orderOf(params);
     const [ draft, setDraft ] = useState(filter);
-    const log = useCurrencyLog(filter, cursor);
+    const log = useCurrencyLog(filter, page, order);
     const filtered = Object.values(filter).some(x => x !== '');
     const entries = log.data?.entries ?? [];
+    const pageSize = log.data?.pageSize ?? 1;
 
-    const go = (next: CurrencyLogFilter, nextCursor: CurrencyLogCursor = {}) => {
-        const search = new URLSearchParams();
-
-        for (const [ key, value ] of Object.entries(next))
-            if (value)
-                search.set(key, value);
-
-        if (nextCursor.before)
-            search.set('before', String(nextCursor.before));
-
-        if (nextCursor.after)
-            search.set('after', String(nextCursor.after));
-
+    /** Another filter, page or order; the search box follows the filter. */
+    const go = (next: CurrencyLogFilter, nextPage = 1, nextOrder: ListOrder | null = order) => {
         setDraft(next);
-        setParams(search);
+        setParams(listQuery(next, nextPage, nextOrder));
     };
+
+    const sorting: Sorting = { order: order ?? log.data?.order, onSort: next => go(filter, 1, next) };
 
     const handleSubmit = (event: FormEvent) => {
         event.preventDefault();
         go({ player: draft.player.trim(), currency: draft.currency, cause: draft.cause.trim() });
     };
-
-    const first = entries[0];
-    const last = entries[entries.length - 1];
 
     return (
         <>
@@ -103,7 +89,16 @@ export const CurrencyLogPage = () => {
                         </div>
                     )}
                     <Panel className="overflow-clip">
-                        <ListToolbar watch={[ filter.player, filter.currency, filter.cause, cursor.before, cursor.after ]}>
+                        <ListToolbar
+                            watch={[ filter.player, filter.currency, filter.cause, page, order ]}
+                            page={{
+                                offset: (page - 1) * pageSize,
+                                limit: pageSize,
+                                total: log.data?.total,
+                                capped: log.data?.totalCapped,
+                                onChange: offset => go(filter, Math.floor(offset / pageSize) + 1),
+                            }}
+                        >
                             <form onSubmit={handleSubmit} className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                                 <SearchInput
                                     value={draft.player}
@@ -129,15 +124,6 @@ export const CurrencyLogPage = () => {
                                     {filtered && <Button type="button" variant="ghost" icon={<X />} onClick={() => go({ player: '', currency: '', cause: '' })}>Clear</Button>}
                                 </LogFilters>
                             </form>
-                            <nav aria-label="Pages" className="ml-auto flex items-center gap-1">
-                                <Button variant="ghost" icon={<ChevronLeft />} disabled={!log.data?.hasNewer || !first} onClick={() => first && go(filter, { after: first.id })}>
-                                    Newer
-                                </Button>
-                                <Button variant="ghost" disabled={!log.data?.hasOlder || !last} onClick={() => last && go(filter, { before: last.id })}>
-                                    Older
-                                    <ChevronRight />
-                                </Button>
-                            </nav>
                         </ListToolbar>
 
                         {log.error && <div className="p-4"><ErrorNotice error={log.error} /></div>}
@@ -148,7 +134,8 @@ export const CurrencyLogPage = () => {
                                     <div className={cx('transition-opacity', log.isFetching && 'opacity-60')}>
                                         <RowList
                                             columns="max-content minmax(0,9rem) max-content minmax(0,1fr) minmax(0,10rem) minmax(0,8rem)"
-                                            headers={[ { label: 'When' }, { label: 'Player' }, { label: 'Amount', className: 'text-right' }, { label: 'Why' }, { label: 'Other side' }, { label: 'By' } ]}
+                                            headers={[ { label: 'When', sort: 'when', first: 'desc' }, { label: 'Player' }, { label: 'Amount', className: 'text-right' }, { label: 'Why' }, { label: 'Other side' }, { label: 'By' } ]}
+                                            sorting={sorting}
                                         >
                                             {entries.map(entry => (
                                                 <Row key={entry.id}>

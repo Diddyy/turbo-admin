@@ -4,10 +4,15 @@ import { Link } from 'react-router';
 
 import { type MetaAssignment, type NodeAssignment, type Target, targetCalls, useCatalog, usePermissionChange } from '#/api/permissions';
 import { ask } from '#/components/confirm';
-import { PhoneLabel, Row, RowList } from '#/components/RowList';
+import { PhoneLabel, Row, SortedRowList } from '#/components/RowList';
 import { Button, EmptyState, ErrorNotice, Input, Labeled, Panel, Select } from '#/components/ui';
+import type { SortKeys } from '#/lib/sort';
 
 import { ADD_FORM_CLASS, Expiry, TimingFields, UnsetButton, Verdict } from './common';
+
+const NODE_KEYS: SortKeys<NodeAssignment> = { node: x => x.node, value: x => x.value };
+
+const META_KEYS: SortKeys<MetaAssignment> = { key: x => x.key, value: x => x.value };
 
 /** The answer to the last change: an error, or the server's word that nothing changed. */
 const Outcome = ({ error, message }: { error: unknown; message: string | null }) => (
@@ -83,11 +88,14 @@ export const NodesCard = ({ target, nodes, canEdit }: { target: Target; nodes: N
             {nodes.length === 0
                 ? <EmptyState>No nodes are set here.</EmptyState>
                 : (
-                        <RowList
+                        <SortedRowList
                             columns={canEdit ? 'minmax(0,1fr) max-content max-content' : 'minmax(0,1fr) max-content'}
-                            headers={[ { label: 'Node' }, { label: 'Value' }, ...(canEdit ? [ {} ] : []) ]}
+                            headers={[ { label: 'Node', sort: 'node' }, { label: 'Value', sort: 'value' }, ...(canEdit ? [ {} ] : []) ]}
+                            rows={nodes}
+                            keys={NODE_KEYS}
+                            initial={{ sort: 'node', dir: 'asc' }}
                         >
-                            {nodes.map(assignment => (
+                            {assignment => (
                                 <Row key={`${assignment.node}|${assignment.expiresAtUtc ?? ''}`}>
                                     <div className="wrap-anywhere">
                                         {assignment.node.endsWith('*')
@@ -117,8 +125,8 @@ export const NodesCard = ({ target, nodes, canEdit }: { target: Target; nodes: N
                                         />
                                     )}
                                 </Row>
-                            ))}
-                        </RowList>
+                            )}
+                        </SortedRowList>
                     )}
             {canEdit && (
                 <form onSubmit={handleSubmit} className={ADD_FORM_CLASS}>
@@ -185,11 +193,14 @@ export const MetaCard = ({ target, meta, canEdit }: { target: Target; meta: Meta
             {meta.length === 0
                 ? <EmptyState>No meta is set here.</EmptyState>
                 : (
-                        <RowList
+                        <SortedRowList
                             columns={canEdit ? 'minmax(0,1fr) minmax(0,1fr) max-content' : 'minmax(0,1fr) minmax(0,1fr)'}
-                            headers={[ { label: 'Key' }, { label: 'Value' }, ...(canEdit ? [ {} ] : []) ]}
+                            headers={[ { label: 'Key', sort: 'key' }, { label: 'Value', sort: 'value' }, ...(canEdit ? [ {} ] : []) ]}
+                            rows={meta}
+                            keys={META_KEYS}
+                            initial={{ sort: 'key', dir: 'asc' }}
                         >
-                            {meta.map(assignment => (
+                            {assignment => (
                                 <Row key={`${assignment.key}|${assignment.expiresAtUtc ?? ''}`}>
                                     <div className="wrap-anywhere">
                                         <code className="font-mono text-xs">{assignment.key}</code>
@@ -214,8 +225,8 @@ export const MetaCard = ({ target, meta, canEdit }: { target: Target; meta: Meta
                                         />
                                     )}
                                 </Row>
-                            ))}
-                        </RowList>
+                            )}
+                        </SortedRowList>
                     )}
             {canEdit && (
                 <form onSubmit={handleSubmit} className={ADD_FORM_CLASS}>

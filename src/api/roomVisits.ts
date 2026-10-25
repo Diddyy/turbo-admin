@@ -1,5 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
+import { type ListOrder, listQuery } from '#/lib/sort';
+
 import { api } from './client';
 
 export interface RoomVisitEntry {
@@ -13,11 +15,14 @@ export interface RoomVisitEntry {
     roomName: string | null;
 }
 
-/** A run of the log, newest first. Paged by visit, not counted: there is no total. */
+/** A page of the log in `order`, counted only so far, as the chat log is. */
 export interface RoomVisitsResponse {
+    total: number;
+    /** The server stopped counting at `total` (10,000): there are more. */
+    totalCapped: boolean;
+    page: number;
     pageSize: number;
-    hasOlder: boolean;
-    hasNewer: boolean;
+    order: ListOrder;
     entries: RoomVisitEntry[];
 }
 
@@ -28,33 +33,12 @@ export interface RoomVisitsFilter {
     room: string;
 }
 
-/** Where a run starts: visits older than `before`, newer than `after`, or the newest. */
-export interface RoomVisitsCursor {
-    before?: number;
-    after?: number;
-}
-
-/** How often the newest visits are asked again while open. */
+/** How often the first page is asked again while open. */
 const REFRESH_MS = 30_000;
 
-export const useRoomVisits = (filter: RoomVisitsFilter, cursor: RoomVisitsCursor) => {
-    const query = new URLSearchParams();
-
-    for (const [ key, value ] of Object.entries(filter))
-        if (value)
-            query.set(key, value);
-
-    if (cursor.before)
-        query.set('before', String(cursor.before));
-
-    if (cursor.after)
-        query.set('after', String(cursor.after));
-
-    return useQuery({
-        queryKey: [ 'room-visits', filter, cursor ],
-        queryFn: () => api<RoomVisitsResponse>(`/room-visits?${query}`),
-        placeholderData: keepPreviousData,
-        // Only the newest visits change.
-        refetchInterval: cursor.before || cursor.after ? false : REFRESH_MS,
-    });
-};
+export const useRoomVisits = (filter: RoomVisitsFilter, page: number, order: ListOrder | null) => useQuery({
+    queryKey: [ 'room-visits', filter, page, order ],
+    queryFn: () => api<RoomVisitsResponse>(`/room-visits?${listQuery(filter, page, order)}`),
+    placeholderData: keepPreviousData,
+    refetchInterval: page === 1 ? REFRESH_MS : false,
+});

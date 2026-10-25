@@ -1,18 +1,22 @@
 import { type FormEvent, useId, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
-import { useCatalog, useHolders, useLog } from '#/api/permissions';
+import { type Holder, useCatalog, useHolders, useLog } from '#/api/permissions';
 import { ListToolbar } from '#/components/ListToolbar';
-import { Row, RowList } from '#/components/RowList';
+import { Row, SortedRowList } from '#/components/RowList';
 import { SearchInput } from '#/components/SearchInput';
 import { Badge, Button, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Panel } from '#/components/ui';
 import { useHubTabs } from '#/layout/nav';
+import { type SortKeys, useSortedRows } from '#/lib/sort';
 
+import { AUDIT_KEYS, AUDIT_NEWEST } from './audit';
 import { AuditTable, Expiry, PermissionsHeader, Verdict } from './common';
 import { targetLink } from './links';
 
 /** Rows shown at once in the lists paged here, which the server sends whole. */
 const PAGE_SIZE = 25;
+
+const HOLDER_KEYS: SortKeys<Holder> = { who: x => x.targetName, as: x => x.node, value: x => x.value };
 
 /** Every group and player given a node, exactly or by a wildcard that covers it. */
 export const SearchPage = () => {
@@ -50,8 +54,14 @@ export const SearchPage = () => {
                             {holders.data.length === 0
                                 ? <EmptyState>Nobody is given {node}, directly or by wildcard.</EmptyState>
                                 : (
-                                        <RowList columns="minmax(0,1fr) minmax(0,1fr) max-content" headers={[ { label: 'Given to' }, { label: 'As' }, { label: 'Value' } ]}>
-                                            {holders.data.map(holder => (
+                                        <SortedRowList
+                                            columns="minmax(0,1fr) minmax(0,1fr) max-content"
+                                            headers={[ { label: 'Given to', sort: 'who' }, { label: 'As', sort: 'as' }, { label: 'Value', sort: 'value' } ]}
+                                            rows={holders.data}
+                                            keys={HOLDER_KEYS}
+                                            initial={{ sort: 'who', dir: 'asc' }}
+                                        >
+                                            {holder => (
                                                 <Row key={`${holder.targetType}|${holder.targetId}|${holder.node}|${holder.expiresAtUtc ?? ''}`}>
                                                     <span>
                                                         <span className="mr-1.5 text-xs text-muted">{holder.targetType === 'Group' ? 'group' : 'player'}</span>
@@ -65,8 +75,8 @@ export const SearchPage = () => {
                                                         <Expiry at={holder.expiresAtUtc} />
                                                     </span>
                                                 </Row>
-                                            ))}
-                                        </RowList>
+                                            )}
+                                        </SortedRowList>
                                     )}
                         </>
                     )}
@@ -84,6 +94,7 @@ export const LogPage = () => {
     const [ draft, setDraft ] = useState(search);
     const [ offset, setOffset ] = useState(0);
     const log = useLog(search);
+    const [ entries, sorting ] = useSortedRows(log.data, AUDIT_KEYS, AUDIT_NEWEST);
 
     const handleSubmit = (event: FormEvent) => {
         event.preventDefault();
@@ -97,7 +108,7 @@ export const LogPage = () => {
             <PageBody>
                 <Panel className="overflow-clip">
                     <ListToolbar
-                        watch={[ search, offset ]}
+                        watch={[ search, offset, sorting.order ]}
                         page={{ offset, limit: PAGE_SIZE, total: log.data?.length, onChange: setOffset }}
                     >
                         <form onSubmit={handleSubmit} className="flex min-w-0 flex-1 gap-2">
@@ -107,7 +118,18 @@ export const LogPage = () => {
                     </ListToolbar>
                     {log.error && <div className="p-4"><ErrorNotice error={log.error} /></div>}
                     {log.isPending && <Loading />}
-                    {log.data && <AuditTable entries={log.data.slice(offset, offset + PAGE_SIZE)} />}
+                    {log.data && (
+                        <AuditTable
+                            entries={entries.slice(offset, offset + PAGE_SIZE)}
+                            sorting={{
+                                order: sorting.order,
+                                onSort: (next) => {
+                                    setOffset(0);
+                                    sorting.onSort(next);
+                                },
+                            }}
+                        />
+                    )}
                 </Panel>
             </PageBody>
         </>

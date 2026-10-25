@@ -1,19 +1,22 @@
 import { useState } from 'react';
 
-import { useClientFunnel, useClientUsage } from '#/api/telemetry';
-import { Row, RowList } from '#/components/RowList';
+import { type ClientUsageEvent, useClientFunnel, useClientUsage } from '#/api/telemetry';
+import { Row, RowList, SortedRowList } from '#/components/RowList';
 import { Button, Chip, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Panel, Stat } from '#/components/ui';
 import { useHubTabs } from '#/layout/nav';
+import type { SortKeys } from '#/lib/sort';
 
 import { dayPoints, number, SERIES_1, SERIES_2, useDayRange } from './format';
 import { DayChartCard, Figure, RangePicker } from './shared';
 
 const EVENT_COLUMNS = [
-    { label: 'Event' },
-    { label: 'Times', className: 'text-right' },
-    { label: 'Player days', className: 'text-right' },
+    { label: 'Event', sort: 'event' },
+    { label: 'Times', className: 'text-right', sort: 'times', first: 'desc' as const },
+    { label: 'Player days', className: 'text-right', sort: 'players', first: 'desc' as const },
     { label: '' },
 ];
+
+const EVENT_KEYS: SortKeys<ClientUsageEvent> = { event: x => x.action || x.type, times: x => x.count, players: x => x.playerDays };
 
 const FUNNEL_COLUMNS = [
     { label: 'Step' },
@@ -82,8 +85,8 @@ export const UsagePage = () => {
                                 {data.top.length === 0
                                     ? <EmptyState>No events in this range.</EmptyState>
                                     : (
-                                            <RowList columns="minmax(0,1fr) repeat(3,auto)" headers={EVENT_COLUMNS}>
-                                                {data.top.map((x) => {
+                                            <SortedRowList columns="minmax(0,1fr) repeat(3,auto)" headers={EVENT_COLUMNS} rows={data.top} keys={EVENT_KEYS} initial={{ sort: 'times', dir: 'desc' }}>
+                                                {(x) => {
                                                     const key = keyOf(x);
 
                                                     return (
@@ -103,8 +106,8 @@ export const UsagePage = () => {
                                                             </Button>
                                                         </Row>
                                                     );
-                                                })}
-                                            </RowList>
+                                                }}
+                                            </SortedRowList>
                                         )}
                             </Panel>
                             <Panel

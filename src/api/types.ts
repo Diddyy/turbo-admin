@@ -1,5 +1,7 @@
 /** The admin API's shapes, as Turbo.Admin serializes them (camelCase JSON). */
 
+import type { ListOrder } from '#/lib/sort';
+
 export interface AdminPlayer {
     id: number;
     name: string;
@@ -152,6 +154,7 @@ export interface RoomListResponse {
     total: number;
     page: number;
     pageSize: number;
+    order: ListOrder;
     rooms: RoomListItem[];
 }
 

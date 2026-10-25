@@ -1,5 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { type ListOrder, listQuery } from '#/lib/sort';
+
 import { api, post } from './client';
 import { liveInterval } from './live';
 
@@ -33,11 +35,12 @@ export interface ReportItem {
     sanctioned: boolean;
 }
 
-/** A run of reports, newest first, and how many are open and held across the hotel. */
+/** A page of reports in `order`, and how many are open and held across the hotel. */
 export interface ReportListResponse {
+    total: number;
+    page: number;
     pageSize: number;
-    hasOlder: boolean;
-    hasNewer: boolean;
+    order: ListOrder;
     open: number;
     picked: number;
     entries: ReportItem[];
@@ -92,33 +95,15 @@ export interface ReportFilter {
     player: string;
 }
 
-export interface ReportCursor {
-    before?: number;
-    after?: number;
-}
-
 /** How often the open reports are asked again without the live stream; with it, a change asks at once. */
 const REFRESH_MS = 20_000;
 
-export const useReports = (filter: ReportFilter, cursor: ReportCursor) => {
-    const query = new URLSearchParams({ state: filter.state });
-
-    if (filter.player)
-        query.set('player', filter.player);
-
-    if (cursor.before)
-        query.set('before', String(cursor.before));
-
-    if (cursor.after)
-        query.set('after', String(cursor.after));
-
-    return useQuery({
-        queryKey: [ 'reports', filter, cursor ],
-        queryFn: () => api<ReportListResponse>(`/reports?${query}`),
-        placeholderData: keepPreviousData,
-        refetchInterval: cursor.before || cursor.after ? false : liveInterval(REFRESH_MS),
-    });
-};
+export const useReports = (filter: ReportFilter, page: number, order: ListOrder | null) => useQuery({
+    queryKey: [ 'reports', filter, page, order ],
+    queryFn: () => api<ReportListResponse>(`/reports?${listQuery(filter, page, order)}`),
+    placeholderData: keepPreviousData,
+    refetchInterval: page === 1 ? liveInterval(REFRESH_MS) : false,
+});
 
 export const useReport = (id: number) => useQuery({
     queryKey: [ 'report', id ],

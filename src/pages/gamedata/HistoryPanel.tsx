@@ -1,9 +1,10 @@
-import { ChevronDown, ChevronLeft, ChevronRight, Undo2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 
 import { CHANGE_KINDS, type ChangeSet, type HistoryScope, RECORD_TYPES, useChanges, useHistory, useRollback } from '#/api/gamedata';
 import { ask } from '#/components/confirm';
 import { Modal } from '#/components/Modal';
+import { Pagination } from '#/components/Pagination';
 import { Badge, type BadgeTone, Button, EmptyState, ErrorNotice, Loading, Panel, SuccessNotice, WarningNotice } from '#/components/ui';
 import { cx } from '#/lib/cx';
 import { fromNow } from '#/lib/time';
@@ -89,20 +90,14 @@ const Changes = ({ set }: { set: ChangeSet }) => {
     );
 };
 
-/** A page of one history and the Newer and Older buttons that turn it. */
+/** A page of one history and its pages, as every list's are: which sets these are and the arrows to the others. */
 const useHistoryPage = (scope: HistoryScope) => {
     const [ page, setPage ] = useState(0);
     const query = useHistory(scope, page);
+    const size = query.data?.pageSize ?? 1;
 
-    const pager = (
-        <div className="flex items-center gap-1 text-xs text-muted">
-            <span className="mr-1 tabular-nums">Page {page + 1}</span>
-            <Button variant="ghost" icon={<ChevronLeft />} disabled={page === 0} onClick={() => setPage(page - 1)}>Newer</Button>
-            <Button variant="ghost" disabled={!query.data || query.data.length === 0} onClick={() => setPage(page + 1)}>
-                Older
-                <ChevronRight />
-            </Button>
-        </div>
+    const pager = query.data && (
+        <Pagination offset={page * size} limit={size} total={query.data.total} onChange={offset => setPage(Math.floor(offset / size))} />
     );
 
     return { page, query, pager };
@@ -111,9 +106,10 @@ const useHistoryPage = (scope: HistoryScope) => {
 const describe = (scope: HistoryScope) => `${SCOPES[scope].of}, newest first. Rolling back leaves anything changed again since as it is.`;
 
 /** The sets on the page, newest first; a set opens to its changes and rolls back as a whole. */
-const ChangeSets = ({ scope, canManage, page, query: { data: sets, error, isFetching } }: { scope: HistoryScope; canManage: boolean } & Omit<ReturnType<typeof useHistoryPage>, 'pager'>) => {
+const ChangeSets = ({ scope, canManage, page, query: { data, error, isFetching } }: { scope: HistoryScope; canManage: boolean } & Omit<ReturnType<typeof useHistoryPage>, 'pager'>) => {
     const [ open, setOpen ] = useState<number | null>(null);
     const rollback = useRollback();
+    const sets = data?.sets;
 
     return (
         <>

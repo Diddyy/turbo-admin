@@ -8,10 +8,12 @@ import { HotelStatusPill } from '#/layout/HotelStatus';
 import { useActiveNavItem } from '#/layout/nav';
 import { NotificationsBell } from '#/layout/NotificationsBell';
 import { cx } from '#/lib/cx';
+import type { SortDir, Sorting } from '#/lib/sort';
 import { avatarUrl } from '#/preview/avatar';
 
 import { BackArrow } from './BackArrow';
 import { HeaderActions } from './HeaderActions';
+import { SortButton } from './SortHeader';
 import { type TabItem, Tabs } from './Tabs';
 
 /** The width every page's content keeps to, header and body alike. */
@@ -421,8 +423,17 @@ export const Kv = ({ label, mono, children }: { label: string; mono?: boolean; c
     </div>
 );
 
-export const Th = ({ children, className }: { children?: ReactNode; className?: string }) => (
-    <th className={cx('border-b border-line px-4 py-2 text-left font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase', className)}>{children}</th>
+/**
+ * A table's column header. With `sort` (a key the table sorts by) and `sorting`, a click sorts the
+ * table by it, as a <c>RowList</c>'s headers do.
+ */
+export const Th = ({ children, className, sort, first, sorting }: { children?: ReactNode; className?: string; sort?: string; first?: SortDir; sorting?: Sorting }) => (
+    <th
+        aria-sort={sort && sorting?.order?.sort === sort ? (sorting.order.dir === 'asc' ? 'ascending' : 'descending') : undefined}
+        className={cx('border-b border-line px-4 py-2 text-left font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase', className)}
+    >
+        {sort && sorting ? <SortButton label={children} sort={sort} first={first} sorting={sorting} /> : children}
+    </th>
 );
 
 export const Td = ({ children, className }: { children?: ReactNode; className?: string }) => (

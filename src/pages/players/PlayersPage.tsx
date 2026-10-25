@@ -5,8 +5,10 @@ import { Link, useSearchParams } from 'react-router';
 import { type PlayerListItem, type PlayerSearchMode, usePlayerAbilities, usePlayerSearch } from '#/api/players';
 import { ListToolbar } from '#/components/ListToolbar';
 import { SearchInput } from '#/components/SearchInput';
+import { PhoneSort } from '#/components/SortHeader';
 import { Avatar, Badge, Button, EmptyState, ErrorNotice, LiveBadge, Loading, PageBody, PageHeader, Panel, Select, Switch, Td, Th } from '#/components/ui';
 import { cx } from '#/lib/cx';
+import { type ListOrder, orderOf, orderParams, pageOf, type Sorting } from '#/lib/sort';
 import { fromNow } from '#/lib/time';
 
 import { NewPlayerPanel } from './NewPlayerPanel';
@@ -26,25 +28,36 @@ const Seen = ({ player }: { player: PlayerListItem }) =>
         ? <LiveBadge live>ONLINE</LiveBadge>
         : <span className="text-xs text-muted">{player.lastLoginUtc ? fromNow(player.lastLoginUtc) : 'never'}</span>;
 
+/** The columns the list sorts by, as the server names them. */
+const SORT_COLUMNS = [
+    { label: 'Player', sort: 'name' },
+    { label: 'Seen', sort: 'seen', first: 'desc' },
+    { label: 'Rooms', sort: 'rooms', first: 'desc' },
+    { label: 'Joined', sort: 'joined', first: 'desc' },
+] as const;
+
 /**
- * Every player, by part of their name or by id, most recently logged in first, the online ones
- * alone when asked. The search lives in the address, so a search can be shared, and Back from a
- * player returns to it.
+ * Every player, by part of their name or by id, most recently logged in first unless sorted
+ * otherwise, the online ones alone when asked. The search and its order live in the address, so a
+ * search can be shared, and Back from a player returns to it.
  */
 export const PlayersPage = () => {
     const [ params, setParams ] = useSearchParams();
     const text = params.get('q') ?? '';
     const by = modeOf(params.get('by'));
     const online = params.get('online') === 'true';
-    const page = Math.max(1, Number(params.get('page')) || 1);
+    const page = pageOf(params);
+    const order = orderOf(params);
     const [ draft, setDraft ] = useState(text);
     const [ draftBy, setDraftBy ] = useState(by);
-    const search = usePlayerSearch(text, by, online, page);
+    const search = usePlayerSearch(text, by, online, page, order);
     const canCreate = usePlayerAbilities().data?.createPlayers ?? false;
     const [ creating, setCreating ] = useState(false);
 
-    const go = (next: { q?: string; by?: PlayerSearchMode; online?: boolean; page?: number }) =>
-        setParams({ q: next.q ?? text, by: next.by ?? by, online: String(next.online ?? online), page: String(next.page ?? page) });
+    const go = (next: { q?: string; by?: PlayerSearchMode; online?: boolean; page?: number }, nextOrder: ListOrder | null = order) =>
+        setParams({ q: next.q ?? text, by: next.by ?? by, online: String(next.online ?? online), page: String(next.page ?? page), ...orderParams(nextOrder) });
+
+    const sorting: Sorting = { order: order ?? search.data?.order, onSort: next => go({ page: 1 }, next) };
 
     const handleSubmit = (event: FormEvent) => {
         event.preventDefault();
@@ -67,7 +80,7 @@ export const PlayersPage = () => {
                 {creating && <NewPlayerPanel onClose={() => setCreating(false)} />}
                 <Panel className="overflow-clip">
                     <ListToolbar
-                        watch={[ text, by, online, page ]}
+                        watch={[ text, by, online, page, order ]}
                         page={{
                             offset: (page - 1) * pageSize,
                             limit: pageSize,
@@ -100,6 +113,7 @@ export const PlayersPage = () => {
                             : (
                                     <div className={cx('transition-opacity', search.isFetching && 'opacity-60')}>
                                         {/* A phone: one tappable row per player. */}
+                                        <PhoneSort columns={[ ...SORT_COLUMNS ]} sorting={sorting} />
                                         <ul className="sm:hidden">
                                             {search.data.players.map(player => (
                                                 <li key={player.id} className="border-t border-line first:border-t-0">
@@ -118,10 +132,10 @@ export const PlayersPage = () => {
                                             <table className="w-full text-sm">
                                                 <thead>
                                                     <tr>
-                                                        <Th>Player</Th>
-                                                        <Th>Seen</Th>
-                                                        <Th className="text-right">Rooms</Th>
-                                                        <Th>Joined</Th>
+                                                        <Th sort="name" sorting={sorting}>Player</Th>
+                                                        <Th sort="seen" first="desc" sorting={sorting}>Seen</Th>
+                                                        <Th className="text-right" sort="rooms" first="desc" sorting={sorting}>Rooms</Th>
+                                                        <Th sort="joined" first="desc" sorting={sorting}>Joined</Th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="[&>tr:last-child>td]:border-b-0">

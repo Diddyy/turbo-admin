@@ -2,8 +2,9 @@ import { Check, Hammer, Pencil, X } from 'lucide-react';
 import { useState } from 'react';
 
 import { FILES, type GamedataFile, type GamedataStatus, useRebuild, useSetFileKey } from '#/api/gamedata';
-import { PhoneLabel, Row, RowList } from '#/components/RowList';
+import { PhoneLabel, Row, SortedRowList } from '#/components/RowList';
 import { Badge, Button, ErrorNotice, IconButton, Input, Panel, SuccessNotice } from '#/components/ui';
+import type { SortKeys } from '#/lib/sort';
 import { fromNow } from '#/lib/time';
 
 import { formatSize } from './labels';
@@ -72,6 +73,13 @@ const FileKey = ({ file, keys, fallback, canManage }: { file: string; keys: stri
     );
 };
 
+const FILE_KEYS: SortKeys<FileRow> = {
+    file: x => x.what,
+    setting: x => x.setting,
+    size: x => x.file.size,
+    built: x => Date.parse(x.file.builtAt),
+};
+
 /**
  * The gamedata files clients load, built from the database whenever what they're made from
  * changes, with the client setting each address is written under. They are served by the hotel's
@@ -104,11 +112,14 @@ export const ClientFiles = ({ status }: { status: GamedataStatus }) => {
                 </Button>
             )}
         >
-            <RowList
+            {/* In the order the client reads them until a header sorts them. */}
+            <SortedRowList
                 columns="minmax(12rem,1.4fr) minmax(12rem,1.2fr) 7rem 5rem 7rem"
-                headers={[ { label: 'File' }, { label: 'Client setting' }, { label: 'Build' }, { label: 'Size', className: 'text-right' }, { label: 'Built' } ]}
+                headers={[ { label: 'File', sort: 'file' }, { label: 'Client setting', sort: 'setting' }, { label: 'Build' }, { label: 'Size', className: 'text-right', sort: 'size', first: 'desc' }, { label: 'Built', sort: 'built', first: 'desc' } ]}
+                rows={files}
+                keys={FILE_KEYS}
             >
-                {files.map((row) => {
+                {(row) => {
                     const keys = status.fileKeys?.[row.file.file];
 
                     return (
@@ -125,8 +136,8 @@ export const ClientFiles = ({ status }: { status: GamedataStatus }) => {
                             <span className="text-xs text-muted">{fromNow(row.file.builtAt)}</span>
                         </Row>
                     );
-                })}
-            </RowList>
+                }}
+            </SortedRowList>
             {(rebuild.error || rebuild.isSuccess) && (
                 <div className="border-t border-line p-4">
                     {rebuild.error && <ErrorNotice error={rebuild.error} />}

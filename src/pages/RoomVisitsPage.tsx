@@ -1,9 +1,9 @@
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
 import { useMe } from '#/api/queries';
-import { type RoomVisitEntry, type RoomVisitsCursor, type RoomVisitsFilter, useRoomVisits } from '#/api/roomVisits';
+import { type RoomVisitEntry, type RoomVisitsFilter, useRoomVisits } from '#/api/roomVisits';
 import { ListToolbar } from '#/components/ListToolbar';
 import { LogFilters } from '#/components/LogFilters';
 import { PhoneLabel, Row, RowList } from '#/components/RowList';
@@ -11,17 +11,13 @@ import { SearchInput } from '#/components/SearchInput';
 import { Button, EmptyState, ErrorNotice, Input, Loading, PageBody, PageHeader, Panel } from '#/components/ui';
 import { useHubTabs } from '#/layout/nav';
 import { cx } from '#/lib/cx';
+import { type ListOrder, listQuery, orderOf, pageOf, type Sorting } from '#/lib/sort';
 import { fromNow } from '#/lib/time';
 import { formatDateTime } from '#/pages/rooms/labels';
 
 const filterOf = (params: URLSearchParams): RoomVisitsFilter => ({
     player: params.get('player') ?? '',
     room: params.get('room') ?? '',
-});
-
-const cursorOf = (params: URLSearchParams): RoomVisitsCursor => ({
-    before: Number(params.get('before')) || undefined,
-    after: Number(params.get('after')) || undefined,
 });
 
 /**
@@ -49,36 +45,29 @@ const Where = ({ entry, linked }: { entry: RoomVisitEntry; linked: boolean }) =>
 );
 
 /**
- * Who went into which room, newest first, from the entry log the navigator's history keeps:
- * narrowed to a player (name or id) or a room (id). The filter lives in the address, so a
- * player's and a room's page can link straight to their visits.
+ * Who went into which room, newest first (or oldest, or by room id), from the entry log the
+ * navigator's history keeps: narrowed to a player (name or id) or a room (id). The filter, the page
+ * and the order live in the address, so a player's and a room's page can link straight to their
+ * visits.
  */
 export const RoomVisitsPage = () => {
     const tabs = useHubTabs('logs');
     const canViewRooms = useMe().data?.canViewRooms ?? false;
     const [ params, setParams ] = useSearchParams();
     const filter = filterOf(params);
-    const cursor = cursorOf(params);
+    const page = pageOf(params);
+    const order = orderOf(params);
     const [ draft, setDraft ] = useState(filter);
-    const log = useRoomVisits(filter, cursor);
+    const log = useRoomVisits(filter, page, order);
     const filtered = Object.values(filter).some(x => x !== '');
     const entries = log.data?.entries ?? [];
+    const pageSize = log.data?.pageSize ?? 1;
 
-    const go = (next: RoomVisitsFilter, nextCursor: RoomVisitsCursor = {}) => {
-        const search = new URLSearchParams();
+    /** Another filter, page or order. */
+    const go = (next: RoomVisitsFilter, nextPage = 1, nextOrder: ListOrder | null = order) =>
+        setParams(listQuery(next, nextPage, nextOrder));
 
-        for (const [ key, value ] of Object.entries(next))
-            if (value)
-                search.set(key, value);
-
-        if (nextCursor.before)
-            search.set('before', String(nextCursor.before));
-
-        if (nextCursor.after)
-            search.set('after', String(nextCursor.after));
-
-        setParams(search);
-    };
+    const sorting: Sorting = { order: order ?? log.data?.order, onSort: next => go(filter, 1, next) };
 
     const handleSubmit = (event: FormEvent) => {
         event.preventDefault();
@@ -87,18 +76,24 @@ export const RoomVisitsPage = () => {
 
     const clear = () => {
         setDraft({ player: '', room: '' });
-        setParams(new URLSearchParams());
+        go({ player: '', room: '' });
     };
-
-    const first = entries[0];
-    const last = entries[entries.length - 1];
 
     return (
         <>
             <PageHeader title="Logs" tabs={tabs} description="Who went into which room, and when" />
             <PageBody>
                 <Panel className="overflow-clip">
-                    <ListToolbar watch={[ filter.player, filter.room, cursor.before, cursor.after ]}>
+                    <ListToolbar
+                        watch={[ filter.player, filter.room, page, order ]}
+                        page={{
+                            offset: (page - 1) * pageSize,
+                            limit: pageSize,
+                            total: log.data?.total,
+                            capped: log.data?.totalCapped,
+                            onChange: offset => go(filter, Math.floor(offset / pageSize) + 1),
+                        }}
+                    >
                         <form onSubmit={handleSubmit} className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
                             <SearchInput
                                 value={draft.player}
@@ -121,16 +116,6 @@ export const RoomVisitsPage = () => {
                                 {filtered && <Button type="button" variant="ghost" icon={<X />} onClick={clear}>Clear</Button>}
                             </LogFilters>
                         </form>
-                        {/* The visits are newest first: newer ones are before these, older ones after. */}
-                        <nav aria-label="Pages" className="ml-auto flex items-center gap-1">
-                            <Button variant="ghost" icon={<ChevronLeft />} disabled={!log.data?.hasNewer || !first} onClick={() => first && go(filter, { after: first.id })}>
-                                Newer
-                            </Button>
-                            <Button variant="ghost" disabled={!log.data?.hasOlder || !last} onClick={() => last && go(filter, { before: last.id })}>
-                                Older
-                                <ChevronRight />
-                            </Button>
-                        </nav>
                     </ListToolbar>
 
                     {log.error && <div className="p-4"><ErrorNotice error={log.error} /></div>}
@@ -142,7 +127,8 @@ export const RoomVisitsPage = () => {
                                     <div className={cx('transition-opacity', log.isFetching && 'opacity-60')}>
                                         <RowList
                                             columns="max-content minmax(0,12rem) minmax(0,1fr) max-content"
-                                            headers={[ { label: 'When' }, { label: 'Who' }, { label: 'Room' }, { label: 'Room id', className: 'text-right' } ]}
+                                            headers={[ { label: 'When', sort: 'when', first: 'desc' }, { label: 'Who' }, { label: 'Room' }, { label: 'Room id', className: 'text-right', sort: 'room' } ]}
+                                            sorting={sorting}
                                         >
                                             {entries.map(entry => (
                                                 <Row key={entry.id}>

@@ -11,6 +11,7 @@ import { SearchInput } from '#/components/SearchInput';
 import { Badge, type BadgeTone, Button, EmptyState, ErrorNotice, Input, Loading, PageBody, PageHeader, Panel, Select } from '#/components/ui';
 import { useHubTabs } from '#/layout/nav';
 import { cx } from '#/lib/cx';
+import { type ListOrder, listQuery, orderOf, pageOf, type Sorting } from '#/lib/sort';
 import { fromNow } from '#/lib/time';
 import { formatDateTime } from '#/pages/rooms/labels';
 
@@ -83,35 +84,28 @@ const filterOf = (params: URLSearchParams): CommandLogFilter => ({
 });
 
 /**
- * Every logged command, newest first: who ran it, where, with what, and how it went. Narrowed to
- * one player, command, outcome or source; the filter lives in the address, so a player's page
- * can link straight to their commands.
+ * Every logged command, newest first or by command: who ran it, where, with what, and how it went.
+ * Narrowed to one player, command, outcome or source; the filter and the order live in the
+ * address, so a player's page can link straight to their commands.
  */
 export const CommandLogPage = () => {
     const tabs = useHubTabs('logs');
     const [ params, setParams ] = useSearchParams();
     const filter = filterOf(params);
-    const page = Math.max(1, Number(params.get('page')) || 1);
+    const page = pageOf(params);
+    const order = orderOf(params);
     const [ draft, setDraft ] = useState({ player: filter.player, command: filter.command });
-    const log = useCommandLog(filter, page);
+    const log = useCommandLog(filter, page, order);
     const commands = useCommands();
     const listId = useId();
     const pageSize = log.data?.pageSize ?? 1;
     const filtered = Object.values(filter).some(x => x !== '');
 
-    const go = (next: Partial<CommandLogFilter> & { page?: number }) => {
-        const merged = { ...filter, ...next };
-        const search = new URLSearchParams();
+    /** Another filter or page, in the same order; another order starts at the first page. */
+    const go = ({ page: nextPage, ...next }: Partial<CommandLogFilter> & { page?: number }, nextOrder: ListOrder | null = order) =>
+        setParams(listQuery({ ...filter, ...next }, nextPage ?? 1, nextOrder));
 
-        for (const [ key, value ] of Object.entries(merged))
-            if (key !== 'page' && value)
-                search.set(key, String(value));
-
-        if ((next.page ?? 1) > 1)
-            search.set('page', String(next.page));
-
-        setParams(search);
-    };
+    const sorting: Sorting = { order: order ?? log.data?.order, onSort: next => go({}, next) };
 
     const handleSubmit = (event: FormEvent) => {
         event.preventDefault();
@@ -120,7 +114,7 @@ export const CommandLogPage = () => {
 
     const clear = () => {
         setDraft({ player: '', command: '' });
-        setParams(new URLSearchParams());
+        setParams(listQuery({}, 1, order));
     };
 
     return (
@@ -135,7 +129,7 @@ export const CommandLogPage = () => {
             <PageBody>
                 <Panel className="overflow-clip">
                     <ListToolbar
-                        watch={[ filter.player, filter.command, filter.outcome, filter.source, page ]}
+                        watch={[ filter.player, filter.command, filter.outcome, filter.source, page, order ]}
                         page={{
                             offset: (page - 1) * pageSize,
                             limit: pageSize,
@@ -188,7 +182,8 @@ export const CommandLogPage = () => {
                                     <div className={cx('transition-opacity', log.isFetching && 'opacity-60')}>
                                         <RowList
                                             columns="max-content minmax(0,10rem) minmax(0,10rem) minmax(0,1fr) max-content"
-                                            headers={[ { label: 'When' }, { label: 'Who' }, { label: 'Where' }, { label: 'Command' }, { label: 'Outcome' } ]}
+                                            headers={[ { label: 'When', sort: 'when', first: 'desc' }, { label: 'Who' }, { label: 'Where' }, { label: 'Command', sort: 'command' }, { label: 'Outcome' } ]}
+                                            sorting={sorting}
                                         >
                                             {log.data.entries.map(entry => (
                                                 <Row key={entry.id}>

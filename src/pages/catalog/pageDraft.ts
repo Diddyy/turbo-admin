@@ -12,6 +12,8 @@ export const pageDraftOf = (page: CatalogPageDetail): PageDraft => ({
     textData: page.textData,
     display: page.display,
     folderOnly: page.folderOnly,
+    minRank: page.minRank ?? 1,
+    requiredNode: page.requiredNode ?? '',
 });
 
 /** A list with one place set, padded to reach it, without empty places left trailing. */

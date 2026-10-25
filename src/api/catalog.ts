@@ -123,6 +123,10 @@ export interface CatalogPageDetail {
     display: PageDisplay;
     offers: CatalogOffer[];
     folderOnly: boolean;
+    /** The lowest rank that sees it and the pages under it; 1 is every player. */
+    minRank: number;
+    /** A permission node a player needs to see it and the pages under it; null for none. */
+    requiredNode: string | null;
 }
 
 export interface CatalogFurniture {
@@ -143,6 +147,10 @@ export interface CatalogPageInput {
     display: PageDisplay;
     /** Left out, a saved page keeps what it was and a new one is a page. */
     folderOnly?: boolean;
+    /** Left out, a saved page keeps what it was and a new one is for everyone (1). */
+    minRank?: number;
+    /** Left out, a saved page keeps what it was; empty takes it off. */
+    requiredNode?: string;
 }
 
 export interface CatalogOfferInput {

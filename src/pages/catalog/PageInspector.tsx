@@ -218,6 +218,32 @@ export const PageInspector = ({ tree, page, draft, onDraft, focus, onOpen }: Pag
                         )}
                     </Section>
 
+                    <Section title="Who sees it">
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <Labeled label="Lowest rank" hint="1 is every player. The pages under it are kept from lower ranks too.">
+                                <Input
+                                    name="page-min-rank"
+                                    value={draft.minRank ?? 1}
+                                    onChange={event => set('minRank', Math.max(1, Number(event.target.value.replace(/\D/g, '')) || 1))}
+                                    inputMode="numeric"
+                                    disabled={!canManage}
+                                />
+                            </Labeled>
+                            <Labeled label="Needs the permission" hint="A permission node; empty: none. The pages under it need it too.">
+                                <Input
+                                    name="page-required-node"
+                                    value={draft.requiredNode ?? ''}
+                                    onChange={event => set('requiredNode', event.target.value)}
+                                    placeholder="catalog.page.vip"
+                                    spellCheck={false}
+                                    autoComplete="off"
+                                    className="font-mono text-xs"
+                                    disabled={!canManage}
+                                />
+                            </Labeled>
+                        </div>
+                    </Section>
+
                     <Section title="Layout">
                         <button
                             type="button"

@@ -1,4 +1,4 @@
-import { Activity, Armchair, BellRing, Bug, ChartColumn, CloudDownload, Coins, Disc3, DoorOpen, Flag, FunnelX, Gauge, History, House, KeyRound, Landmark, Languages, Mail, MessagesSquare, Milestone, MonitorSmartphone, PackagePlus, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, Timer, UserRound, Users } from 'lucide-react';
+import { Activity, Armchair, BellRing, Bug, CalendarClock, ChartColumn, CloudDownload, Coins, Disc3, DoorOpen, Flag, FunnelX, Gauge, History, House, KeyRound, Landmark, Languages, Mail, MessagesSquare, Milestone, MonitorSmartphone, PackagePlus, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, Timer, UserRound, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router';
 
@@ -56,7 +56,8 @@ const PAGES = {
     roomVisits: { to: '/room-visits', label: 'Room visits', icon: <DoorOpen />, end: false, needs: 'canViewPlayers' },
     permissionLog: { to: '/permission-log', label: 'Permission log', icon: <History />, end: false, needs: 'canViewPermissions' },
     settings: { to: '/settings', label: 'Settings', icon: <SlidersHorizontal />, end: false, key: 'e', needs: 'canViewSettings' },
-    plugins: { to: '/plugins', label: 'Plugins', icon: <Plug />, end: false, key: 'i', needs: 'canViewPlugins' },
+    plugins: { to: '/plugins', label: 'Plugins', icon: <Plug />, end: true, key: 'i', needs: 'canViewPlugins' },
+    pluginSchedule: { to: '/plugins/schedule', label: 'Schedule', icon: <CalendarClock />, end: false, needs: 'canViewPlugins' },
     console: { to: '/console', label: 'Console', icon: <SquareTerminal />, end: false, key: 'o' },
     account: { to: '/account', label: 'Account', icon: <UserRound />, end: false, key: 'a' },
 } satisfies Record<string, NavItem>;
@@ -88,6 +89,7 @@ const OVERVIEW: NavEntry = { label: 'Overview', icon: <Gauge />, pages: [ 'dashb
 const LOGS: NavEntry = { label: 'Logs', icon: <ScrollText />, pages: [ 'commandLog', 'chatlog', 'messages', 'currencyLog', 'roomVisits', 'permissionLog' ], hint: 'Commands run, chat in rooms, private messages, wallet changes, room visits, permission changes' };
 const MODERATION: NavEntry = { label: 'Moderation', icon: <Flag />, pages: [ 'reports', 'wordFilter' ], hint: 'Calls for help players send, and the word filter' };
 const GROUPS: NavEntry = { label: 'Groups', icon: <Shield />, pages: [ 'groups', 'badgeParts' ], hint: 'Groups, their members, and badge parts' };
+const PLUGINS: NavEntry = { label: 'Plugins', icon: <Plug />, pages: [ 'plugins', 'pluginSchedule' ], hint: 'What the server loaded, turning it off or on, and its scheduled tasks' };
 const ACCESS: NavEntry = { label: 'Access', icon: <KeyRound />, pages: [ 'permissions', 'staff' ], hint: 'Groups, nodes and staff passkeys' };
 
 const SECTIONS: NavSection[] = [
@@ -129,7 +131,7 @@ const SECTIONS: NavSection[] = [
         label: 'Server',
         entries: [
             { label: 'Settings', icon: <SlidersHorizontal />, pages: [ 'settings' ], hint: 'How the server is set up' },
-            { label: 'Plugins', icon: <Plug />, pages: [ 'plugins' ], hint: 'What the server loaded, and turning it off or on' },
+            PLUGINS,
             { label: 'Console', icon: <SquareTerminal />, pages: [ 'console' ], hint: 'Run the hotel\'s commands' },
         ],
     },
@@ -225,10 +227,10 @@ export const useIsActive = () => {
  * The tabs of an entry that holds several pages, for its pages' headers: each a link to its page,
  * the one open now chosen. Only the pages the viewer may open; none at all when that is one.
  */
-export const useHubTabs = (hub: 'overview' | 'logs' | 'groups' | 'moderation'): { items: TabItem[]; value: string } | undefined => {
+export const useHubTabs = (hub: 'overview' | 'logs' | 'groups' | 'moderation' | 'plugins'): { items: TabItem[]; value: string } | undefined => {
     const { data: me } = useMe();
     const { pathname } = useLocation();
-    const entry = { overview: OVERVIEW, logs: LOGS, groups: GROUPS, moderation: MODERATION }[hub];
+    const entry = { overview: OVERVIEW, logs: LOGS, groups: GROUPS, moderation: MODERATION, plugins: PLUGINS }[hub];
     const pages = entry.pages.map(name => PAGES[name] as NavItem).filter(page => allowed(me, page));
 
     if (pages.length < 2)

@@ -1,5 +1,6 @@
-import { Download, ExternalLink, History, Link2, Pencil, Power, PowerOff, RefreshCw, ScanSearch, Trash2, Unlink, Upload } from 'lucide-react';
+import { Download, ExternalLink, History, Layers, Link2, Palette, Pencil, Power, PowerOff, RefreshCw, ScanSearch, Trash2, Unlink, Upload } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router';
 
 import { type Plugin, type PluginActionResponse, type PluginSource, type PluginSourceActionResponse, type PluginState, useCheckPluginSource, useInstallPlugin, usePluginContributions, usePlugins, useReloadPlugin, useRemovePluginSource, useRescanPlugins, useRollbackPlugin, useSetPluginEnabled, useUpdatePluginSource } from '#/api/plugins';
 import { ask } from '#/components/confirm';
@@ -230,6 +231,13 @@ const PluginDetail = ({ plugin, source, canManage, canInstall, canUninstall }: {
                                     Turn off
                                 </Button>
                             )}
+                    <Link to={`/plugins/${encodeURIComponent(plugin.key)}/theme`} className="inline-flex items-center gap-1 px-2 text-sm text-accent hover:underline">
+                        <Palette className="size-4" />
+                        Theme
+                    </Link>
+                    <Link to={`/gamedata/texts?plugin=${encodeURIComponent(plugin.key)}`} className="inline-flex items-center gap-1 px-2 text-sm text-accent hover:underline">
+                        Phrases
+                    </Link>
                     {canUninstall && !plugin.dev && (
                         <Button variant="ghost" icon={<Trash2 />} disabled={busy} onClick={() => setUninstalling(true)}>
                             Uninstall
@@ -372,6 +380,10 @@ export const PluginsPage = () => {
                         Rescan
                     </Button>
                 )}
+                <Link to="/plugins/patches" className="inline-flex items-center gap-1 rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-subtle">
+                    <Layers className="size-4" />
+                    Template patches
+                </Link>
                 {canLink && (
                     <Button variant="secondary" icon={<Link2 />} onClick={() => setEditing('new')}>
                         Link from GitHub

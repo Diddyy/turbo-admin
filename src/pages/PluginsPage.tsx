@@ -5,6 +5,7 @@ import { type Plugin, type PluginActionResponse, type PluginSource, type PluginS
 import { ask } from '#/components/confirm';
 import { toast, toastError } from '#/components/toast';
 import { Badge, type BadgeTone, Button, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Panel, WarningNotice } from '#/components/ui';
+import { useHubTabs } from '#/layout/nav';
 import { cx } from '#/lib/cx';
 import { fromNow } from '#/lib/time';
 import { JobPanel } from '#/pages/assets/JobPanel';
@@ -277,10 +278,11 @@ export const PluginsPage = () => {
     const loaded = data?.plugins.filter(plugin => plugin.state === 'loaded').length ?? 0;
     const canLink = !!data?.canInstall && data.uploadEnabled;
     const sourceOf = (key: string) => data?.sources.find(source => source.key?.toLowerCase() === key.toLowerCase());
+    const tabs = useHubTabs('plugins');
 
     return (
         <>
-            <PageHeader title="Plugins" description="What the server loaded from its plugin folders, and what each added">
+            <PageHeader title="Plugins" description="What the server loaded from its plugin folders, and what each added" tabs={tabs}>
                 {data?.canManage && (
                     <Button variant="secondary" icon={<ScanSearch />} disabled={rescan.isPending} onClick={() => rescan.mutate(undefined, said)}>
                         Rescan

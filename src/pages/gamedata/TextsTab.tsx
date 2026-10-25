@@ -73,6 +73,12 @@ const TextEditor = ({ text, canManage, onDone }: { text: TextEntry | null; canMa
                     <Textarea value={value} onChange={event => setValue(event.target.value)} rows={Math.min(8, Math.max(2, Math.ceil(value.length / 100)))} disabled={!canManage} />
                 </Labeled>
                 {text?.habbo !== null && text?.habbo !== undefined && text.habbo !== value && <HabboDiffers habbo={text.habbo || '""'} canManage={canManage} onUse={() => setValue(text.habbo!)} />}
+                {text?.plugin && text.pluginValue !== null && text.pluginValue !== undefined && text.pluginValue !== value && (
+                    <p className="flex flex-wrap items-center gap-2 text-xs text-muted">
+                        <span>{`${text.plugin}'s default: ${text.pluginValue || '""'}`}</span>
+                        {canManage && <button type="button" className="text-accent hover:underline" onClick={() => setValue(text.pluginValue!)}>Use the plugin&apos;s</button>}
+                    </p>
+                )}
             </div>
             {canManage && (
                 <div className="flex flex-wrap items-center gap-2">
@@ -113,7 +119,9 @@ export const TextsTab = ({ status, adding, onAdded }: { status: GamedataStatus; 
     const [ text, setText ] = useState(() => params.get('q') ?? '');
     const [ page, setPage ] = useState(0);
     const [ open, setOpen ] = useState<string | null>(() => params.get('open'));
-    const { data: found, isFetching, error } = useTextSearch(useDebounced(text), page);
+    // Opened from a plugin's row: the phrases it brought.
+    const plugin = params.get('plugin');
+    const { data: found, isFetching, error } = useTextSearch(useDebounced(text), page, plugin);
     const size = found?.pageSize ?? 1;
 
     return (
@@ -124,6 +132,7 @@ export const TextsTab = ({ status, adding, onAdded }: { status: GamedataStatus; 
                     watch={[ text, page ]}
                     page={{ offset: page * size, limit: size, total: found?.total, onChange: offset => setPage(Math.floor(offset / size)) }}
                 >
+                    {plugin && <Badge tone="amber">{`Phrases of ${plugin}`}</Badge>}
                     <SearchInput
                         value={text}
                         onValueChange={(value) => {
@@ -150,7 +159,9 @@ export const TextsTab = ({ status, adding, onAdded }: { status: GamedataStatus; 
                                         <span className="truncate font-mono text-[13px]">{item.key}</span>
                                         <span className="truncate text-muted">{item.value || '""'}</span>
                                         <span className="max-sm:hidden sm:justify-self-end">
-                                            {item.habbo === null && <Badge tone="green">hotel's own</Badge>}
+                                            {item.plugin && item.pluginValue !== item.value && <Badge tone="amber">changed from {item.plugin}</Badge>}
+                                            {item.plugin && item.pluginValue === item.value && <Badge>{item.plugin}</Badge>}
+                                            {!item.plugin && item.habbo === null && <Badge tone="green">hotel's own</Badge>}
                                             {item.habbo !== null && item.habbo !== item.value && <Badge tone="amber">changed</Badge>}
                                         </span>
                                     </div>

@@ -571,6 +571,9 @@ export interface TextEntry {
     value: string;
     /** Habbo's as last taken in; null for the hotel's own. */
     habbo: string | null;
+    /** The plugin that brought it, and its text as the plugin gives it (its default); null for none. */
+    plugin?: string | null;
+    pluginValue?: string | null;
 }
 
 export interface TextSearchResult {
@@ -596,9 +599,9 @@ export const useTextImport = () => {
     });
 };
 
-export const useTextSearch = (text: string, page: number) => useQuery({
-    queryKey: [ 'gamedata', 'texts', 'search', text, page ],
-    queryFn: () => api<TextSearchResult>(`/gamedata/texts?${new URLSearchParams({ q: text, page: String(page) })}`),
+export const useTextSearch = (text: string, page: number, plugin?: string | null) => useQuery({
+    queryKey: [ 'gamedata', 'texts', 'search', text, page, plugin ?? null ],
+    queryFn: () => api<TextSearchResult>(`/gamedata/texts?${new URLSearchParams({ q: text, page: String(page), ...(plugin ? { plugin } : {}) })}`),
     placeholderData: keepPreviousData,
 });
 

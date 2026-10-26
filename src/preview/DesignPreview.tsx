@@ -1,5 +1,5 @@
 import { Crosshair } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, type Ref, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 
 import { useClientAssets } from '#/api/assets';
 import { useCatalogTree } from '#/api/catalog';
@@ -41,6 +41,41 @@ export interface DesignSelection {
     key: string | null;
     tag: string;
     name: string | null;
+    /** What it is drawn with, its patches applied (the client's own element). */
+    element?: DesignElementValues;
+}
+
+/** A picked element's own values as the client draws it, as a patch's `set` names them. */
+export interface DesignElementValues {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    color: number | string | null;
+    hidden: boolean;
+    vars: Record<string, unknown>;
+    params: Record<string, unknown>;
+}
+
+/** A box in the preview's own pixels (the frame's CSS pixels, from its top left). */
+export interface DesignBox {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+/** Where the outlined element is drawn: `scale` is a patch's pixels per preview pixel. */
+export interface DesignRects {
+    key: string;
+    rects: DesignBox[];
+    scale: number;
+}
+
+/** What an editor drawing over the preview can ask of it. */
+export interface DesignPreviewControls {
+    /** Picks the element at a point of the preview (its own pixels), as a press there would. */
+    pick: (x: number, y: number) => void;
 }
 
 interface DesignReport {
@@ -52,7 +87,19 @@ interface DesignReport {
     missingStyles: string[];
 }
 
-type HostMessage = { type: typeof MESSAGE_TYPE; event: 'ready' | 'shown' | 'error' | 'report' | 'select'; message?: string; template?: string; base?: boolean; key?: string | null; tag?: string; name?: string | null } & Partial<DesignReport>;
+type HostMessage = {
+    type: typeof MESSAGE_TYPE;
+    event: 'ready' | 'shown' | 'error' | 'report' | 'select' | 'rect';
+    message?: string;
+    template?: string;
+    base?: boolean;
+    key?: string | null;
+    tag?: string;
+    name?: string | null;
+    element?: DesignElementValues;
+    rects?: DesignBox[];
+    scale?: number;
+} & Partial<DesignReport>;
 
 const isHostMessage = (data: unknown): data is HostMessage => (typeof data === 'object') && (data !== null) && ((data as HostMessage).type === MESSAGE_TYPE);
 
@@ -86,8 +133,15 @@ interface DesignPreviewProps {
     owner?: string;
     /** The element outlined in the preview (a row hovered in a tree). */
     highlight?: string | null;
+    /** An editor's own pick, outlined in place of the last press's (null: none). */
+    selected?: string | null;
     /** A press in the preview: the element it picked. */
     onSelect?: (selection: DesignSelection) => void;
+    /** Where the outlined element is drawn, each time it moves. */
+    onRects?: (rects: DesignRects) => void;
+    /** Drawn over the window, in its pixels: a visual editor's handles. */
+    overlay?: ReactNode;
+    controls?: Ref<DesignPreviewControls | null>;
 }
 
 /**
@@ -98,7 +152,7 @@ interface DesignPreviewProps {
  * as the client itself worked it out. The client listens only to the origins its
  * `preview.allowed_origins` names: until the hotel names the panel's there, it stays on its loading screen.
  */
-export const DesignPreview = ({ template, part, draft, owner, highlight, onSelect }: DesignPreviewProps) => {
+export const DesignPreview = ({ template, part, draft, owner, highlight, selected, onSelect, onRects, overlay, controls }: DesignPreviewProps) => {
     const assets = useClientAssets();
     const url = assets?.preview || null;
     const frame = useRef<HTMLIFrameElement>(null);
@@ -108,6 +162,7 @@ export const DesignPreview = ({ template, part, draft, owner, highlight, onSelec
     const [ report, setReport ] = useState<DesignReport | null>(null);
     const [ picked, setPicked ] = useState<DesignSelection | null>(null);
     const select = useRef(onSelect);
+    const rects = useRef(onRects);
     const origin = url ? new URL(url).origin : null;
     const catalog = useCatalogTree().data;
     const items = useMemo(() => designSamples(template, { catalog, catalogIcon: assets?.catalogIcon ?? '' }), [ template, catalog, assets?.catalogIcon ]);
@@ -116,7 +171,14 @@ export const DesignPreview = ({ template, part, draft, owner, highlight, onSelec
 
     useEffect(() => {
         select.current = onSelect;
-    }, [ onSelect ]);
+        rects.current = onRects;
+    }, [ onSelect, onRects ]);
+
+    useImperativeHandle(controls, () => ({
+        pick: (x: number, y: number) => {
+            if (origin) frame.current?.contentWindow?.postMessage({ type: MESSAGE_TYPE, window: 'design', pick: { x, y } }, origin);
+        },
+    }), [ origin ]);
 
     useEffect(() => {
         if (!origin) return;
@@ -130,8 +192,10 @@ export const DesignPreview = ({ template, part, draft, owner, highlight, onSelec
             else if (data.event === 'error') setError(data.message ?? 'error');
             else if (data.event === 'shown') setError(null);
             else if (data.event === 'report') setReport({ owners: data.owners ?? [], unmatched: data.unmatched ?? [], ineffective: data.ineffective ?? [], conflicts: data.conflicts ?? [], errors: data.errors ?? [], missingStyles: data.missingStyles ?? [] });
-            else if (data.event === 'select') {
-                const selection = { template: data.template ?? '', key: data.key ?? null, tag: data.tag ?? '', name: data.name ?? null };
+            else if (data.event === 'rect') {
+                if (typeof data.key === 'string') rects.current?.({ key: data.key, rects: data.rects ?? [], scale: data.scale ?? 1 });
+            } else if (data.event === 'select') {
+                const selection = { template: data.template ?? '', key: data.key ?? null, tag: data.tag ?? '', name: data.name ?? null, ...(data.element ? { element: data.element } : {}) };
 
                 setPicked(selection);
                 select.current?.(selection);
@@ -164,8 +228,8 @@ export const DesignPreview = ({ template, part, draft, owner, highlight, onSelec
     useEffect(() => {
         if (!ready || !origin) return;
 
-        frame.current?.contentWindow?.postMessage({ type: MESSAGE_TYPE, window: 'design', highlight: highlight ?? picked?.key ?? null }, origin);
-    }, [ ready, origin, highlight, picked ]);
+        frame.current?.contentWindow?.postMessage({ type: MESSAGE_TYPE, window: 'design', highlight: highlight ?? ((selected !== undefined) ? selected : picked?.key) ?? null }, origin);
+    }, [ ready, origin, highlight, selected, picked ]);
 
     if (!url) return <p className="text-xs text-muted">No preview: the server knows no client to draw it with (Turbo:Admin:ClientPreviewUrl, else Turbo:Admin:ClientConfigUrl).</p>;
 
@@ -180,9 +244,12 @@ export const DesignPreview = ({ template, part, draft, owner, highlight, onSelec
                 </span>
             </div>
             <div className="overflow-auto rounded-xl border border-line bg-black">
-                <iframe ref={frame} src={url} title="The window in the game" style={{ width: FRAME_WIDTH, height: FRAME_HEIGHT }} className="block border-0" />
+                <div className="relative" style={{ width: FRAME_WIDTH, height: FRAME_HEIGHT }}>
+                    <iframe ref={frame} src={url} title="The window in the game" style={{ width: FRAME_WIDTH, height: FRAME_HEIGHT }} className="block border-0" />
+                    {overlay && !base && <div className="pointer-events-none absolute inset-0">{overlay}</div>}
+                </div>
             </div>
-            {picked && (
+            {picked && (selected === undefined) && (
                 <p className="flex items-center gap-1.5 text-xs">
                     <Crosshair className="size-3.5 text-accent" />
                     {picked.key === null

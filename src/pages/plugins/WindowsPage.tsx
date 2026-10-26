@@ -17,6 +17,7 @@ import { usePathTab } from '#/lib/tabs';
 import { DesignPreview } from '#/preview/DesignPreview';
 
 import { PatchEditor } from './PatchesPage';
+import { SkinSetUpload } from './SkinSetUpload';
 import { WindowTree } from './WindowTree';
 
 const TABS = [
@@ -220,36 +221,39 @@ const SkinsTab = () => {
     const found = Object.entries(skins?.skins ?? {}).filter(([ id, skin ]) => !words || id.toLowerCase() === words || (!params.get('skin') && (id.toLowerCase().includes(words) || skin.sprites.some(sprite => sprite.sprite.includes(words)) || Object.keys(skin.windows).some(win => win.toLowerCase().includes(words)))));
 
     return (
-        <Panel className="overflow-clip">
-            <div className="flex flex-wrap items-center gap-2 border-b border-line p-3">
-                <SearchInput
-                    value={text}
-                    onValueChange={(value) => {
-                        setText(value);
-                        setParams({}, { replace: true });
-                    }}
-                    placeholder="Skin (frame:3), sprite or window"
-                    className="min-w-48 flex-1 sm:max-w-96"
-                    aria-label="Find skins"
-                />
-                {skins && <span className="text-xs text-muted">{`${found.length} of ${Object.keys(skins.skins).length} skins`}</span>}
-                {replacing?.canManage && (
-                    <label className="ml-auto flex items-center gap-2 text-xs text-muted">
-                        Upload replacements into
-                        <Select aria-label="Plugin the replacements are uploaded into" value={target} onChange={event => setTarget(event.target.value)} className="w-auto">
-                            {targets.map(key => <option key={key} value={key}>{key === 'hotel' ? 'hotel (this hotel\'s own)' : key}</option>)}
-                        </Select>
-                    </label>
-                )}
-            </div>
-            {error && <div className="p-4"><ErrorNotice error={error} /></div>}
-            {overlaysError && <div className="p-4"><ErrorNotice error={overlaysError} /></div>}
-            {sheetError && <div className="p-4"><ErrorNotice error={sheetError} /></div>}
-            {assets && !assets.templates && <p className="border-b border-line p-3 text-xs text-muted">The sprites aren&apos;t drawn: the hotel&apos;s external variables name no asset.bundles.templates, where the client loads its theme sheet.</p>}
-            {!skins && !error && <Loading />}
-            {skins && found.length === 0 && <EmptyState>No skin has those words.</EmptyState>}
-            <ul className="divide-y divide-line">{found.slice(0, LIST_LIMIT).map(([ id, skin ]) => <li key={id}><SkinCard id={id} skin={skin} sheet={sheet} replacing={replacing} /></li>)}</ul>
-        </Panel>
+        <>
+            {skins && replacing?.canManage && <SkinSetUpload skins={skins} target={target} canManage={replacing.canManage} />}
+            <Panel className="overflow-clip">
+                <div className="flex flex-wrap items-center gap-2 border-b border-line p-3">
+                    <SearchInput
+                        value={text}
+                        onValueChange={(value) => {
+                            setText(value);
+                            setParams({}, { replace: true });
+                        }}
+                        placeholder="Skin (frame:3), sprite or window"
+                        className="min-w-48 flex-1 sm:max-w-96"
+                        aria-label="Find skins"
+                    />
+                    {skins && <span className="text-xs text-muted">{`${found.length} of ${Object.keys(skins.skins).length} skins`}</span>}
+                    {replacing?.canManage && (
+                        <label className="ml-auto flex items-center gap-2 text-xs text-muted">
+                            Upload replacements into
+                            <Select aria-label="Plugin the replacements are uploaded into" value={target} onChange={event => setTarget(event.target.value)} className="w-auto">
+                                {targets.map(key => <option key={key} value={key}>{key === 'hotel' ? 'hotel (this hotel\'s own)' : key}</option>)}
+                            </Select>
+                        </label>
+                    )}
+                </div>
+                {error && <div className="p-4"><ErrorNotice error={error} /></div>}
+                {overlaysError && <div className="p-4"><ErrorNotice error={overlaysError} /></div>}
+                {sheetError && <div className="p-4"><ErrorNotice error={sheetError} /></div>}
+                {assets && !assets.templates && <p className="border-b border-line p-3 text-xs text-muted">The sprites aren&apos;t drawn: the hotel&apos;s external variables name no asset.bundles.templates, where the client loads its theme sheet.</p>}
+                {!skins && !error && <Loading />}
+                {skins && found.length === 0 && <EmptyState>No skin has those words.</EmptyState>}
+                <ul className="divide-y divide-line">{found.slice(0, LIST_LIMIT).map(([ id, skin ]) => <li key={id}><SkinCard id={id} skin={skin} sheet={sheet} replacing={replacing} /></li>)}</ul>
+            </Panel>
+        </>
     );
 };
 

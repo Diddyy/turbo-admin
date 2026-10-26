@@ -218,3 +218,67 @@ export const downloadPluginPackage = async (key: string, request: PluginPackageR
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
+
+/**
+ * A skin set: many library bitmaps replaced (a url each) or given back (null) for the hotel in one
+ * change, each checked before any is written; a bitmap the base theme declares as an image style goes
+ * through that style. Answers the hotel's `asset.overlays` entries after.
+ */
+export const useOverlaysChange = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (overlays: Record<string, string | null>) => put<{ overlays: Record<string, string> }>('/plugins/hotel-overlays', { overlays }),
+        onSettled: () => Promise.all([
+            queryClient.invalidateQueries({ queryKey: [ 'gamedata', 'variables' ] }),
+            queryClient.invalidateQueries({ queryKey: stylesKey('hotel') }),
+        ]),
+    });
+};
+
+/** A font file in a plugin's `wwwroot/styles/`: `family` is what a font style or a text style names it by. */
+export interface PluginFont {
+    path: string;
+    url: string | null;
+    family: string;
+    bytes: number;
+    modified: string;
+}
+
+export interface PluginFontsResponse {
+    key: string;
+    fonts: PluginFont[];
+    canManage: boolean;
+}
+
+/** The font files a font can be: WOFF2, WOFF, TrueType, OpenType. */
+export const FONT_TYPES = '.woff2,.woff,.ttf,.otf,font/woff2,font/woff,font/ttf,font/otf';
+
+const fontsKey = (key: string) => [ 'plugins', key, 'fonts' ];
+
+export const usePluginFonts = (key: string) => useQuery({
+    queryKey: fontsKey(key),
+    queryFn: () => api<PluginFontsResponse>(`/plugins/${encodeURIComponent(key)}/fonts`),
+});
+
+/** Uploads a font into the plugin's `wwwroot/styles/` (clients load it as its file's name), or takes one away with its family. */
+export const useFontChange = (key: string) => {
+    const queryClient = useQueryClient();
+    const base = `/plugins/${encodeURIComponent(key)}/fonts`;
+
+    return useMutation({
+        mutationFn: ({ file, path }: { file?: File; path?: string }) => {
+            if (path) return remove<undefined>(`${base}?path=${encodeURIComponent(path)}`);
+
+            const form = new FormData();
+
+            form.append('file', file!);
+
+            return postForm<PluginFont>(base, form);
+        },
+        onSettled: () => Promise.all([
+            queryClient.invalidateQueries({ queryKey: fontsKey(key) }),
+            queryClient.invalidateQueries({ queryKey: [ 'gamedata', 'variables' ] }),
+        ]),
+    });
+};

@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 
 import { useClientAssets } from '#/api/assets';
-import { type PluginImage, type PluginStyle, useImageChange, usePluginImages, usePluginStyles, useStyleChange } from '#/api/noCode';
+import { FONT_TYPES, type PluginFont, type PluginImage, type PluginStyle, useFontChange, useImageChange, usePluginFonts, usePluginImages, usePluginStyles, useStyleChange } from '#/api/noCode';
 import { type TemplateIndex, useTemplateIndex } from '#/api/windows';
 import { useSaved } from '#/components/SaveFeedback';
 import { toast, toastError } from '#/components/toast';
@@ -18,6 +18,9 @@ import { PackageDialog } from './PackageDialog';
 const pickerValue = (value: string) => /^#[0-9a-f]{6,8}$/i.test(value) ? `#${value.slice(-6)}` : '#000000';
 
 const IMAGE_TYPES = 'image/png,image/gif,image/jpeg,image/webp';
+
+/** The faces the client ships, which a font style names as they are (nitro-next `docs/text.md`). */
+const SHIPPED_FONTS = [ 'Ubuntu', 'UbuntuCondensed', 'Volter', 'Volter Bold' ];
 
 /** What a style with no value shows: the base theme's are the client's own, Habbo's look. */
 const CLIENTS_OWN = 'Habbo\'s own';
@@ -63,8 +66,11 @@ const clientValues = (style: PluginStyle, value: string): { style: unknown; vari
     return ((style.type === 'font') || (style.type === 'text')) && text ? { style: text, variable: text } : undefined;
 };
 
-/** The unsaved values as a preview's draft: each in `templates.styles` and in the variable it goes to. */
-const styleDraft = (pluginKey: string, styles: readonly PluginStyle[], values: Readonly<Record<string, string>>): DesignDraft => {
+/**
+ * The unsaved values as a preview's draft: each in `templates.styles` and in the variable it goes to; a
+ * font that was uploaded also its `text.fonts` entry, so the preview loads its file.
+ */
+const styleDraft = (pluginKey: string, styles: readonly PluginStyle[], values: Readonly<Record<string, string>>, fonts: readonly PluginFont[]): DesignDraft => {
     const draft: Required<Pick<DesignDraft, 'styles' | 'variables'>> = { styles: {}, variables: [] };
 
     for (const style of styles) {
@@ -76,6 +82,10 @@ const styleDraft = (pluginKey: string, styles: readonly PluginStyle[], values: R
         draft.styles[`${pluginKey}:${style.name}`] = client.style;
 
         if (style.variable.length > 1) draft.variables.push({ path: style.variable, value: client.variable });
+
+        const font = (style.type === 'font') ? fonts.find(each => each.family === value?.trim()) : undefined;
+
+        if (font?.url) draft.variables.push({ path: [ 'text.fonts', font.family ], value: font.url });
     }
 
     return draft;
@@ -91,13 +101,14 @@ const windowOfStyle = (index: TemplateIndex | undefined, style: PluginStyle | un
 };
 
 /** One style: its picker, what the hotel has, and Reset back to the theme's default. */
-const StyleRow = ({ pluginKey, style, canManage, images, onDraft }: { pluginKey: string; style: PluginStyle; canManage: boolean; images: PluginImage[]; onDraft?: (name: string, value: string) => void }) => {
+const StyleRow = ({ pluginKey, style, canManage, images, fonts, onDraft }: { pluginKey: string; style: PluginStyle; canManage: boolean; images: PluginImage[]; fonts: PluginFont[]; onDraft?: (name: string, value: string) => void }) => {
     const [ value, setOwnValue ] = useState(style.value ?? '');
     const setValue = (next: string) => {
         setOwnValue(next);
         onDraft?.(style.name, next);
     };
     const change = useStyleChange(pluginKey);
+    const fontChange = useFontChange(pluginKey);
     const saved = useSaved();
     const dirty = value !== (style.value ?? '');
     const said = { onSuccess: () => saved(style.label ?? style.name), onError: toastError };
@@ -123,6 +134,40 @@ const StyleRow = ({ pluginKey, style, canManage, images, onDraft }: { pluginKey:
                 {style.type === 'number' && <Input type="number" aria-label={style.name} value={value} min={style.min ?? undefined} max={style.max ?? undefined} disabled={!canManage} onChange={event => setValue(event.target.value)} className="w-32" />}
                 {style.type === 'position' && <Input aria-label={style.name} value={value} placeholder={`x,y - ${CLIENTS_OWN}`} disabled={!canManage} onChange={event => setValue(event.target.value)} className="w-40 font-mono" />}
                 {(style.type === 'font' || style.type === 'text') && <Input aria-label={style.name} value={value} placeholder={CLIENTS_OWN} disabled={!canManage} onChange={event => setValue(event.target.value)} className="w-64" style={style.type === 'font' ? { fontFamily: value } : undefined} />}
+                {style.type === 'font' && canManage && (
+                    <>
+                        <select
+                            aria-label={`${style.name} font`}
+                            value=""
+                            className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm"
+                            onChange={(event) => {
+                                if (event.target.value) setValue(event.target.value);
+                            }}
+                        >
+                            <option value="">Pick a font</option>
+                            <optgroup label="The client's">{SHIPPED_FONTS.map(face => <option key={face} value={face}>{face}</option>)}</optgroup>
+                            {fonts.length > 0 && <optgroup label="Uploaded">{fonts.map(font => <option key={font.path} value={font.family}>{font.family}</option>)}</optgroup>}
+                        </select>
+                        <label className={`inline-flex items-center gap-1 text-sm text-accent ${fontChange.isPending ? 'opacity-50' : 'cursor-pointer hover:underline'}`}>
+                            <Upload className="size-4" />
+                            {fontChange.isPending ? 'Uploading...' : 'Upload a font'}
+                            <input
+                                type="file"
+                                accept={FONT_TYPES}
+                                aria-label={`Upload a font for ${style.name}`}
+                                className="sr-only"
+                                disabled={fontChange.isPending}
+                                onChange={(event) => {
+                                    const file = event.target.files?.[0];
+
+                                    event.target.value = '';
+
+                                    if (file) fontChange.mutate({ file }, { onSuccess: font => font && setValue(font.family), onError: toastError });
+                                }}
+                            />
+                        </label>
+                    </>
+                )}
                 {style.type === 'image' && (
                     <>
                         {style.value && /^(\/|https?:)/.test(style.value) && <img src={style.value} alt="" className="max-h-12 max-w-32 rounded border border-line bg-subtle object-contain" />}
@@ -237,6 +282,63 @@ export const ImagesPanel = ({ pluginKey }: { pluginKey: string }) => {
 };
 
 /**
+ * The plugin's fonts (its `wwwroot/styles/`): upload a WOFF2, WOFF, TrueType or OpenType file and
+ * clients load it as the family its name says, which a font style property then picks; take one away
+ * with its family.
+ */
+export const FontsPanel = ({ pluginKey }: { pluginKey: string }) => {
+    const { data, error } = usePluginFonts(pluginKey);
+    const change = useFontChange(pluginKey);
+
+    return (
+        <Panel
+            title="Fonts"
+            description="A font file is given to players' clients as the family its file name says (pixel.woff2 is pixel): pick it on a font style property (Fonts > Text, Window titles)."
+        >
+            {error && <ErrorNotice error={error} />}
+            {!data && !error && <Loading />}
+            {data?.canManage && (
+                <div className="px-4 py-3">
+                    <label className="inline-flex cursor-pointer items-center gap-1 text-sm text-accent hover:underline">
+                        <Upload className="size-4" />
+                        Upload a font (WOFF2, WOFF, TTF or OTF, at most 2 MB)
+                        <input
+                            type="file"
+                            accept={FONT_TYPES}
+                            aria-label="Upload a font"
+                            className="sr-only"
+                            onChange={(event) => {
+                                const file = event.target.files?.[0];
+
+                                event.target.value = '';
+
+                                if (file) change.mutate({ file }, { onSuccess: font => toast(`Uploaded ${font!.path}: clients load it as ${font!.family}.`), onError: toastError });
+                            }}
+                        />
+                    </label>
+                </div>
+            )}
+            {data && data.fonts.length === 0 && <EmptyState>No fonts yet.</EmptyState>}
+            <ul className="divide-y divide-line">
+                {data?.fonts.map(font => (
+                    <li key={font.path} className="flex flex-wrap items-center gap-3 px-4 py-2">
+                        <span className="font-medium">{font.family}</span>
+                        <code className="font-mono text-sm text-muted">{font.path}</code>
+                        <Button variant="ghost" icon={<Copy />} onClick={() => copy(font.family)}>Family</Button>
+                        <span className="text-xs text-muted">{`${Math.ceil(font.bytes / 1024)} KB`}</span>
+                        {data.canManage && (
+                            <Button variant="ghost" icon={<Trash2 />} className="ml-auto" disabled={change.isPending} onClick={() => change.mutate({ path: font.path }, { onSuccess: () => toast(`Removed ${font.path}.`), onError: toastError })}>
+                                Remove
+                            </Button>
+                        )}
+                    </li>
+                ))}
+            </ul>
+        </Panel>
+    );
+};
+
+/**
  * A theme's style properties (its `theme.json`, and those of the theme it extends) with the hotel's
  * values: staff change a colour, size, image or font once and every patch naming it follows, at each
  * player's next load. The hotel's own plugin extends the base theme, Habbo's look.
@@ -246,6 +348,10 @@ export const ThemePage = () => {
     const [ params, setParams ] = useSearchParams();
     const { data, error } = usePluginStyles(key);
     const images = usePluginImages(key).data?.images ?? [];
+    const ownFonts = usePluginFonts(key).data?.fonts;
+    const hotelFonts = usePluginFonts('hotel').data?.fonts;
+    // The plugin's fonts and the hotel's: each is given to clients as the hotel's text.fonts entry.
+    const fonts = useMemo(() => [ ...(ownFonts ?? []), ...(key === 'hotel' ? [] : hotelFonts ?? []) ], [ ownFonts, hotelFonts, key ]);
     const assets = useClientAssets();
     const [ packaging, setPackaging ] = useState(false);
     const all = Map.groupBy(data?.styles ?? [], style => style.group ?? 'Styles');
@@ -257,7 +363,7 @@ export const ThemePage = () => {
     const [ values, setValues ] = useState<Record<string, string>>({});
     const [ previewed, setPreviewed ] = useState<string | null>(null);
     const styles = useMemo(() => data?.styles ?? [], [ data ]);
-    const draft = useMemo(() => styleDraft(key, styles, values), [ key, styles, values ]);
+    const draft = useMemo(() => styleDraft(key, styles, values, fonts), [ key, styles, values, fonts ]);
     const windows = useMemo(() => [ ...new Set(styles.map(style => windowOfStyle(index, style)).filter(id => id !== undefined)) ], [ index, styles ]);
     const shownWindow = previewed ?? windows[0] ?? null;
     const onDraft = (name: string, value: string) => {
@@ -312,7 +418,7 @@ export const ThemePage = () => {
                 {groups.map(([ name, inGroup ]) => (
                     <Panel key={name} title={name} description={GROUP_HINTS[name]}>
                         <ul className="divide-y divide-line">
-                            {inGroup.map(style => <StyleRow key={`${style.name}-${style.value}`} pluginKey={key} style={style} canManage={data!.canManage} images={images} onDraft={onDraft} />)}
+                            {inGroup.map(style => <StyleRow key={`${style.name}-${style.value}`} pluginKey={key} style={style} canManage={data!.canManage} images={images} fonts={fonts} onDraft={onDraft} />)}
                         </ul>
                     </Panel>
                 ))}

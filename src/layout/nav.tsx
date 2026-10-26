@@ -1,4 +1,4 @@
-import { Activity, AppWindow, Armchair, BellRing, Bug, CalendarClock, CalendarDays, ChartColumn, CloudDownload, Coins, Disc3, DoorOpen, Flag, FunnelX, Gauge, History, House, ImageIcon, KeyRound, Landmark, Languages, Layers, Mail, MessageCircle, MessagesSquare, Milestone, MonitorSmartphone, PackagePlus, Palette, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, SwatchBook, Ticket, Timer, TriangleAlert, Type, UserRound, Users } from 'lucide-react';
+import { Activity, AppWindow, Armchair, BellRing, Bug, CalendarClock, CalendarDays, ChartColumn, CloudDownload, Coins, Disc3, DoorOpen, Flag, FunnelX, Gauge, History, House, ImageIcon, Images, KeyRound, Landmark, Languages, Layers, Mail, MessageCircle, MessagesSquare, Milestone, MonitorSmartphone, PackagePlus, Palette, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, SwatchBook, Ticket, Timer, TriangleAlert, Type, UserRound, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router';
 
@@ -48,6 +48,7 @@ const PAGES = {
     content: { to: '/content', label: 'Content', icon: <Puzzle />, end: false, key: 't', needs: 'canViewContent', words: 'achievements badges pets currencies daily tasks' },
     updates: { to: '/gamedata/updates', label: 'Habbo updates', icon: <CloudDownload />, end: false, key: 'g', needs: 'canViewGamedata' },
     library: { to: '/gamedata/library', label: 'Library', icon: <Armchair />, end: false, key: 'f', needs: 'canViewGamedata', words: 'furniture definitions furnidata logic bundles clothing figures effects pets' },
+    media: { to: '/gamedata/media', label: 'Media library', icon: <Images />, end: false, needs: 'canViewGamedata', words: 'images pictures upload picker web_promo c_images badges icons assets photos' },
     texts: { to: '/gamedata/products', also: [ '/gamedata/texts', '/gamedata/variables' ], label: 'Texts & variables', icon: <Languages />, end: false, key: 'x', needs: 'canViewGamedata', words: 'product data external texts variables' },
     publish: { to: '/gamedata/publish', label: 'Publish', icon: <Send />, end: false, key: 'n', needs: 'canViewGamedata' },
     themes: { to: '/appearance/themes', label: 'Themes', icon: <Palette />, end: false, key: 'z', needs: 'canViewPlugins', words: 'look design styles extends habbo theme.json' },
@@ -148,6 +149,7 @@ const SECTIONS: NavSection[] = [
         entries: [
             { label: 'Habbo updates', icon: <CloudDownload />, pages: [ 'updates' ], hint: 'What Habbo has that the hotel hasn\'t taken in' },
             { label: 'Library', icon: <Armchair />, pages: [ 'library' ], hint: 'Furniture, clothing, effects and pets' },
+            { label: 'Media library', icon: <Images />, pages: [ 'media' ], hint: 'Every image the hotel shows: find, upload, see where it is used' },
             { label: 'Texts & variables', icon: <Languages />, pages: [ 'texts' ], hint: 'Product data, external texts and variables' },
             { label: 'Publish', icon: <Send />, pages: [ 'publish' ], hint: 'Publish targets, client files and checks' },
         ],

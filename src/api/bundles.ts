@@ -14,7 +14,7 @@ import { api, API_URL, apiBlob, ApiError, MESSAGES, post, put, remove } from './
  * out a hotel's assets: the `.nitro` bundles, then the furniture's icons, the badges, the catalog's
  * pictures and the trax samples.
  */
-export type BundleKind = 'furniture' | 'figure' | 'effect' | 'pet' | 'template' | 'room' | 'furni-icon' | 'catalog-icon' | 'badge' | 'catalog-image' | 'sound';
+export type BundleKind = 'furniture' | 'figure' | 'effect' | 'pet' | 'template' | 'room' | 'furni-icon' | 'catalog-icon' | 'badge' | 'catalog-image' | 'sound' | 'library-image';
 
 export type BundleStatus = 'all' | 'ok' | 'failed' | 'unused';
 
@@ -32,6 +32,7 @@ export const BUNDLE_KINDS: { value: BundleKind; label: string; one: string }[] =
     { value: 'badge', label: 'Badges', one: 'badge' },
     { value: 'catalog-image', label: 'Catalog pictures', one: 'catalog picture' },
     { value: 'sound', label: 'Trax samples', one: 'trax sample' },
+    { value: 'library-image', label: 'Image library', one: 'image library picture' },
 ];
 
 export const PROTOCOLS: { value: TargetProtocol; label: string }[] = [

@@ -59,11 +59,15 @@ const HistoryModal = ({ target, onClose }: { target: AssetTarget | null; onClose
     );
 };
 
+/** Comparing reads the target with its stored password, as testing it does: staff who may only see get it greyed. */
+const NEEDS_MANAGE = 'Needs gamedata.manage';
+
 /**
  * What a target lacks or holds an older copy of, as a publish would send it (largest first): each
- * file's path, size and why, found by its path, with the totals of all of it.
+ * file's path, size and why, found by its path, with the totals of all of it. A changed file can be
+ * compared with the copy the target holds, by staff who may manage the assets.
  */
-const PendingList = ({ target }: { target: AssetTarget }) => {
+const PendingList = ({ target, canManage }: { target: AssetTarget; canManage: boolean }) => {
     const [ text, setText ] = useState('');
     const [ page, setPage ] = useState(0);
     // The file compared, '' for every changed one; null while none is.
@@ -81,11 +85,19 @@ const PendingList = ({ target }: { target: AssetTarget }) => {
                         <p className="min-w-0 flex-1 text-xs text-muted">
                             {`${data.count.toLocaleString()} ${data.count === 1 ? 'file' : 'files'}, ${formatBytes(data.bytes)}: ${data.new.toLocaleString()} never sent, ${data.changed.toLocaleString()} changed since sent`}
                         </p>
-                        {data.changed > 0 && (
-                            <Button variant="ghost" icon={<GitCompare />} className="h-8 shrink-0 px-2 text-xs sm:h-7" onClick={() => setComparing('')}>
-                                Compare all
-                            </Button>
-                        )}
+                        {data.changed > 0 && (canManage
+                            ? (
+                                    <Button variant="ghost" icon={<GitCompare />} className="h-8 shrink-0 px-2 text-xs sm:h-7" onClick={() => setComparing('')}>
+                                        Compare all
+                                    </Button>
+                                )
+                            : (
+                                    <span title={NEEDS_MANAGE} className="inline-flex shrink-0">
+                                        <Button variant="ghost" icon={<GitCompare />} disabled aria-label={`Compare all: ${NEEDS_MANAGE}`} className="h-8 px-2 text-xs sm:h-7">
+                                            Compare all
+                                        </Button>
+                                    </span>
+                                ))}
                     </div>
                     <div className="flex items-center gap-2">
                         <SearchInput
@@ -109,7 +121,9 @@ const PendingList = ({ target }: { target: AssetTarget }) => {
                                             <span className="min-w-0 flex-1 truncate font-mono" title={file.path}>{file.path}</span>
                                             <span className="shrink-0 text-muted tabular-nums">{formatBytes(file.size)}</span>
                                             {file.change === 'changed' && (
-                                                <IconButton small label={`Compare ${file.path}`} icon={<GitCompare />} onClick={() => setComparing(file.path)} />
+                                                canManage
+                                                    ? <IconButton small label={`Compare ${file.path}`} icon={<GitCompare />} onClick={() => setComparing(file.path)} />
+                                                    : <IconButton small disabled label={`Compare ${file.path}: ${NEEDS_MANAGE}`} icon={<GitCompare />} />
                                             )}
                                         </li>
                                     ))}
@@ -237,7 +251,7 @@ const TargetCard = ({ target, canManage, busy, onEdit, onHistory }: { target: As
                 )}
             </dl>
 
-            {showPending && target.pending > 0 && <PendingList target={target} />}
+            {showPending && target.pending > 0 && <PendingList target={target} canManage={canManage} />}
 
             {(test.data || test.error) && (
                 <div className="px-4 pb-3">

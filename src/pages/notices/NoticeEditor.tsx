@@ -9,7 +9,7 @@ import {
     AUDIENCE_OPTIONS, AUTO_OPEN_NOT_CLAIMED, CLOSE_OPTIONS, CONDITION_REWARD_TRACK, DEFAULT_COLOR, descKey, fromLocalInput, habboDifferences, type Notice, NOTICE_TYPES, type NoticeField,
     type NoticeText, parseColor, splitCondition, toLocalInput,
 } from './model';
-import { NoticeImagePicker } from './NoticeImagePicker';
+import { NoticeImage } from './NoticeImage';
 import { NoticePreview } from './NoticePreview';
 
 /** Where a notice's click goes: a client link, a web page, or nowhere. */
@@ -64,7 +64,7 @@ export const NoticeEditor = ({ notice, onChange, disabled }: { notice: Notice; o
                 <p className="text-xs text-muted">Habbo&apos;s notices have no title: the words are all the text they show.</p>
             </Section>
             <Section title="Picture">
-                <NoticeImagePicker value={notice.fields.image} onChange={value => set('image', value)} disabled={disabled} />
+                <NoticeImage value={notice.fields.image} onChange={value => set('image', value)} disabled={disabled} />
             </Section>
             <Section title="Look">
                 <div className="grid gap-4 sm:grid-cols-2">

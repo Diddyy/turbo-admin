@@ -4,12 +4,13 @@ import { type ReactNode, useState } from 'react';
 
 import { catalogCalls, type CatalogTree, type GeneratedPage, type GenerateMode, type GeneratePageEdit, type GeneratePlan, type GenerateRequest, type GenerateSection, useCatalogEdit } from '#/api/catalog';
 import { ask } from '#/components/confirm';
+import { ImagePicker } from '#/components/ImagePicker';
 import { celebrate, toast, toastError } from '#/components/toast';
 import { Button, EmptyState, ErrorNotice, Input, Label, Labeled, Stat, Switch, TextButton } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 import { type Price, PriceFields } from './fields';
-import { IconPicker } from './IconPicker';
+import { CATALOG_ICON } from './images';
 import { layoutOf } from './layouts';
 import { PageIcon } from './PageTree';
 
@@ -354,11 +355,18 @@ export const GenerateCatalog = ({ tree, onDone }: { tree: CatalogTree; onDone: (
                     </>
                 )}
             </div>
-            <IconPicker
-                value={pickedPage ? edits.get(pickedPage.key)?.icon ?? pickedPage.icon : 0}
+            <ImagePicker
                 open={!!pickedPage}
-                onPick={icon => picking && editPage(picking, { icon: pickedPage && icon === pickedPage.icon ? null : icon })}
+                title="Pick an icon"
+                accept={CATALOG_ICON}
+                value={String(pickedPage ? edits.get(pickedPage.key)?.icon ?? pickedPage.icon : 0)}
+                onPick={(picked) => {
+                    const icon = Number(picked) || 0;
+
+                    if (picking) editPage(picking, { icon: pickedPage && icon === pickedPage.icon ? null : icon });
+                }}
                 onClose={() => setPicking(null)}
+                none="No icon"
             />
         </div>
     );

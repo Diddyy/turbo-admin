@@ -2,20 +2,22 @@ import { CalendarClock, ImageOff, Plus, Trash2 } from 'lucide-react';
 import { type ReactNode, useId, useState } from 'react';
 
 import { useCatalogTree } from '#/api/catalog';
+import type { ImageAccept } from '#/api/media';
+import { ImageInput } from '#/components/ImageInput';
 import { Badge, Button, IconButton, Input, Labeled, Select } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 import type { HotelViewDraft } from './draft';
-import { currentCode, formatSchedule, fromLocalInput, parseSchedule, parseTime, type ScheduleEntry, toLocalInput } from './model';
+import { currentCode, formatSchedule, fromLocalInput, LIBRARY_ADDRESS, parseSchedule, parseTime, type ScheduleEntry, toLocalInput } from './model';
 
 /** A dot beside what has changed since it was saved. */
 export const Changed = ({ on }: { on: boolean }) => (on ? <span title="Not saved yet" className="inline-block size-1.5 shrink-0 rounded-full bg-accent" /> : null);
 
-/** A picture's address, with the picture beside it as the client would load it. */
-export const ImageField = ({ label, hint, value, onChange, resolve, changed, disabled, placeholder }: {
+/** A picture's address, picked in the image picker, with the picture beside it as the client would load it. */
+export const ImageField = ({ label, hint, value, onChange, resolve, changed, disabled, accept = LIBRARY_ADDRESS }: {
     label: string;
     hint?: ReactNode;
-    placeholder?: string;
+    accept?: ImageAccept;
     value: string;
     onChange: (value: string) => void;
     resolve: (uri: string) => string;
@@ -34,14 +36,7 @@ export const ImageField = ({ label, hint, value, onChange, resolve, changed, dis
             </div>
             <Labeled label={label} hint={failed === url && url ? <span className="text-warn">The picture could not be loaded from {url}.</span> : hint} className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                    <Input
-                        value={value}
-                        onChange={event => onChange(event.target.value)}
-                        placeholder={placeholder ?? '${image.library.url}reception/background.png'}
-                        className="w-full font-mono text-xs"
-                        disabled={disabled}
-                        spellCheck={false}
-                    />
+                    <ImageInput value={value} onChange={onChange} accept={accept} title={label} resolve={resolve} preview={false} disabled={disabled} className="flex-1" />
                     <Changed on={!!changed} />
                 </div>
             </Labeled>

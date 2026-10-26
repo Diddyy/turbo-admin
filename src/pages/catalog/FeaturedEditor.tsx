@@ -6,10 +6,12 @@ import { useState } from 'react';
 
 import { promoImageUrl, useClientAssets } from '#/api/assets';
 import { catalogCalls, type CatalogFeaturedInput, type CatalogFeaturedItem, type CatalogOffer, type CatalogTree, FEATURED_MAX, type FeaturedLinkType, useCatalogEdit } from '#/api/catalog';
+import { ImageInput } from '#/components/ImageInput';
 import { toast } from '#/components/toast';
 import { Button, EmptyState, ErrorNotice, IconButton, Input, Labeled, Segmented, Select } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
+import { FEATURED_IMAGE } from './images';
 import { givesOf } from './offers';
 
 interface ItemDraft extends CatalogFeaturedInput {
@@ -65,7 +67,7 @@ const ItemCard = ({ item, index, tree, offers, onChange, onRemove, disabled }: {
                     </span>
                     <div className="flex min-w-0 flex-1 flex-col gap-2">
                         <Input value={item.title} onChange={event => set('title', event.target.value)} maxLength={100} placeholder="Title" aria-label="Title" disabled={disabled} />
-                        <Input value={item.image} onChange={event => set('image', event.target.value.trim())} maxLength={255} placeholder="Promo image, e.g. web_promo_small/spromo_x.png" aria-label="Promo image" spellCheck={false} disabled={disabled} className="w-full font-mono text-xs" />
+                        <ImageInput value={item.image} onChange={value => set('image', value)} accept={FEATURED_IMAGE} title="Promo image" preview={false} disabled={disabled} />
                     </div>
                 </div>
                 <Labeled label="Clicking it opens">

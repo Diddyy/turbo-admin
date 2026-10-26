@@ -5,13 +5,14 @@ import { catalogImageUrl, useClientAssets } from '#/api/assets';
 import { catalogCalls, type CatalogPageDetail, type CatalogTree, type PageDisplay, useCatalogEdit } from '#/api/catalog';
 import { findImage, useAllCatalogImages } from '#/api/catalogImages';
 import { ask } from '#/components/confirm';
+import { ImageInput } from '#/components/ImageInput';
+import { ImagePicker } from '#/components/ImagePicker';
 import { toast } from '#/components/toast';
 import { Button, ErrorNotice, Field, IconButton, Input, Label, Labeled, Switch, Textarea } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 import { CatalogImageThumb, CHECKS } from './CatalogImageThumb';
-import { IconPicker } from './IconPicker';
-import { ImagePicker } from './ImagePicker';
+import { CATALOG_ICON, CATALOG_PICTURE } from './images';
 import { DISPLAY_LABELS, inBuildersClub } from './labels';
 import { LayoutPicker } from './LayoutPicker';
 import { isKnownLayout, layoutOf } from './layouts';
@@ -43,7 +44,7 @@ const Section = ({ title, children, action }: { title: string; children: ReactNo
  * One picture's place: the picture, found by name among those the server keeps, and the picture
  * beside it - the server's own file, or else the client's host's, for one the server lacks.
  */
-const ImageField = ({ id, label, hint, value, onChange, disabled, highlight }: { id: string; label: string; hint?: string; value: string; onChange: (value: string) => void; disabled: boolean; highlight: boolean }) => {
+const ImageField = ({ id, label, hint, role, value, onChange, disabled, highlight }: { id: string; label: string; hint?: string; role?: string; value: string; onChange: (value: string) => void; disabled: boolean; highlight: boolean }) => {
     const url = catalogImageUrl(useClientAssets(), value);
     const image = findImage(useAllCatalogImages().data?.items, value);
 
@@ -58,7 +59,7 @@ const ImageField = ({ id, label, hint, value, onChange, disabled, highlight }: {
                     )}
             <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <label htmlFor={id} className="text-xs font-medium text-muted">{label}</label>
-                <ImagePicker id={id} value={value} onChange={onChange} disabled={disabled} canUpload={!disabled} />
+                <ImageInput id={id} value={value} onChange={onChange} accept={{ ...CATALOG_PICTURE, usedIn: `catalog.${role ?? 'image'}` }} title={label} preview={false} disabled={disabled} />
                 {hint && <span className="text-[11px] text-muted">{hint}</span>}
             </div>
         </div>
@@ -327,6 +328,7 @@ export const PageInspector = ({ tree, page, draft, onDraft, focus, onOpen }: Pag
                                     id={`slot-image-${slot.index}`}
                                     label={slot.label}
                                     hint={slot.hint}
+                                    role={slot.role}
                                     value={draft.imageData[slot.index] ?? ''}
                                     onChange={value => set('imageData', withSlot(draft.imageData, slot.index, value))}
                                     disabled={!canManage}
@@ -382,7 +384,7 @@ export const PageInspector = ({ tree, page, draft, onDraft, focus, onOpen }: Pag
                 </div>
             )}
 
-            <IconPicker value={draft.icon} open={iconOpen} onPick={icon => set('icon', icon)} onClose={() => setIconOpen(false)} />
+            <ImagePicker open={iconOpen} title="Pick an icon" accept={CATALOG_ICON} value={String(draft.icon)} onPick={icon => set('icon', Number(icon) || 0)} onClose={() => setIconOpen(false)} none="No icon" />
             <LayoutPicker value={draft.layout} open={layoutOpen} extra={tree.layouts} onPick={layout => set('layout', layout)} onClose={() => setLayoutOpen(false)} />
         </form>
     );

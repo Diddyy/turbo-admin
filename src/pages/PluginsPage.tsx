@@ -1,4 +1,4 @@
-import { Download, ExternalLink, History, Layers, Link2, Palette, Pencil, Power, PowerOff, RefreshCw, ScanSearch, Trash2, Unlink, Upload } from 'lucide-react';
+import { AppWindow, Download, ExternalLink, History, Layers, Link2, Palette, Pencil, Power, PowerOff, RefreshCw, ScanSearch, Trash2, Unlink, Upload } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { Link } from 'react-router';
 
@@ -444,6 +444,10 @@ export const PluginsPage = () => {
                 <Link to="/plugins/patches" className="inline-flex items-center gap-1 rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-subtle">
                     <Layers className="size-4" />
                     Template patches
+                </Link>
+                <Link to="/plugins/windows" className="inline-flex items-center gap-1 rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-subtle">
+                    <AppWindow className="size-4" />
+                    Windows &amp; skins
                 </Link>
                 {data && (canLink
                     ? (

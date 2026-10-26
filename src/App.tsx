@@ -40,6 +40,7 @@ import { PlayersPage as PlayerListPage } from '#/pages/players/PlayersPage';
 import { PatchesPage } from '#/pages/plugins/PatchesPage';
 import { PluginPage } from '#/pages/plugins/PluginPage';
 import { ThemePage } from '#/pages/plugins/ThemePage';
+import { WindowsPage } from '#/pages/plugins/WindowsPage';
 import { PluginSchedulePage } from '#/pages/PluginSchedulePage';
 import { PluginsPage } from '#/pages/PluginsPage';
 import { ReportPage } from '#/pages/reports/ReportPage';
@@ -112,6 +113,7 @@ export const App = () => (
             <Route path="plugins" element={<PluginsPage />} />
             <Route path="plugins/schedule" element={<PluginSchedulePage />} />
             <Route path="plugins/patches" element={<PatchesPage />} />
+            <Route path="plugins/windows/:tab?" element={<WindowsPage />} />
             <Route path="plugins/:key/theme" element={<ThemePage />} />
             <Route path="plugin/:key/:page" element={<PluginPage />} />
             <Route path="plugin/:key/:page/:id" element={<PluginPage />} />

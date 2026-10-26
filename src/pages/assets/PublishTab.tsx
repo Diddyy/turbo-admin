@@ -1,9 +1,11 @@
-import { ExternalLink, FlaskConical, History, KeyRound, Pencil, Plug, Plus, Send, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { ChevronDown, ExternalLink, FlaskConical, History, KeyRound, Pencil, Plug, Plus, Send, Trash2 } from 'lucide-react';
+import { useDeferredValue, useState } from 'react';
 
-import { type AssetPublishEntry, type AssetTarget, DEFAULT_PORTS, PROTOCOLS, useDeleteTarget, useForgetHostKey, usePublish, useTargetHistory, useTargets, useTestTarget } from '#/api/bundles';
+import { type AssetPublishEntry, type AssetTarget, DEFAULT_PORTS, PROTOCOLS, useDeleteTarget, useForgetHostKey, usePublish, useTargetHistory, useTargetPending, useTargets, useTestTarget } from '#/api/bundles';
 import { ask } from '#/components/confirm';
 import { Modal } from '#/components/Modal';
+import { Pagination } from '#/components/Pagination';
+import { SearchInput } from '#/components/SearchInput';
 import { toast, toastError } from '#/components/toast';
 import { Badge, Button, EmptyState, ErrorNotice, IconButton, Loading, Panel, SuccessNotice, Switch } from '#/components/ui';
 import { cx } from '#/lib/cx';
@@ -56,8 +58,59 @@ const HistoryModal = ({ target, onClose }: { target: AssetTarget | null; onClose
     );
 };
 
+/**
+ * What a target lacks or holds an older copy of, as a publish would send it (largest first): each
+ * file's path, size and why, found by its path, with the totals of all of it.
+ */
+const PendingList = ({ target }: { target: AssetTarget }) => {
+    const [ text, setText ] = useState('');
+    const [ page, setPage ] = useState(0);
+    const q = useDeferredValue(text.trim());
+    const { data, error } = useTargetPending(target.id, q, page);
+
+    return (
+        <div className="flex flex-col gap-2 border-t border-line px-4 py-3">
+            {error && <ErrorNotice error={error} />}
+            {!data && !error && <Loading />}
+            {data && (
+                <>
+                    <p className="text-xs text-muted">
+                        {`${data.count.toLocaleString()} ${data.count === 1 ? 'file' : 'files'}, ${formatBytes(data.bytes)}: ${data.new.toLocaleString()} never sent, ${data.changed.toLocaleString()} changed since sent`}
+                    </p>
+                    <div className="flex items-center gap-2">
+                        <SearchInput
+                            placeholder="Find by path"
+                            value={text}
+                            onValueChange={(value) => {
+                                setText(value);
+                                setPage(0);
+                            }}
+                            className="min-w-0 flex-1"
+                        />
+                        <Pagination offset={page * data.pageSize} limit={data.pageSize} total={data.matched} onChange={offset => setPage(Math.floor(offset / data.pageSize))} />
+                    </div>
+                    {data.items.length === 0
+                        ? <p className="py-2 text-center text-xs text-muted">{data.count === 0 ? 'Nothing is pending: it is up to date.' : `No pending path holds "${q}".`}</p>
+                        : (
+                                <ul aria-label={`${target.name}: pending`} className="max-h-72 divide-y divide-line overflow-y-auto rounded-lg border border-line">
+                                    {data.items.map(file => (
+                                        <li key={file.path} className="flex items-center gap-2 px-2.5 py-1.5 text-xs">
+                                            <Badge tone={file.change === 'new' ? 'accent' : 'amber'}>{file.change}</Badge>
+                                            <span className="min-w-0 flex-1 truncate font-mono" title={file.path}>{file.path}</span>
+                                            <span className="shrink-0 text-muted tabular-nums">{formatBytes(file.size)}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                </>
+            )}
+        </div>
+    );
+};
+
 const TargetCard = ({ target, canManage, busy, onEdit, onHistory }: { target: AssetTarget; canManage: boolean; busy: boolean; onEdit: () => void; onHistory: () => void }) => {
     const [ deleteRemoved, setDeleteRemoved ] = useState(false);
+    const [ showPending, setShowPending ] = useState(false);
     const test = useTestTarget();
     const publish = usePublish();
     const remove = useDeleteTarget();
@@ -75,7 +128,20 @@ const TargetCard = ({ target, canManage, busy, onEdit, onHistory }: { target: As
                         <h2 className="truncate text-sm font-semibold">{target.name}</h2>
                         <Badge tone="accent">{protocol}</Badge>
                         {target.pending > 0
-                            ? <Badge tone="amber">{`${target.pending.toLocaleString()} pending`}</Badge>
+                            ? (
+                                    <button
+                                        type="button"
+                                        title="What's pending"
+                                        aria-expanded={showPending}
+                                        onClick={() => setShowPending(!showPending)}
+                                        className="rounded-md transition hover:brightness-95 active:scale-[0.97]"
+                                    >
+                                        <Badge tone="amber">
+                                            {`${target.pending.toLocaleString()} pending`}
+                                            <ChevronDown className={cx('size-3 transition-transform', showPending && 'rotate-180')} />
+                                        </Badge>
+                                    </button>
+                                )
                             : <Badge tone="green">up to date</Badge>}
                     </div>
                     <p className="mt-1 truncate font-mono text-xs text-muted" title={addressOf(target)}>{addressOf(target)}</p>
@@ -156,6 +222,8 @@ const TargetCard = ({ target, canManage, busy, onEdit, onHistory }: { target: As
                     </>
                 )}
             </dl>
+
+            {showPending && target.pending > 0 && <PendingList target={target} />}
 
             {(test.data || test.error) && (
                 <div className="px-4 pb-3">

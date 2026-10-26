@@ -1,8 +1,9 @@
 import { Download, ExternalLink, History, Layers, Link2, Palette, Pencil, Power, PowerOff, RefreshCw, ScanSearch, Trash2, Unlink, Upload } from 'lucide-react';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Link } from 'react-router';
 
 import { type Plugin, type PluginActionResponse, type PluginSource, type PluginSourceActionResponse, type PluginState, useCheckPluginSource, useInstallPlugin, usePluginContributions, usePlugins, useReloadPlugin, useRemovePluginSource, useRescanPlugins, useRollbackPlugin, useSetPluginEnabled, useUpdatePluginSource } from '#/api/plugins';
+import { useMe } from '#/api/queries';
 import { ask } from '#/components/confirm';
 import { Tabs } from '#/components/Tabs';
 import { toast, toastError } from '#/components/toast';
@@ -123,8 +124,60 @@ const PluginInspector = ({ pluginKey }: { pluginKey: string }) => {
     );
 };
 
+/** The nodes the page's actions need, by name: no wildcard grants install or uninstall. */
+const MANAGE = 'admin.plugins.manage';
+const INSTALL = 'admin.plugins.install';
+const UNINSTALL = 'admin.plugins.uninstall';
+
+/**
+ * An action the staff member may not take yet, greyed out rather than hidden, saying on hover what
+ * it needs; the notice under the header says where to grant it.
+ */
+const NeedsNode = ({ icon, label, need }: { icon: ReactNode; label: string; need: string }) => (
+    <span title={need} className="inline-flex">
+        <Button variant="ghost" icon={icon} disabled aria-label={`${label}: ${need}`}>
+            {label}
+        </Button>
+    </span>
+);
+
+/**
+ * What the page's greyed-out actions need, and where to grant it: the signed-in staff member's own
+ * page under Access, whose Nodes section sets a node by name, or `:perm user` in the Console.
+ */
+const MissingNodes = ({ canManage, canInstall, canUninstall, uploadEnabled }: { canManage: boolean; canInstall: boolean; canUninstall: boolean; uploadEnabled: boolean }) => {
+    const me = useMe().data;
+    const missing = [ !canManage && MANAGE, !canInstall && INSTALL, !canUninstall && UNINSTALL ].filter((node): node is string => !!node);
+
+    if (missing.length === 0) return null;
+
+    return (
+        <WarningNotice>
+            <span className="flex flex-col gap-1" data-testid="plugins-missing-nodes">
+                <span>
+                    {!canManage && <>Installing, reloading and turning plugins off need <code>{MANAGE}</code>. </>}
+                    {canManage && !canInstall && <>{uploadEnabled ? 'You can install a data plugin: a theme, texts, patches and images, no AssemblyFile. ' : ''}A package with code, Link from GitHub and Update need <code>{INSTALL}</code>. </>}
+                    {!canUninstall && <>Uninstall needs <code>{UNINSTALL}</code>. </>}
+                    {missing.some(node => node !== MANAGE) && 'No wildcard grants those: each is given by its name.'}
+                </span>
+                <span>
+                    {'Grant '}
+                    {missing.length === 1 ? 'it' : 'them'}
+                    {' under '}
+                    {me
+                        ? <Link to={`/permissions/players/${me.id}`} className="font-medium underline">{`Access > Players > ${me.name} > Nodes`}</Link>
+                        : 'Access > Players > you > Nodes'}
+                    {', or in the Console with '}
+                    <code>{`:perm user ${me?.name ?? '<you>'} set ${missing[0]}`}</code>
+                    .
+                </span>
+            </span>
+        </WarningNotice>
+    );
+};
+
 /** A plugin open: its manifest, what it added, why it failed, and what may be done with it. */
-const PluginDetail = ({ plugin, source, canManage, canInstall, canUninstall }: { plugin: Plugin; source: PluginSource | undefined; canManage: boolean; canInstall: boolean; canUninstall: boolean }) => {
+const PluginDetail = ({ plugin, source, canManage, canRollback, canUninstall }: { plugin: Plugin; source: PluginSource | undefined; canManage: boolean; canRollback: boolean; canUninstall: boolean }) => {
     const [ uninstalling, setUninstalling ] = useState(false);
     const reload = useReloadPlugin();
     const setEnabled = useSetPluginEnabled();
@@ -183,7 +236,7 @@ const PluginDetail = ({ plugin, source, canManage, canInstall, canUninstall }: {
                                             {plugin.versions.map(version => (
                                                 <span key={version} className="inline-flex items-center gap-1">
                                                     <code className="rounded bg-subtle px-1.5 py-0.5 text-xs">{version}</code>
-                                                    {canInstall && (
+                                                    {canRollback && (
                                                         <Button
                                                             variant="ghost"
                                                             icon={<History />}
@@ -238,11 +291,13 @@ const PluginDetail = ({ plugin, source, canManage, canInstall, canUninstall }: {
                     <Link to={`/gamedata/texts?plugin=${encodeURIComponent(plugin.key)}`} className="inline-flex items-center gap-1 px-2 text-sm text-accent hover:underline">
                         Phrases
                     </Link>
-                    {canUninstall && !plugin.dev && (
-                        <Button variant="ghost" icon={<Trash2 />} disabled={busy} onClick={() => setUninstalling(true)}>
-                            Uninstall
-                        </Button>
-                    )}
+                    {!plugin.dev && (canUninstall
+                        ? (
+                                <Button variant="ghost" icon={<Trash2 />} disabled={busy} onClick={() => setUninstalling(true)}>
+                                    Uninstall
+                                </Button>
+                            )
+                        : <NeedsNode icon={<Trash2 />} label="Uninstall" need={`Needs ${UNINSTALL}`} />)}
                 </div>
             )}
             {known && <PluginInspector pluginKey={plugin.key} />}
@@ -251,8 +306,11 @@ const PluginDetail = ({ plugin, source, canManage, canInstall, canUninstall }: {
     );
 };
 
-/** Installs a zip chosen from disk, after saying what it does. */
-const InstallButton = ({ maxBytes }: { maxBytes: number }) => {
+/**
+ * Installs a zip chosen from disk, after saying what it does. Without `admin.plugins.install` only
+ * a data plugin goes in: the server says why it refuses one with code.
+ */
+const InstallButton = ({ maxBytes, code }: { maxBytes: number; code: boolean }) => {
     const install = useInstallPlugin();
 
     return (
@@ -270,7 +328,7 @@ const InstallButton = ({ maxBytes }: { maxBytes: number }) => {
                         ask(
                             {
                                 title: `Install ${file.name}?`,
-                                body: `A plugin is server code: it runs with the hotel's own access. One with the same key is replaced. Up to ${Math.floor(maxBytes / (1024 * 1024))} MB.`,
+                                body: `${code ? 'A plugin is server code: it runs with the hotel\'s own access.' : `Only a data plugin installs without ${INSTALL}: a theme, texts, patches and images, no AssemblyFile.`} One with the same key is replaced. Up to ${Math.floor(maxBytes / (1024 * 1024))} MB.`,
                                 confirm: 'Install',
                             },
                             () => install.mutate(file, said),
@@ -357,8 +415,9 @@ const SourceRow = ({ source, canManage, canInstall, onEdit }: { source: PluginSo
 /**
  * The server's plugins: each one's manifest, whether it loaded and why not, and the capabilities,
  * packet headers and migrations it added. Staff who manage them reload one, scan the folders
- * again and turn one off or on; installing a package needs its own node and the server's leave,
- * and uninstalling one (keeping or deleting its data) its own node too.
+ * again, turn one off or on and install a data plugin; a package with code needs its own node,
+ * uninstalling one (keeping or deleting its data) its own node too, and installing the server's
+ * leave. An action the staff member may not take is greyed out, saying what it needs.
  * Every action is in the command log.
  */
 export const PluginsPage = () => {
@@ -369,6 +428,8 @@ export const PluginsPage = () => {
     const [ editing, setEditing ] = useState<PluginSource | 'new' | null>(null);
     const loaded = data?.plugins.filter(plugin => plugin.state === 'loaded').length ?? 0;
     const canLink = !!data?.canInstall && data.uploadEnabled;
+    const canUpload = !!data?.canManage && data.uploadEnabled;
+    const uploadOff = 'Installing from the panel is off (Turbo:Plugin:UploadEnabled)';
     const sourceOf = (key: string) => data?.sources.find(source => source.key?.toLowerCase() === key.toLowerCase());
     const tabs = useHubTabs('plugins');
 
@@ -384,19 +445,24 @@ export const PluginsPage = () => {
                     <Layers className="size-4" />
                     Template patches
                 </Link>
-                {canLink && (
-                    <Button variant="secondary" icon={<Link2 />} onClick={() => setEditing('new')}>
-                        Link from GitHub
-                    </Button>
-                )}
-                {data?.canInstall && data.uploadEnabled && <InstallButton maxBytes={data.maxUploadBytes} />}
+                {data && (canLink
+                    ? (
+                            <Button variant="secondary" icon={<Link2 />} onClick={() => setEditing('new')}>
+                                Link from GitHub
+                            </Button>
+                        )
+                    : <NeedsNode icon={<Link2 />} label="Link from GitHub" need={data.uploadEnabled ? `Needs ${INSTALL}` : uploadOff} />)}
+                {data && (canUpload
+                    ? <InstallButton maxBytes={data.maxUploadBytes} code={data.canInstall} />
+                    : <NeedsNode icon={<Upload />} label="Install" need={data.uploadEnabled ? `Needs ${MANAGE}` : uploadOff} />)}
             </PageHeader>
             <PageBody className="flex flex-col gap-4 lg:gap-5">
                 {error && <ErrorNotice error={error} />}
                 {!data && !error && <Loading />}
-                {data?.canInstall && !data.uploadEnabled && (
+                {data && !data.uploadEnabled && (
                     <WarningNotice>Installing plugins from the panel is off. The server allows it with Turbo:Plugin:UploadEnabled.</WarningNotice>
                 )}
+                {data && <MissingNodes canManage={data.canManage} canInstall={data.canInstall} canUninstall={data.canUninstall} uploadEnabled={data.uploadEnabled} />}
                 {data?.job && <JobPanel job={data.job} canManage={data.canManage} compact={data.job.status !== 'running'} />}
                 {data && (data.sources.length > 0 || canLink) && (
                     <Panel
@@ -444,7 +510,7 @@ export const PluginsPage = () => {
                                         </div>
                                     )}
                                 >
-                                    <PluginDetail plugin={plugin} source={sourceOf(plugin.key)} canManage={data.canManage} canInstall={canLink} canUninstall={data.canUninstall} />
+                                    <PluginDetail plugin={plugin} source={sourceOf(plugin.key)} canManage={data.canManage} canRollback={canUpload} canUninstall={data.canUninstall} />
                                 </OpenRow>
                             ))}
                         </ul>

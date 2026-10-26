@@ -1,9 +1,11 @@
-import { ChevronRight, SlidersHorizontal } from 'lucide-react';
+import { ChevronRight, Cpu, PlugZap, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 
 import { useCommandLog } from '#/api/commandLog';
+import { useFurnitureList } from '#/api/gamedata';
 import { useLive } from '#/api/live';
+import { type Plugin, usePlugins, useReloadPlugin } from '#/api/plugins';
 import { useDashboard, useHotelAbilities, useMe } from '#/api/queries';
 import type { AvailabilityPhase } from '#/api/types';
 import { Badge, Button, EmptyState, ErrorNotice, Label, LiveBadge, Loading, PageBody, PageHeader, Panel, Stat, TextLink } from '#/components/ui';
@@ -86,6 +88,73 @@ const HotelCard = ({ phase, atUtc }: { phase: AvailabilityPhase; atUtc: string |
     );
 };
 
+/**
+ * What to do about a plugin that failed to load, from why it failed: one built against another
+ * server's contracts (a type, method or assembly it names is gone) is rebuilt against this one.
+ */
+const fixFor = (error: string | null) => (/could not load (type|file or assembly)|typeload|missingmethod|missingfield|method not found|entrypointnotfound/i.test(error ?? '')
+    ? 'Rebuild it against this server\'s version and install it again, then reload it.'
+    : 'Fix what the error names, then reload it.');
+
+/**
+ * The plugins whose last load failed, at the top of the overview: a plugin that failed adds
+ * nothing to the hotel, and the plugins page is not where staff look first.
+ */
+const FailedPlugins = ({ plugins, canManage }: { plugins: Plugin[]; canManage: boolean }) => {
+    const reload = useReloadPlugin();
+
+    return (
+        <Panel
+            title={<span className="flex items-center gap-2 text-bad"><PlugZap className="size-4" />{`${plugins.length} ${plugins.length === 1 ? 'plugin' : 'plugins'} failed to load`}</span>}
+            description="What a plugin adds is missing from the hotel until it loads."
+            actions={<TextLink to="/plugins">Open plugins</TextLink>}
+            className="border-bad-line"
+        >
+            <ul>
+                {plugins.map(plugin => (
+                    <li key={plugin.key} className="flex flex-wrap items-center gap-3 border-t border-line px-4 py-2.5 first:border-t-0">
+                        <div className="min-w-0 flex-[1_1_16rem]">
+                            <span className="block truncate font-medium">{plugin.name ?? plugin.folder}</span>
+                            <span className="block truncate font-mono text-[11px] text-bad" title={plugin.error ?? undefined}>{plugin.error ?? 'Its manifest could not be read.'}</span>
+                            <span className="block text-xs text-muted">{fixFor(plugin.error)}</span>
+                        </div>
+                        {canManage && plugin.name && (
+                            <Button variant="secondary" disabled={reload.isPending} onClick={() => reload.mutate(plugin.key)}>Reload</Button>
+                        )}
+                    </li>
+                ))}
+            </ul>
+        </Panel>
+    );
+};
+
+/** The failed plugins, for staff who may see plugins; nothing when every plugin loaded. */
+const PluginAlerts = () => {
+    const { data } = usePlugins();
+    const failed = data?.plugins.filter(x => x.state === 'failed') ?? [];
+
+    return failed.length > 0 ? <FailedPlugins plugins={failed} canManage={data?.canManage ?? false} /> : null;
+};
+
+/**
+ * Furniture the server runs as plain furniture where it has their logic (a group forum terminal
+ * that opens no forum): a line on the overview, to the library's list of them.
+ */
+const LogicAlert = () => {
+    const { data } = useFurnitureList('', '', 'logic-mismatch', 0);
+    const count = data?.total ?? 0;
+
+    return count > 0 && (
+        <section className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-bad-line bg-surface px-4 py-3">
+            <div className="min-w-0 flex-[1_1_16rem]">
+                <h2 className="flex items-center gap-2 text-[13px] font-semibold tracking-wide text-bad"><Cpu className="size-4" />{`${count} furniture ${count === 1 ? 'runs' : 'run'} with the wrong logic`}</h2>
+                <div className="mt-0.5 text-xs text-muted">The server has a logic for each, but runs it as plain furniture: in a room it does nothing of its own.</div>
+            </div>
+            <TextLink to="/gamedata/library/furniture?tag=logic-mismatch">Fix in the library</TextLink>
+        </section>
+    );
+};
+
 const NO_FILTER = { player: '', command: '', outcome: '', source: '' };
 
 /** The last few commands staff and the console ran, newest first: what has been done lately, a click from the whole log. */
@@ -139,6 +208,8 @@ export const DashboardPage = () => {
     const { data, error, isPending, dataUpdatedAt } = useDashboard();
     const canViewRooms = useMe().data?.canViewRooms ?? false;
     const canViewCommandLog = useMe().data?.canViewCommandLog ?? false;
+    const canViewPlugins = useMe().data?.canViewPlugins ?? false;
+    const canViewGamedata = useMe().data?.canViewGamedata ?? false;
     const canControl = useCanControlHotel();
     const live = useLive(state => state.connected);
     const now = useMinuteClock();
@@ -154,6 +225,8 @@ export const DashboardPage = () => {
             </PageHeader>
             <PageBody className="flex flex-col gap-4 lg:gap-5">
                 {error && <ErrorNotice error={error} />}
+                {canViewPlugins && <PluginAlerts />}
+                {canViewGamedata && <LogicAlert />}
                 {isPending && <Loading />}
                 {data && (
                     <>

@@ -120,6 +120,8 @@ export interface PluginClientIssue {
     kind: string;
     /** The module's URL, or the template's id. */
     subject: string;
+    /** The client's: for a patch the element it is about (`credits_old`, `tab_button:bind`, `.caption`), or the ops applied. */
+    reason: string;
     message: string;
     /** How many players' clients said so. */
     clients: number;

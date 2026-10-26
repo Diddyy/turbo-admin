@@ -2,17 +2,73 @@ import { AppWindow, Package, Plus, Power, PowerOff, Save, Trash2, X } from 'luci
 import { useState } from 'react';
 import { Link } from 'react-router';
 
+import { usePluginTemplatePatches } from '#/api/appearance';
 import { type HotelPatch, useHotelPatches, useRemoveHotelPatch, useSaveHotelPatch } from '#/api/noCode';
-import { type Plugin, usePluginContributions, usePlugins } from '#/api/plugins';
+import { type Plugin, type PluginActionResponse, type PluginClientIssue, usePluginContributions, usePlugins, useSetPluginEnabled } from '#/api/plugins';
+import { useTemplateIndex } from '#/api/windows';
 import { ask } from '#/components/confirm';
+import { useSaved } from '#/components/SaveFeedback';
 import { toast, toastError } from '#/components/toast';
 import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, PageBody, PageHeader, Panel, Textarea } from '#/components/ui';
+import { outdatedReasons } from '#/pages/appearance/outdated';
 
 import { PackageDialog } from './PackageDialog';
 import { PatchTest } from './PatchTest';
 
 /** How a patch stands in players' clients, by the reports' kinds. */
 const TONES: Record<string, 'green' | 'amber' | 'red'> = { 'patch.applied': 'green', 'patch.unmatched': 'amber', 'patch.conflict': 'amber', 'patch.ineffective': 'amber', 'module.failed': 'red' };
+
+/** The reports a window's patches get, in the order the counts read: applied / unmatched / ineffective, then a clash. */
+const COUNTED = [ 'patch.applied', 'patch.unmatched', 'patch.ineffective' ] as const;
+
+/**
+ * The reports that are about one patch: its window's applied figure, and each other report whose
+ * element (the client's reason: `name`, `name:what`, `name.property`) one of its ops names.
+ */
+const issuesOf = (issues: readonly PluginClientIssue[], template: string, ops: unknown) => {
+    const elements = (Array.isArray(ops) ? ops : []).flatMap(op => (op && typeof op === 'object' && typeof (op as { element?: unknown }).element === 'string' ? [ (op as { element: string }).element ] : []));
+
+    return issues.filter(issue => issue.subject === template && (issue.kind === 'patch.applied' || elements.some(element => issue.reason === element || issue.reason.startsWith(`${element}:`) || issue.reason.startsWith(`${element}.`))));
+};
+
+/**
+ * How many players' clients report a patch applied, unmatched and ineffective (XenForo's 1/0/0,
+ * but live), a clash with another owner's beside them; what a client said of a patch that does not
+ * apply is under it.
+ */
+const ClientCounts = ({ issues, template, ops }: { issues: readonly PluginClientIssue[]; template: string; ops: unknown }) => {
+    const mine = issuesOf(issues, template, ops);
+    const count = (kind: string) => mine.filter(issue => issue.kind === kind).reduce((sum, issue) => sum + issue.clients, 0);
+    const conflicts = count('patch.conflict');
+
+    return (
+        <span className="inline-flex flex-wrap items-center gap-1" title="Players' clients reporting this window's patches: applied / unmatched / ineffective">
+            {COUNTED.map(kind => <Badge key={kind} tone={count(kind) > 0 ? TONES[kind] : 'neutral'}>{`${kind.slice('patch.'.length)} ${count(kind)}`}</Badge>)}
+            {conflicts > 0 && <Badge tone="amber">{`conflict ${conflicts}`}</Badge>}
+        </span>
+    );
+};
+
+/** What clients said of a patch that did not apply, one line each. */
+const ClientWords = ({ issues, template, ops }: { issues: readonly PluginClientIssue[]; template: string; ops: unknown }) => issuesOf(issues, template, ops)
+    .filter(issue => issue.kind !== 'patch.applied')
+    .map(issue => <p key={`${issue.kind}-${issue.reason}`} className="text-xs text-warn">{issue.message}</p>);
+
+/** What of a patch is gone from the client the hotel runs, said in place (Outdated patches lists them all). */
+const Outdated = ({ template, ops }: { template: string; ops: unknown }) => {
+    const { data: index } = useTemplateIndex();
+    const reasons = index ? outdatedReasons(index, template, ops) : [];
+
+    return reasons.map(reason => (
+        <p key={reason.element ?? ''} className="text-xs text-bad">
+            <Badge tone="red">outdated</Badge>
+            {` ${reason.text}`}
+        </p>
+    ));
+};
+
+/** A plugin action's answer as a toast: what it did, or why not. */
+const said = { onSuccess: (answer: PluginActionResponse) => (answer.ok ? toast(answer.message) : toastError(new Error(answer.message))), onError: toastError };
 
 /**
  * What a pasted text is as a patch: the inspector's "copy patch" (`api.templates.patch('<id>', [ ...ops ])`
@@ -42,6 +98,7 @@ export const PatchEditor = ({ patch, onDone }: { patch: HotelPatch | null; onDon
     const [ order, setOrder ] = useState(patch?.order === null || patch?.order === undefined ? '' : String(patch.order));
     const [ ops, setOps ] = useState(patch ? JSON.stringify(patch.ops, null, 2) : '[\n  { "element": "help_button", "set": { "color": 4281244476 } }\n]');
     const save = useSaveHotelPatch();
+    const saved = useSaved();
     const pasted = readPasted(ops);
     const problem = pasted === null ? 'The ops are not JSON yet.' : !Array.isArray(pasted.ops) ? 'The ops are a list: [ { "element": ..., "set": { ... } } ].' : null;
 
@@ -56,7 +113,7 @@ export const PatchEditor = ({ patch, onDone }: { patch: HotelPatch | null; onDon
                 save.mutate(
                     { id: patch?.id ?? '', name, template: pasted.template ?? template, order: order === '' ? null : Number(order), ops: pasted.ops, disabled: patch?.disabled ?? false },
                     { onSuccess: () => {
-                        toast(`${name}: saved. Players get it at their next load.`);
+                        saved(name);
                         onDone();
                     } },
                 );
@@ -64,7 +121,7 @@ export const PatchEditor = ({ patch, onDone }: { patch: HotelPatch | null; onDon
         >
             <div className="grid gap-3 sm:grid-cols-[1fr_1fr_8rem]">
                 <Labeled label="Name"><Input value={name} onChange={event => setName(event.target.value)} placeholder="Green help button" className="w-full" /></Labeled>
-                <Labeled label="Template" hint={<>{'<library>/<asset>, as '}<Link to="/plugins/windows" className="text-accent hover:underline">Windows &amp; skins</Link>{' lists it.'}</>}><Input value={pasted?.template ?? template} onChange={event => setTemplate(event.target.value)} placeholder="habbo-toolbar-com/purse_xml" className="w-full font-mono" /></Labeled>
+                <Labeled label="Template" hint={<>{'<library>/<asset>, as '}<Link to="/appearance/windows" className="text-accent hover:underline">Windows &amp; skins</Link>{' lists it.'}</>}><Input value={pasted?.template ?? template} onChange={event => setTemplate(event.target.value)} placeholder="habbo-toolbar-com/purse_xml" className="w-full font-mono" /></Labeled>
                 <Labeled label="Order" hint="Lower first; a theme takes a negative one."><Input type="number" value={order} onChange={event => setOrder(event.target.value)} className="w-full" /></Labeled>
             </div>
             <Labeled label="Ops" hint="JSON: each names its element and does one of set, remove, insert, move, wrap or bind (a value per window or per list row, from placeholders such as ctx.key and item.key). Paste the client's alt-click &quot;copy patch&quot; straight in.">
@@ -86,6 +143,7 @@ export const PatchEditor = ({ patch, onDone }: { patch: HotelPatch | null; onDon
 /** The hotel's own patches: made, edited, turned off and removed here; held by its data plugin. */
 const HotelPatches = () => {
     const { data, error } = useHotelPatches();
+    const issues = usePluginContributions(data?.key ?? 'hotel').data?.clientIssues.filter(issue => issue.kind.startsWith('patch.')) ?? [];
     const save = useSaveHotelPatch();
     const remove = useRemoveHotelPatch();
     const [ open, setOpen ] = useState<string | null>(null);
@@ -93,7 +151,7 @@ const HotelPatches = () => {
 
     return (
         <Panel
-            title="This hotel's patches"
+            title="This hotel (hotel)"
             description="Kept in the hotel's own data plugin (hotel): turning it off on the Plugins page takes them all away at once."
             actions={data?.canManage && (
                 <div className="flex gap-2">
@@ -114,6 +172,7 @@ const HotelPatches = () => {
                             <span className="font-mono text-xs text-muted">{patch.template}</span>
                             <span className="text-xs text-muted">{Array.isArray(patch.ops) ? patch.ops.length : 0} op(s)</span>
                             {patch.disabled ? <Badge>off</Badge> : <Badge tone="green">on</Badge>}
+                            {!patch.disabled && <ClientCounts issues={issues} template={patch.template} ops={patch.ops} />}
                             {data.canManage && (
                                 <span className="ml-auto flex gap-1">
                                     <Button variant="ghost" icon={patch.disabled ? <Power /> : <PowerOff />} disabled={save.isPending} onClick={() => save.mutate({ ...patch, disabled: !patch.disabled }, { onError: toastError })}>
@@ -130,6 +189,8 @@ const HotelPatches = () => {
                                 </span>
                             )}
                         </div>
+                        <Outdated template={patch.template} ops={patch.ops} />
+                        {!patch.disabled && <ClientWords issues={issues} template={patch.template} ops={patch.ops} />}
                         {open === patch.id && <PatchEditor patch={patch} onDone={() => setOpen(null)} />}
                     </li>
                 ))}
@@ -139,31 +200,47 @@ const HotelPatches = () => {
     );
 };
 
-/** One plugin's patches per window, with what players' clients report of them. */
-const PluginPatches = ({ plugin }: { plugin: Plugin }) => {
-    const { data } = usePluginContributions(plugin.key);
-    const patches = data?.items.filter(item => item.kind === 'template-patch') ?? [];
-    const issues = data?.clientIssues.filter(issue => issue.kind.startsWith('patch.')) ?? [];
+/**
+ * One plugin's patches, as its wwwroot/template-patches.json gives them: each window with its ops,
+ * what players' clients report of it and what is gone from the current client; the plugin turned
+ * off or on here takes them all away or back.
+ */
+const PluginPatches = ({ plugin, canManage }: { plugin: Plugin; canManage: boolean }) => {
+    const { data } = usePluginTemplatePatches(plugin.key);
+    const contributions = usePluginContributions(plugin.key).data;
+    const setEnabled = useSetPluginEnabled();
+    const patches = data?.patches ?? [];
+    const issues = contributions?.clientIssues.filter(issue => issue.kind.startsWith('patch.')) ?? [];
 
     if (patches.length === 0 && issues.length === 0) return null;
 
     return (
-        <li className="flex flex-col gap-1.5 px-4 py-3">
-            <div className="flex items-center gap-2">
+        <li id={plugin.key} className="flex scroll-mt-20 flex-col gap-2 px-4 py-3">
+            <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium">{plugin.name ?? plugin.key}</span>
                 <span className="font-mono text-xs text-muted">{plugin.key}</span>
-                <Link to={`/plugins/${encodeURIComponent(plugin.key)}/theme`} className="ml-auto text-xs text-accent hover:underline">Theme</Link>
+                {plugin.state === 'loaded' ? <Badge tone="green">on</Badge> : <Badge>{plugin.state.replace('_', ' ')}</Badge>}
+                <span className="text-xs text-muted">{`${patches.length} patch(es)`}</span>
+                <span className="ml-auto flex gap-1">
+                    <Link to={`/appearance/styles/${encodeURIComponent(plugin.key)}`} className="px-2 text-xs text-accent hover:underline">Style properties</Link>
+                    {canManage && (plugin.state === 'loaded'
+                        ? <Button variant="ghost" icon={<PowerOff />} disabled={setEnabled.isPending} onClick={() => ask({ title: `Turn ${plugin.name ?? plugin.key} off?`, body: 'Its patches, styles and everything else it adds are taken away; players lose them at their next load.', confirm: 'Turn off' }, () => setEnabled.mutate({ key: plugin.key, enabled: false }, said))}>Turn off</Button>
+                        : <Button variant="ghost" icon={<Power />} disabled={setEnabled.isPending} onClick={() => setEnabled.mutate({ key: plugin.key, enabled: true }, said)}>Turn on</Button>)}
+                </span>
             </div>
-            {patches.map(patch => (
-                <div key={patch.name} className="flex flex-wrap items-center gap-2 text-sm">
-                    <span className="font-mono">{patch.name}</span>
-                    <span className="text-xs text-muted">{patch.detail}</span>
-                    {issues.filter(issue => issue.subject === patch.name).map(issue => (
-                        <Badge key={issue.kind} tone={TONES[issue.kind] ?? 'neutral'}>{`${issue.kind.slice('patch.'.length)} - ${issue.clients} client(s)`}</Badge>
-                    ))}
-                </div>
-            ))}
-            {issues.filter(issue => issue.kind !== 'patch.applied').map(issue => <p key={`${issue.kind}-${issue.subject}`} className="text-xs text-warn">{`${issue.subject}: ${issue.message}`}</p>)}
+            <ul className="flex flex-col gap-1.5">
+                {patches.map((patch, at) => (
+                    <li key={`${patch.template}-${at}`} className="flex flex-col gap-1 text-sm">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Link to={`/appearance/windows/windows?${new URLSearchParams({ id: patch.template })}`} className="font-mono hover:text-accent">{patch.template}</Link>
+                            <span className="text-xs text-muted">{`${Array.isArray(patch.ops) ? patch.ops.length : 0} op(s)${patch.order === null ? '' : `, order ${patch.order}`}`}</span>
+                            <ClientCounts issues={issues} template={patch.template} ops={patch.ops} />
+                        </div>
+                        <Outdated template={patch.template} ops={patch.ops} />
+                        <ClientWords issues={issues} template={patch.template} ops={patch.ops} />
+                    </li>
+                ))}
+            </ul>
         </li>
     );
 };
@@ -175,12 +252,14 @@ const PluginPatches = ({ plugin }: { plugin: Plugin }) => {
  */
 export const PatchesPage = () => {
     const { data, error } = usePlugins();
-    const live = data?.plugins.filter(plugin => plugin.state === 'loaded') ?? [];
+    const { data: hotel } = useHotelPatches();
+    // Each owner's group: the plugins that are on, then those turned off, whose patches come back with them.
+    const owners = [ ...(data?.plugins ?? []) ].filter(plugin => plugin.key !== (hotel?.key ?? 'hotel')).sort((a, b) => Number(b.state === 'loaded') - Number(a.state === 'loaded'));
 
     return (
         <>
-            <PageHeader title="Template patches" description="Changes to the game's windows, as data: by plugin and by this hotel. Players get a change at their next load." back={{ to: '/plugins', label: 'Plugins' }}>
-                <Link to="/plugins/windows" className="inline-flex items-center gap-1 rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-subtle">
+            <PageHeader title="Template patches" description="Changes to the game's windows, as data, by who made them: this hotel and each plugin. Beside each window: how many players' clients report it applied / unmatched / ineffective, and what a client update took away. Players get a change at their next load.">
+                <Link to="/appearance/windows" className="inline-flex items-center gap-1 rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-subtle">
                     <AppWindow className="size-4" />
                     Windows &amp; skins
                 </Link>
@@ -188,9 +267,9 @@ export const PatchesPage = () => {
             <PageBody className="flex flex-col gap-4 lg:gap-5">
                 {error && <ErrorNotice error={error} />}
                 <HotelPatches />
-                <Panel title="Plugins' patches" description="From each loaded plugin's wwwroot/template-patches.json; what clients report beside each window.">
+                <Panel title="Plugins" description="From each plugin's wwwroot/template-patches.json, by plugin.">
                     {!data && !error && <Loading />}
-                    <ul className="divide-y divide-line">{live.map(plugin => <PluginPatches key={plugin.key} plugin={plugin} />)}</ul>
+                    <ul className="divide-y divide-line">{owners.map(plugin => <PluginPatches key={plugin.key} plugin={plugin} canManage={!!data?.canManage} />)}</ul>
                 </Panel>
             </PageBody>
         </>

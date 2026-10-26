@@ -9,7 +9,7 @@ import type { TestElement } from './windowTest';
 const textLink = (key: string) => `/gamedata/texts?${new URLSearchParams({ q: key, open: key })}`;
 
 /** A skin's place in the skins gallery. */
-const skinLink = (skin: string) => `/plugins/windows/skins?${new URLSearchParams({ skin })}`;
+const skinLink = (skin: string) => `/appearance/windows/skins?${new URLSearchParams({ skin })}`;
 
 interface TreeProps {
     elements: readonly (WindowElement | TestElement)[];

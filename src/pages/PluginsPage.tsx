@@ -1,4 +1,4 @@
-import { AppWindow, Download, ExternalLink, History, Layers, Link2, Palette, Pencil, Power, PowerOff, RefreshCw, ScanSearch, Trash2, Unlink, Upload } from 'lucide-react';
+import { Download, ExternalLink, History, Link2, Palette, Pencil, Power, PowerOff, RefreshCw, ScanSearch, Trash2, Unlink, Upload } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 import { Link } from 'react-router';
 
@@ -285,7 +285,7 @@ const PluginDetail = ({ plugin, source, canManage, canRollback, canUninstall }: 
                                     Turn off
                                 </Button>
                             )}
-                    <Link to={`/plugins/${encodeURIComponent(plugin.key)}/theme`} className="inline-flex items-center gap-1 px-2 text-sm text-accent hover:underline">
+                    <Link to={`/appearance/styles/${encodeURIComponent(plugin.key)}`} className="inline-flex items-center gap-1 px-2 text-sm text-accent hover:underline">
                         <Palette className="size-4" />
                         Theme
                     </Link>
@@ -442,17 +442,10 @@ export const PluginsPage = () => {
                         Rescan
                     </Button>
                 )}
-                <Link to="/plugins/patches" className="inline-flex items-center gap-1 rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-subtle">
-                    <Layers className="size-4" />
-                    Template patches
-                </Link>
-                <Link to="/plugins/hotel/theme" className="inline-flex items-center gap-1 rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-subtle">
+                {/* Themes, style properties, windows, patches, images and texts are all under Appearance. */}
+                <Link to="/appearance" className="inline-flex items-center gap-1 rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-subtle">
                     <Palette className="size-4" />
-                    Hotel theme
-                </Link>
-                <Link to="/plugins/windows" className="inline-flex items-center gap-1 rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-subtle">
-                    <AppWindow className="size-4" />
-                    Windows &amp; skins
+                    Appearance
                 </Link>
                 {data && (canLink
                     ? (

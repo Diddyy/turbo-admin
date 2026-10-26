@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes } from 'react-router';
+import { Navigate, Route, Routes, useParams } from 'react-router';
 
 import { LoginPage } from '#/auth/LoginPage';
 import { RequireSession } from '#/auth/RequireSession';
@@ -8,6 +8,10 @@ import { ToTab } from '#/components/ToTab';
 import { Loading } from '#/components/ui';
 import { Shell } from '#/layout/Shell';
 import { AccountPage } from '#/pages/AccountPage';
+import { AppearanceTextsPage } from '#/pages/appearance/AppearanceTextsPage';
+import { ImagesPage } from '#/pages/appearance/ImagesPage';
+import { OutdatedPage } from '#/pages/appearance/OutdatedPage';
+import { ThemesPage } from '#/pages/appearance/ThemesPage';
 import { CampaignsPage } from '#/pages/campaigns/CampaignsPage';
 import { CatalogPage } from '#/pages/catalog/CatalogPage';
 import { DiscountsPage } from '#/pages/catalog/DiscountsPage';
@@ -64,6 +68,15 @@ const UsagePage = lazy(() => import('#/pages/telemetry/UsagePage').then(x => ({ 
 const TelemetryRoomPage = lazy(() => import('#/pages/telemetry/TelemetryDrillPages').then(x => ({ default: x.TelemetryRoomPage })));
 const TelemetryPlayerPage = lazy(() => import('#/pages/telemetry/TelemetryDrillPages').then(x => ({ default: x.TelemetryPlayerPage })));
 
+/** Where the theme pages were before Appearance: a link kept anywhere still lands. */
+const OldThemePage = () => <Navigate to={`/appearance/styles/${encodeURIComponent(useParams().key ?? 'hotel')}`} replace />;
+
+const OldWindowsPage = () => {
+    const { tab } = useParams();
+
+    return <Navigate to={`/appearance/windows${tab ? `/${tab}` : ''}${window.location.search}`} replace />;
+};
+
 export const App = () => (
     <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -112,9 +125,17 @@ export const App = () => (
             <Route path="settings/:tab?" element={<SettingsPage />} />
             <Route path="plugins" element={<PluginsPage />} />
             <Route path="plugins/schedule" element={<PluginSchedulePage />} />
-            <Route path="plugins/patches" element={<PatchesPage />} />
-            <Route path="plugins/windows/:tab?" element={<WindowsPage />} />
-            <Route path="plugins/:key/theme" element={<ThemePage />} />
+            <Route path="plugins/patches" element={<Navigate to="/appearance/patches" replace />} />
+            <Route path="plugins/windows/:tab?" element={<OldWindowsPage />} />
+            <Route path="plugins/:key/theme" element={<OldThemePage />} />
+            <Route path="appearance" element={<Navigate to="/appearance/themes" replace />} />
+            <Route path="appearance/themes" element={<ThemesPage />} />
+            <Route path="appearance/styles/:key?" element={<ThemePage />} />
+            <Route path="appearance/windows/:tab?" element={<WindowsPage />} />
+            <Route path="appearance/patches" element={<PatchesPage />} />
+            <Route path="appearance/images/:key?" element={<ImagesPage />} />
+            <Route path="appearance/texts/:tab?" element={<AppearanceTextsPage />} />
+            <Route path="appearance/outdated" element={<OutdatedPage />} />
             <Route path="plugin/:key/:page" element={<PluginPage />} />
             <Route path="plugin/:key/:page/:id" element={<PluginPage />} />
             <Route path="command-log" element={<CommandLogPage />} />

@@ -1,16 +1,16 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { Copy, Plus, RefreshCw } from 'lucide-react';
+import { Copy, Plus, RefreshCw, RotateCcw, Upload } from 'lucide-react';
 import { type ReactNode, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
 import { useClientAssets } from '#/api/assets';
 import { useTextSearch } from '#/api/gamedata';
-import { type HotelPatch, useHotelPatches } from '#/api/noCode';
+import { type HotelPatch, type PluginStyle, uploadPluginImage, useHotelOverlays, useHotelPatches, useOverlayChange, usePluginStyles, useStyleChange } from '#/api/noCode';
 import { type Plugin, usePluginContributions, usePlugins } from '#/api/plugins';
 import { readWindowsAgain, type SkinEntry, type SkinMap, type SkinSprite, type TemplateIndex, type ThemeSheet, useSkinMap, useTemplateIndex, useThemeSheet, type WindowElement, windowOf } from '#/api/windows';
 import { SearchInput } from '#/components/SearchInput';
 import { toast, toastError } from '#/components/toast';
-import { Badge, Button, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Panel } from '#/components/ui';
+import { Badge, Button, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Panel, Select } from '#/components/ui';
 import { useDebounced } from '#/lib/debounce';
 import { usePathTab } from '#/lib/tabs';
 
@@ -67,8 +67,91 @@ const Sprite = ({ sheet, sprite, rect }: { sheet: ThemeSheet | undefined; sprite
     return <span className="inline-block shrink-0 border border-line [image-rendering:pixelated]" style={{ width, height, background: `url(${sheet.url}) -${x}px -${y}px` }} title={`${width}x${height}`} />;
 };
 
-/** One skin: its sprites (size, nine-slice, the overlay key that replaces it) and the windows drawing it. */
-const SkinCard = ({ id, skin, sheet }: { id: string; skin: SkinEntry; sheet: ThemeSheet | undefined }) => {
+const IMAGE_TYPES = 'image/png,image/gif,image/jpeg,image/webp';
+
+/** Where a sprite's replacement goes: the plugin its image is uploaded into, and what the hotel already replaces. */
+interface Replacing {
+    /** The plugin the image is uploaded into (`wwwroot/styles/`); the hotel's own by default. */
+    target: string;
+    /** The hotel's `asset.overlays` entries: a url per overlay key. */
+    overlays: Record<string, string>;
+    /** The hotel's image styles by the overlay they stand in for (the base theme declares the window frames and the purse's). */
+    styles: Map<string, PluginStyle>;
+    canManage: boolean;
+}
+
+/**
+ * Upload replacement: the image goes into the target plugin's images, under the sprite's own name;
+ * then the base theme's image style for that sprite takes it (so the Theme tab shows it and resets
+ * it), or else the hotel's `asset.overlays` entry for the sprite. Remove gives the sprite back.
+ */
+const SpriteReplacement = ({ sprite, replacing }: { sprite: SkinSprite; replacing: Replacing }) => {
+    const overlay = useOverlayChange();
+    const style = useStyleChange('hotel');
+    const [ uploading, setUploading ] = useState(false);
+    const styled = replacing.styles.get(sprite.overlay);
+    const current = replacing.overlays[sprite.overlay];
+    const busy = uploading || overlay.isPending || style.isPending;
+
+    const upload = async (file: File) => {
+        setUploading(true);
+
+        try {
+            const extension = /\.[a-z0-9]+$/i.exec(file.name)?.[0].toLowerCase() ?? '';
+            const image = await uploadPluginImage(replacing.target, file, `${sprite.overlay.split('/').pop()}${extension}`);
+
+            if (styled) await style.mutateAsync({ name: styled.name, value: replacing.target === 'hotel' ? image.path : image.url! });
+            else await overlay.mutateAsync({ overlay: sprite.overlay, url: image.url });
+
+            toast(`${sprite.sprite} is replaced by ${image.path} (${replacing.target}): players see it at their next load.`);
+        } catch (error) {
+            toastError(error);
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const giveBack = () => (styled
+        ? style.mutateAsync({ name: styled.name, value: null })
+        : overlay.mutateAsync({ overlay: sprite.overlay, url: null }))
+        .then(() => toast(`${sprite.sprite} is Habbo's own again.`), toastError);
+
+    return (
+        <>
+            {current && (
+                <span className="inline-flex items-center gap-1 text-xs">
+                    <Badge tone="amber">replaced</Badge>
+                    <img src={current} alt={`${sprite.sprite} replacement`} className="max-h-8 max-w-24 border border-line bg-subtle object-contain [image-rendering:pixelated]" title={current} />
+                    {styled && <span className="text-muted">{`style ${styled.name}`}</span>}
+                </span>
+            )}
+            {replacing.canManage && (
+                <label className={`inline-flex items-center gap-1 text-sm text-accent ${busy ? 'opacity-50' : 'cursor-pointer hover:underline'}`}>
+                    <Upload className="size-4" />
+                    {busy ? 'Uploading...' : 'Upload replacement'}
+                    <input
+                        type="file"
+                        accept={IMAGE_TYPES}
+                        aria-label={`Upload a replacement for ${sprite.sprite}`}
+                        className="sr-only"
+                        disabled={busy}
+                        onChange={(event) => {
+                            const file = event.target.files?.[0];
+
+                            event.target.value = '';
+
+                            if (file) void upload(file);
+                        }}
+                    />
+                </label>
+            )}
+            {current && replacing.canManage && <Button variant="ghost" icon={<RotateCcw />} disabled={busy} onClick={() => void giveBack()}>Remove</Button>}
+        </>
+    );
+};
+
+/** One skin: its sprites (size, nine-slice, the overlay key that replaces it, its replacement) and the windows drawing it. */
+const SkinCard = ({ id, skin, sheet, replacing }: { id: string; skin: SkinEntry; sheet: ThemeSheet | undefined; replacing: Replacing | undefined }) => {
     const windows = Object.entries(skin.windows);
 
     return (
@@ -94,6 +177,7 @@ const SkinCard = ({ id, skin, sheet }: { id: string; skin: SkinEntry; sheet: The
                         >
                             overlay key
                         </Button>
+                        {replacing && <SpriteReplacement sprite={sprite} replacing={replacing} />}
                     </li>
                 ))}
             </ul>
@@ -113,6 +197,18 @@ const SkinCard = ({ id, skin, sheet }: { id: string; skin: SkinEntry; sheet: The
 /** The skins gallery: every skin of the theme, found by its id, a sprite's name or a window drawing it. */
 const SkinsTab = () => {
     const { data: skins, error } = useSkinMap();
+    const { data: plugins } = usePlugins();
+    const { data: hotelStyles } = usePluginStyles('hotel');
+    const { data: overlays, error: overlaysError } = useHotelOverlays();
+    const [ target, setTarget ] = useState('hotel');
+    const replacing = useMemo<Replacing | undefined>(() => {
+        if (!overlays || !plugins) return undefined;
+
+        const styles = new Map((hotelStyles?.styles ?? []).filter(style => style.type === 'image' && style.overlay).map(style => [ style.overlay!, style ]));
+
+        return { target, overlays, styles, canManage: plugins.canManage };
+    }, [ target, overlays, plugins, hotelStyles ]);
+    const targets = [ 'hotel', ...(plugins?.plugins.map(plugin => plugin.key).filter(key => key !== 'hotel') ?? []) ];
     const { data: sheet, error: sheetError } = useThemeSheet();
     const assets = useClientAssets();
     const [ params, setParams ] = useSearchParams();
@@ -134,13 +230,22 @@ const SkinsTab = () => {
                     aria-label="Find skins"
                 />
                 {skins && <span className="text-xs text-muted">{`${found.length} of ${Object.keys(skins.skins).length} skins`}</span>}
+                {replacing?.canManage && (
+                    <label className="ml-auto flex items-center gap-2 text-xs text-muted">
+                        Upload replacements into
+                        <Select aria-label="Plugin the replacements are uploaded into" value={target} onChange={event => setTarget(event.target.value)} className="w-auto">
+                            {targets.map(key => <option key={key} value={key}>{key === 'hotel' ? 'hotel (this hotel\'s own)' : key}</option>)}
+                        </Select>
+                    </label>
+                )}
             </div>
             {error && <div className="p-4"><ErrorNotice error={error} /></div>}
+            {overlaysError && <div className="p-4"><ErrorNotice error={overlaysError} /></div>}
             {sheetError && <div className="p-4"><ErrorNotice error={sheetError} /></div>}
             {assets && !assets.templates && <p className="border-b border-line p-3 text-xs text-muted">The sprites aren&apos;t drawn: the hotel&apos;s external variables name no asset.bundles.templates, where the client loads its theme sheet.</p>}
             {!skins && !error && <Loading />}
             {skins && found.length === 0 && <EmptyState>No skin has those words.</EmptyState>}
-            <ul className="divide-y divide-line">{found.slice(0, LIST_LIMIT).map(([ id, skin ]) => <li key={id}><SkinCard id={id} skin={skin} sheet={sheet} /></li>)}</ul>
+            <ul className="divide-y divide-line">{found.slice(0, LIST_LIMIT).map(([ id, skin ]) => <li key={id}><SkinCard id={id} skin={skin} sheet={sheet} replacing={replacing} /></li>)}</ul>
         </Panel>
     );
 };

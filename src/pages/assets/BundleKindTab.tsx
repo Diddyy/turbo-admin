@@ -19,6 +19,7 @@ const KIND_CHECKS: Record<BundleKind, string[]> = {
     badge: [],
     'catalog-image': [],
     sound: [],
+    'library-image': [],
 };
 
 /**

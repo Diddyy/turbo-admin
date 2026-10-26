@@ -5,7 +5,7 @@ import { furniIconUrl, useClientAssets } from '#/api/assets';
 import { type BundleKind, useEffectIcons } from '#/api/bundles';
 import { cx } from '#/lib/cx';
 
-const GLYPHS = { furniture: Box, figure: Shirt, effect: Sparkles, pet: PawPrint, template: MessageCircle, room: LayoutGrid, 'furni-icon': Sofa, 'catalog-icon': FolderTree, badge: Award, 'catalog-image': Image, sound: Music } satisfies Record<BundleKind, typeof Box>;
+const GLYPHS = { furniture: Box, figure: Shirt, effect: Sparkles, pet: PawPrint, template: MessageCircle, room: LayoutGrid, 'furni-icon': Sofa, 'catalog-icon': FolderTree, badge: Award, 'catalog-image': Image, sound: Music, 'library-image': Image } satisfies Record<BundleKind, typeof Box>;
 
 /**
  * What a bundle is at a glance: a furniture's icon from the client's host, by the bundle's name; an

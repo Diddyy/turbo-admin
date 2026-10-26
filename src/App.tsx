@@ -25,6 +25,7 @@ import { ContentPage } from '#/pages/content/ContentPage';
 import { CurrencyLogPage } from '#/pages/CurrencyLogPage';
 import { DashboardPage } from '#/pages/DashboardPage';
 import { LibraryPage } from '#/pages/gamedata/LibraryPage';
+import { MediaLibraryPage } from '#/pages/gamedata/MediaLibraryPage';
 import { PublishPage } from '#/pages/gamedata/PublishPage';
 import { TextsPage } from '#/pages/gamedata/TextsPage';
 import { UpdatesPage } from '#/pages/gamedata/UpdatesPage';
@@ -112,6 +113,7 @@ export const App = () => (
             <Route path="gamedata" element={<ToTab to="updates/waiting" />} />
             <Route path="gamedata/updates/:tab?" element={<UpdatesPage />} />
             <Route path="gamedata/library/:tab?" element={<LibraryPage />} />
+            <Route path="gamedata/media" element={<MediaLibraryPage />} />
             <Route path="gamedata/publish/:tab?" element={<PublishPage />} />
             {/* Products, texts and variables: the files the client reads, each by its name. */}
             <Route path="gamedata/:tab" element={<TextsPage />} />

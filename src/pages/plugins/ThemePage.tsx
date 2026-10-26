@@ -1,13 +1,16 @@
 import { Copy, ExternalLink, ImageIcon, Package, RotateCcw, Save, Trash2, Upload } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 
 import { useClientAssets } from '#/api/assets';
 import { type PluginImage, type PluginStyle, useImageChange, usePluginImages, usePluginStyles, useStyleChange } from '#/api/noCode';
+import { type TemplateIndex, useTemplateIndex } from '#/api/windows';
 import { useSaved } from '#/components/SaveFeedback';
 import { toast, toastError } from '#/components/toast';
 import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, PageBody, PageHeader, Panel, Select } from '#/components/ui';
 import { ThemePicker } from '#/pages/appearance/ThemePicker';
+import { type DesignDraft, DesignPreview } from '#/preview/DesignPreview';
+import { designTemplateOfFrame } from '#/preview/designSamples';
 
 import { PackageDialog } from './PackageDialog';
 
@@ -34,9 +37,66 @@ const resetTo = (style: PluginStyle) => (style.origin === 'habbo' || style.origi
 
 const copy = (text: string) => void navigator.clipboard.writeText(text).then(() => toast(`Copied ${text}`));
 
+/** A typed value as the client reads it (turbo-cloud `ThemeStyles.ClientValue`): in `templates.styles`, and in the variable it also goes to. Undefined while it is no value yet. */
+const clientValues = (style: PluginStyle, value: string): { style: unknown; variable: unknown } | undefined => {
+    const text = value.trim();
+
+    if (style.type === 'color') {
+        const hex = /^#?([0-9a-f]{6}|[0-9a-f]{8})$/i.exec(text)?.[1];
+
+        if (!hex) return undefined;
+
+        const argb = (hex.length === 6) ? (0xFF000000 + Number.parseInt(hex, 16)) : Number.parseInt(hex, 16);
+
+        return { style: argb, variable: `#${hex.slice(-6).toLowerCase()}` };
+    }
+
+    if (style.type === 'number') return (text !== '' && Number.isFinite(Number(text))) ? { style: Number(text), variable: Number(text) } : undefined;
+
+    if (style.type === 'position') {
+        const match = /^(-?\d+)\s*,\s*(-?\d+)$/.exec(text);
+        const position = match && { x: Number(match[1]), y: Number(match[2]) };
+
+        return position ? { style: position, variable: position } : undefined;
+    }
+
+    return ((style.type === 'font') || (style.type === 'text')) && text ? { style: text, variable: text } : undefined;
+};
+
+/** The unsaved values as a preview's draft: each in `templates.styles` and in the variable it goes to. */
+const styleDraft = (pluginKey: string, styles: readonly PluginStyle[], values: Readonly<Record<string, string>>): DesignDraft => {
+    const draft: Required<Pick<DesignDraft, 'styles' | 'variables'>> = { styles: {}, variables: [] };
+
+    for (const style of styles) {
+        const value = values[style.name];
+        const client = (value === undefined) ? undefined : clientValues(style, value);
+
+        if (!client) continue;
+
+        draft.styles[`${pluginKey}:${style.name}`] = client.style;
+
+        if (style.variable.length > 1) draft.variables.push({ path: style.variable, value: client.variable });
+    }
+
+    return draft;
+};
+
+/** The window a style changes, for its preview: the one its `frame.overrides` entry names (a frame Nitro draws, or a template's by its code's frame id). */
+const windowOfStyle = (index: TemplateIndex | undefined, style: PluginStyle | undefined) => {
+    const name = (style?.variable[0] === 'frame.overrides') ? style.variable[1] : undefined;
+
+    if (!index || !name) return undefined;
+
+    return index.frames[name] ? name : designTemplateOfFrame(name);
+};
+
 /** One style: its picker, what the hotel has, and Reset back to the theme's default. */
-const StyleRow = ({ pluginKey, style, canManage, images }: { pluginKey: string; style: PluginStyle; canManage: boolean; images: PluginImage[] }) => {
-    const [ value, setValue ] = useState(style.value ?? '');
+const StyleRow = ({ pluginKey, style, canManage, images, onDraft }: { pluginKey: string; style: PluginStyle; canManage: boolean; images: PluginImage[]; onDraft?: (name: string, value: string) => void }) => {
+    const [ value, setOwnValue ] = useState(style.value ?? '');
+    const setValue = (next: string) => {
+        setOwnValue(next);
+        onDraft?.(style.name, next);
+    };
     const change = useStyleChange(pluginKey);
     const saved = useSaved();
     const dirty = value !== (style.value ?? '');
@@ -192,6 +252,21 @@ export const ThemePage = () => {
     const area = params.get('group');
     const groups = [ ...all ].filter(([ name ]) => !area || name === area);
     const client = assets?.preview ? assets.preview.replace(/[?&]preview\b.*$/, '') : null;
+    const { data: index } = useTemplateIndex();
+    // The values typed and not saved yet, by style name: the preview draws them.
+    const [ values, setValues ] = useState<Record<string, string>>({});
+    const [ previewed, setPreviewed ] = useState<string | null>(null);
+    const styles = useMemo(() => data?.styles ?? [], [ data ]);
+    const draft = useMemo(() => styleDraft(key, styles, values), [ key, styles, values ]);
+    const windows = useMemo(() => [ ...new Set(styles.map(style => windowOfStyle(index, style)).filter(id => id !== undefined)) ], [ index, styles ]);
+    const shownWindow = previewed ?? windows[0] ?? null;
+    const onDraft = (name: string, value: string) => {
+        setValues(current => ({ ...current, [name]: value }));
+
+        const target = windowOfStyle(index, styles.find(style => style.name === name));
+
+        if (target) setPreviewed(target);
+    };
 
     return (
         <>
@@ -221,10 +296,23 @@ export const ThemePage = () => {
                 {error && <ErrorNotice error={error} />}
                 {!data && !error && <Loading />}
                 {data && data.styles.length === 0 && <EmptyState framed>This plugin declares no style properties: it has no theme.json (one with &quot;extends&quot;: &quot;habbo&quot; gets Habbo&apos;s).</EmptyState>}
-                {groups.map(([ name, styles ]) => (
+                {shownWindow && (
+                    <Panel
+                        title="Preview"
+                        description="The window as the game draws it with the values typed below, before they are saved."
+                        actions={windows.length > 1 && (
+                            <select aria-label="Window to preview" value={shownWindow} onChange={event => setPreviewed(event.target.value)} className="rounded-lg border border-line bg-surface px-2 py-1.5 font-mono text-xs">
+                                {windows.map(id => <option key={id} value={id}>{id}</option>)}
+                            </select>
+                        )}
+                    >
+                        <div className="p-4"><DesignPreview template={shownWindow} draft={draft} owner={key} /></div>
+                    </Panel>
+                )}
+                {groups.map(([ name, inGroup ]) => (
                     <Panel key={name} title={name} description={GROUP_HINTS[name]}>
                         <ul className="divide-y divide-line">
-                            {styles.map(style => <StyleRow key={`${style.name}-${style.value}`} pluginKey={key} style={style} canManage={data!.canManage} images={images} />)}
+                            {inGroup.map(style => <StyleRow key={`${style.name}-${style.value}`} pluginKey={key} style={style} canManage={data!.canManage} images={images} onDraft={onDraft} />)}
                         </ul>
                     </Panel>
                 ))}

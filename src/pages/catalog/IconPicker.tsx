@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 import { catalogIconUrl, useClientAssets } from '#/api/assets';
 import { Modal } from '#/components/Modal';
-import { Input } from '#/components/ui';
+import { Button, Input } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 /** How many icon numbers are offered: Habbo's go a little past 300; more can be typed. */
@@ -23,22 +23,35 @@ export const IconPicker = ({ value, open, onPick, onClose }: { value: number; op
         onPick(icon);
         onClose();
     };
+    const number = typed.trim() === '' ? NaN : Number(typed);
+    const pickTyped = () => {
+        if (number >= 0)
+            pick(Math.floor(number));
+    };
 
     return (
         <Modal title="Pick an icon" open={open} onClose={onClose}>
             <div className="flex flex-col gap-3 p-4">
-                <form
-                    onSubmit={(event) => {
-                        event.preventDefault();
-
-                        if (Number(typed) >= 0)
-                            pick(Math.floor(Number(typed)));
-                    }}
-                    className="flex items-center gap-2"
-                >
-                    <Input type="number" min={0} value={typed} onChange={event => setTyped(event.target.value)} placeholder="Or type a number" aria-label="Icon number" className="min-w-0 flex-1 font-mono sm:w-44 sm:flex-none" />
+                {/* Not a form: the picker is drawn inside the page editor's, and a form in a form submits the page's (a reload) on Enter. */}
+                <div className="flex items-center gap-2">
+                    <Input
+                        type="number"
+                        min={0}
+                        value={typed}
+                        onChange={event => setTyped(event.target.value)}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                                event.preventDefault();
+                                pickTyped();
+                            }
+                        }}
+                        placeholder="Or type a number"
+                        aria-label="Icon number"
+                        className="min-w-0 flex-1 font-mono sm:w-44 sm:flex-none"
+                    />
+                    <Button variant="secondary" disabled={!(number >= 0)} onClick={pickTyped}>OK</Button>
                     <span className="text-xs text-muted">Now {value > 0 ? `icon ${value}` : 'none'}.</span>
-                </form>
+                </div>
                 <ul className="grid grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-1.5">
                     <li>
                         <button

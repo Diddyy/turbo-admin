@@ -4,9 +4,13 @@ import { postForm } from './bundles';
 import { api, apiBlob, post, put, remove } from './client';
 
 /** What a theme style holds; staff type each as `theme.json` says (turbo-cloud `docs/plugin-data.md`). */
-export type PluginStyleType = 'color' | 'number' | 'image' | 'font' | 'text';
+export type PluginStyleType = 'color' | 'number' | 'image' | 'font' | 'text' | 'position';
 
-/** One style property of a theme and the hotel's value of it: `value` is `default` while `changed` is false. */
+/**
+ * One style property of a theme (its own, or one of the theme it extends: the hotel's own plugin
+ * extends the base theme `habbo`) and the hotel's value of it: `value` is `default` while `changed`
+ * is false; a null `default` is the client's own, so nothing is sent until staff set it.
+ */
 export interface PluginStyle {
     name: string;
     type: PluginStyleType;
@@ -15,11 +19,27 @@ export interface PluginStyle {
     hint: string | null;
     /** The library bitmap an image stands in for (`asset.overlays`). */
     overlay: string | null;
+    /** The merged variable and the path in it the value also goes to (`[ 'frame.overrides', 'catalog', 'color' ]`); empty for none. */
+    variable: string[];
     min: number | null;
     max: number | null;
-    default: string;
-    value: string;
+    default: string | null;
+    value: string | null;
     changed: boolean;
+}
+
+/** An image in a plugin's `wwwroot/styles/`: `path` as a patch's `asset` or an image style names it, `url` as a variable does. */
+export interface PluginImage {
+    path: string;
+    url: string | null;
+    bytes: number;
+    modified: string;
+}
+
+export interface PluginImagesResponse {
+    key: string;
+    images: PluginImage[];
+    canManage: boolean;
 }
 
 export interface PluginStylesResponse {
@@ -74,6 +94,32 @@ export const useStyleChange = (key: string) => {
             return value === null || value === undefined ? remove<PluginStyle>(path) : put<PluginStyle>(path, { value });
         },
         onSettled: () => void queryClient.invalidateQueries({ queryKey: stylesKey(key) }),
+    });
+};
+
+const imagesKey = (key: string) => [ 'plugins', key, 'images' ];
+
+export const usePluginImages = (key: string) => useQuery({
+    queryKey: imagesKey(key),
+    queryFn: () => api<PluginImagesResponse>(`/plugins/${encodeURIComponent(key)}/images`),
+});
+
+/** Uploads an image into the plugin's `wwwroot/styles/` (one by that name is replaced), or takes one away. */
+export const useImageChange = (key: string) => {
+    const queryClient = useQueryClient();
+    const base = `/plugins/${encodeURIComponent(key)}/images`;
+
+    return useMutation({
+        mutationFn: ({ file, path }: { file?: File; path?: string }) => {
+            if (path) return remove<undefined>(`${base}?path=${encodeURIComponent(path)}`);
+
+            const form = new FormData();
+
+            form.append('file', file!);
+
+            return postForm<PluginImage>(base, form);
+        },
+        onSettled: () => void queryClient.invalidateQueries({ queryKey: imagesKey(key) }),
     });
 };
 

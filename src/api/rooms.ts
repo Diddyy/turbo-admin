@@ -43,6 +43,30 @@ export const useRoomBots = (id: number) => useQuery({
     queryFn: () => api<RoomBotItem[]>(`/rooms/${id}/bots`),
 });
 
+/** A furniture item in a room: what it is, the logic the server runs for it, whose it is, where it stands and its data. */
+export interface RoomFurnitureItem {
+    id: number;
+    definitionId: number;
+    className: string;
+    name: string | null;
+    spriteId: number;
+    wall: boolean;
+    logic: string;
+    ownerId: number;
+    ownerName: string;
+    x: number;
+    y: number;
+    z: number;
+    rotation: number;
+    extraData: string | null;
+}
+
+/** The furniture in a room, by classname. */
+export const useRoomFurniture = (id: number) => useQuery({
+    queryKey: [ 'room', id, 'furniture' ],
+    queryFn: () => api<RoomFurnitureItem[]>(`/rooms/${id}/furniture`),
+});
+
 /** A pet standing in a room: what it is, whose it is and how it is doing, as last written. */
 export interface RoomPetItem {
     id: number;
@@ -97,6 +121,7 @@ export const roomCalls = (id: number) => ({
     pickupBot: (botId: number) => post<RoomActionResponse>(`${room(id)}/bots/${botId}/pickup`),
     savePet: (petId: number, pet: RoomPetRequest) => put<RoomActionResponse>(`${room(id)}/pets/${petId}`, pet),
     pickupPet: (petId: number) => post<RoomActionResponse>(`${room(id)}/pets/${petId}/pickup`),
+    pickupFurniture: (itemId: number) => post<RoomActionResponse>(`${room(id)}/furniture/${itemId}/pickup`),
 });
 
 /**

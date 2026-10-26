@@ -156,6 +156,32 @@ export interface AssetTarget {
     lastPublish: AssetPublishEntry | null;
 }
 
+/** Why a publish sends a bundle: never sent to the target, or the hotel's copy changed since it was. */
+export type PendingChange = 'new' | 'changed';
+
+/** A bundle a publish to a target would send. */
+export interface AssetPendingFile {
+    kind: BundleKind;
+    name: string;
+    /** Where it goes, under the target's folder. */
+    path: string;
+    size: number;
+    change: PendingChange;
+}
+
+/** A page of what a target has pending, largest first, with the totals of all of it. */
+export interface AssetPending {
+    items: AssetPendingFile[];
+    /** Files the search found, on every page. */
+    matched: number;
+    pageSize: number;
+    /** Every file pending, whatever the search. */
+    count: number;
+    bytes: number;
+    new: number;
+    changed: number;
+}
+
 export interface AssetTargetInput {
     name: string;
     protocol: TargetProtocol;
@@ -562,6 +588,18 @@ export const useForgetHostKey = () => {
         onSuccess: () => refresh(queryClient),
     });
 };
+
+/** What the target lacks or holds an older copy of, a page at a time, while `id` is set. */
+export const useTargetPending = (id: number | null, q: string, page: number) => useQuery({
+    queryKey: [ 'assets', 'targets', id, 'pending', q, page ],
+    queryFn: () => {
+        const params = new URLSearchParams({ q, page: String(page) });
+
+        return api<AssetPending>(`/assets/targets/${id}/pending?${params}`);
+    },
+    enabled: id !== null,
+    placeholderData: keepPreviousData,
+});
 
 export const useTargetHistory = (id: number | null) => useQuery({
     queryKey: [ 'assets', 'targets', id, 'history' ],

@@ -15,9 +15,8 @@ interface Props {
 
 /**
  * A page that throws while drawing: says so where the page was, and keeps the navigation, the
- * search and the rest of the panel working. Going to another path clears the error, while a page
- * that draws fine stays as it is when its own path moves on (a new notice opening at its key keeps
- * its draft): it isn't drawn again from nothing.
+ * search and the rest of the panel working. Going to another path clears the error, also within a
+ * page the shell keeps drawn across its own paths (a workspace such as the notices).
  */
 export class PageErrorBoundary extends Component<Props, State> {
     override state: State = { error: null };

@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { api } from './client';
+import { api, put } from './client';
 
 /**
  * A plugin that is a theme (the hotel's own always: it extends the base theme): the theme it
@@ -41,3 +41,49 @@ export const usePluginTemplatePatches = (key: string) => useQuery({
     queryKey: [ 'plugins', key, 'template-patches' ],
     queryFn: () => api<{ key: string; patches: PluginTemplatePatch[] }>(`/plugins/${encodeURIComponent(key)}/template-patches`),
 });
+
+/** Who a theme reaches (`docs/plugin-data.md`, "Who gets which theme"). */
+export type ThemeStatus = 'live' | 'development' | 'off';
+
+export interface ThemeAudience {
+    key: string;
+    extends: string | null;
+    status: ThemeStatus;
+    /** The hotel's one default: every player without a theme of their own draws it. */
+    isDefault: boolean;
+    /** Players may choose it in the client's settings. */
+    selectable: boolean;
+    /** While in development: the players and permission groups that get it. */
+    players: { id: number; name: string | null }[];
+    groups: string[];
+}
+
+export interface ThemeAudiencesResponse {
+    themes: ThemeAudience[];
+    /** Every permission group, for the audience editor. */
+    groups: string[];
+    canManage: boolean;
+}
+
+/** A change to who gets a theme; a field left out stays. Players by name or id. */
+export interface ThemeAudienceChange {
+    status?: ThemeStatus;
+    isDefault?: boolean;
+    selectable?: boolean;
+    players?: string[];
+    groups?: string[];
+}
+
+export const useThemeAudiences = () => useQuery({
+    queryKey: [ 'plugins', 'themes', 'audience' ],
+    queryFn: () => api<ThemeAudiencesResponse>('/plugins/themes/audience'),
+});
+
+export const useSetThemeAudience = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ key, change }: { key: string; change: ThemeAudienceChange }) => put<{ key: string }>(`/plugins/themes/${encodeURIComponent(key)}/audience`, change),
+        onSettled: () => void queryClient.invalidateQueries({ queryKey: [ 'plugins', 'themes' ] }),
+    });
+};

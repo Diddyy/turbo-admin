@@ -21,6 +21,8 @@ export interface NavItem {
     /** The letter after `g` that goes to it (`Shortcuts`); none for a page reached from its hub. */
     key?: string;
     needs?: Need;
+    /** What else the search finds it by: what is on it, in the words staff look for it with. */
+    words?: string;
 }
 
 const PAGES = {
@@ -32,7 +34,7 @@ const PAGES = {
     reports: { to: '/reports', label: 'Reports', icon: <Flag />, end: false, key: 'q', needs: 'canHandleReports' },
     wordFilter: { to: '/word-filter', label: 'Word filter', icon: <FunnelX />, end: false, needs: 'canHandleReports' },
     rooms: { to: '/rooms', label: 'Rooms', icon: <House />, end: false, key: 'r', needs: 'canViewRooms' },
-    groups: { to: '/groups', label: 'Groups', icon: <Shield />, end: false, key: 'b', needs: 'canViewContent' },
+    groups: { to: '/groups', label: 'Groups', icon: <Shield />, end: false, key: 'b', needs: 'canViewContent', words: 'guilds forums' },
     badgeParts: { to: '/groups/badge-parts', label: 'Badge parts', icon: <Puzzle />, end: false, needs: 'canViewContent' },
     catalog: { to: '/catalog', label: 'Catalog', icon: <Store />, end: false, key: 'c', needs: 'canViewCatalog' },
     vouchers: { to: '/catalog/vouchers', label: 'Vouchers', icon: <Ticket />, end: false, key: 'u', needs: 'canViewCatalog' },
@@ -43,10 +45,10 @@ const PAGES = {
     rewardTracks: { to: '/reward-tracks', label: 'Reward tracks', icon: <Milestone />, end: false, key: 'w', needs: 'canManageRewardTracks' },
     campaigns: { to: '/campaigns', label: 'Campaigns', icon: <CalendarDays />, end: false, needs: 'canManageCampaigns' },
     onlineRewards: { to: '/online-rewards', label: 'Online rewards', icon: <Timer />, end: false, needs: 'canViewSettings' },
-    content: { to: '/content', label: 'Content', icon: <Puzzle />, end: false, key: 't', needs: 'canViewContent' },
+    content: { to: '/content', label: 'Content', icon: <Puzzle />, end: false, key: 't', needs: 'canViewContent', words: 'achievements badges pets chat styles currencies daily tasks' },
     updates: { to: '/gamedata/updates', label: 'Habbo updates', icon: <CloudDownload />, end: false, key: 'g', needs: 'canViewGamedata' },
-    library: { to: '/gamedata/library', label: 'Library', icon: <Armchair />, end: false, key: 'f', needs: 'canViewGamedata' },
-    texts: { to: '/gamedata/products', also: [ '/gamedata/texts', '/gamedata/variables' ], label: 'Texts & variables', icon: <Languages />, end: false, key: 'x', needs: 'canViewGamedata' },
+    library: { to: '/gamedata/library', label: 'Library', icon: <Armchair />, end: false, key: 'f', needs: 'canViewGamedata', words: 'furniture definitions furnidata logic bundles clothing figures effects pets' },
+    texts: { to: '/gamedata/products', also: [ '/gamedata/texts', '/gamedata/variables' ], label: 'Texts & variables', icon: <Languages />, end: false, key: 'x', needs: 'canViewGamedata', words: 'product data external texts variables' },
     publish: { to: '/gamedata/publish', label: 'Publish', icon: <Send />, end: false, key: 'n', needs: 'canViewGamedata' },
     permissions: { to: '/permissions', label: 'Permissions', icon: <KeyRound />, end: false, key: 'k', needs: 'canViewPermissions' },
     staff: { to: '/staff', label: 'Staff passkeys', icon: <ShieldCheck />, end: false, key: 's', needs: 'canResetPasskeys' },

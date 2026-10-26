@@ -4,14 +4,17 @@ import { useState } from 'react';
 import { furniIconUrl, useClientAssets } from '#/api/assets';
 import { useFurnitureSearch } from '#/api/catalog';
 import { BONUS_SOURCES, type BonusRareCampaign, PURCHASE_RESULTS, useBonusRareCampaigns, useBonusRareStanding, useDeleteBonusRareCampaign, useRecordBonusRarePurchase, useSaveBonusRareCampaign } from '#/api/hotelView';
+import type { ImageAccept } from '#/api/media';
 import { ask } from '#/components/confirm';
 import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, Panel, Select, SuccessNotice } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
 import type { HotelViewDraft } from './draft';
 import { useResolveImage } from './hooks';
-import { COMMON, inputToIso, isoTime, isoToInput } from './model';
+import { COMMON, inputToIso, isoTime, isoToInput, LIBRARY_ADDRESS } from './model';
 import { ImageField } from './parts';
+
+const BONUS_RARE_IMAGE: ImageAccept = { ...LIBRARY_ADDRESS, usedIn: 'hotelView.bonusRare' };
 
 type CampaignDraft = Omit<BonusRareCampaign, 'id'>;
 
@@ -212,7 +215,7 @@ export const BonusRareTab = ({ draft, now, disabled }: { draft: HotelViewDraft; 
             </Panel>
             <Panel title="Widget picture" description="What the bonus rare widget shows beside the furni and the count. Kept with the page's other changes until you press Save.">
                 <div className="p-4">
-                    <ImageField label="Picture" value={draft.text(COMMON.bonusRareImage)} onChange={value => draft.setText(COMMON.bonusRareImage, value)} resolve={resolve} changed={draft.changed(COMMON.bonusRareImage)} disabled={disabled} />
+                    <ImageField label="Picture" value={draft.text(COMMON.bonusRareImage)} onChange={value => draft.setText(COMMON.bonusRareImage, value)} accept={BONUS_RARE_IMAGE} resolve={resolve} changed={draft.changed(COMMON.bonusRareImage)} disabled={disabled} />
                 </div>
             </Panel>
             {!disabled && <RecordPurchase />}

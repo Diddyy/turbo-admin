@@ -3,8 +3,9 @@ import { useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 
 import { useClientAssets } from '#/api/assets';
-import { FONT_TYPES, type PluginFont, type PluginImage, type PluginStyle, useFontChange, useImageChange, usePluginFonts, usePluginImages, usePluginStyles, useStyleChange } from '#/api/noCode';
+import { FONT_TYPES, type PluginFont, type PluginStyle, useFontChange, useImageChange, usePluginFonts, usePluginImages, usePluginStyles, useStyleChange } from '#/api/noCode';
 import { type TemplateIndex, useTemplateIndex } from '#/api/windows';
+import { ImageInput } from '#/components/ImageInput';
 import { useSaved } from '#/components/SaveFeedback';
 import { toast, toastError } from '#/components/toast';
 import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, PageBody, PageHeader, Panel, Select } from '#/components/ui';
@@ -101,7 +102,7 @@ const windowOfStyle = (index: TemplateIndex | undefined, style: PluginStyle | un
 };
 
 /** One style: its picker, what the hotel has, and Reset back to the theme's default. */
-const StyleRow = ({ pluginKey, style, canManage, images, fonts, onDraft }: { pluginKey: string; style: PluginStyle; canManage: boolean; images: PluginImage[]; fonts: PluginFont[]; onDraft?: (name: string, value: string) => void }) => {
+const StyleRow = ({ pluginKey, style, canManage, fonts, onDraft }: { pluginKey: string; style: PluginStyle; canManage: boolean; fonts: PluginFont[]; onDraft?: (name: string, value: string) => void }) => {
     const [ value, setOwnValue ] = useState(style.value ?? '');
     const setValue = (next: string) => {
         setOwnValue(next);
@@ -169,39 +170,15 @@ const StyleRow = ({ pluginKey, style, canManage, images, fonts, onDraft }: { plu
                     </>
                 )}
                 {style.type === 'image' && (
-                    <>
-                        {style.value && /^(\/|https?:)/.test(style.value) && <img src={style.value} alt="" className="max-h-12 max-w-32 rounded border border-line bg-subtle object-contain" />}
-                        {style.value && <span className="max-w-72 truncate font-mono text-xs text-muted" title={style.value}>{style.value}</span>}
-                        {canManage && (
-                            <label className="inline-flex cursor-pointer items-center gap-1 text-sm text-accent hover:underline">
-                                <Upload className="size-4" />
-                                Upload
-                                <input
-                                    type="file"
-                                    accept={IMAGE_TYPES}
-                                    className="sr-only"
-                                    onChange={(event) => {
-                                        const file = event.target.files?.[0];
-
-                                        if (file) change.mutate({ name: style.name, file }, said);
-                                    }}
-                                />
-                            </label>
-                        )}
-                        {canManage && images.length > 0 && (
-                            <select
-                                aria-label={`${style.name} image`}
-                                value=""
-                                className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm"
-                                onChange={(event) => {
-                                    if (event.target.value) change.mutate({ name: style.name, value: event.target.value }, said);
-                                }}
-                            >
-                                <option value="">Pick an uploaded image</option>
-                                {images.map(image => <option key={image.path} value={image.path}>{image.path}</option>)}
-                            </select>
-                        )}
-                    </>
+                    <ImageInput
+                        value={style.value ?? ''}
+                        onChange={next => change.mutate({ name: style.name, value: next || null }, said)}
+                        accept={{ shapes: [ 'plugin' ], plugin: pluginKey, usedIn: 'theme.style' }}
+                        title={style.label ?? style.name}
+                        resolve={path => (/^(\/|https?:)/.test(path) ? path : null)}
+                        disabled={!canManage || change.isPending}
+                        className="w-full max-w-md"
+                    />
                 )}
                 {style.type !== 'image' && canManage && <Button icon={<Save />} disabled={!dirty || value.trim() === '' || change.isPending} onClick={() => change.mutate({ name: style.name, value }, said)}>Save</Button>}
                 {style.changed && canManage && (
@@ -347,7 +324,6 @@ export const ThemePage = () => {
     const { key = 'hotel' } = useParams();
     const [ params, setParams ] = useSearchParams();
     const { data, error } = usePluginStyles(key);
-    const images = usePluginImages(key).data?.images ?? [];
     const ownFonts = usePluginFonts(key).data?.fonts;
     const hotelFonts = usePluginFonts('hotel').data?.fonts;
     // The plugin's fonts and the hotel's: each is given to clients as the hotel's text.fonts entry.
@@ -418,7 +394,7 @@ export const ThemePage = () => {
                 {groups.map(([ name, inGroup ]) => (
                     <Panel key={name} title={name} description={GROUP_HINTS[name]}>
                         <ul className="divide-y divide-line">
-                            {inGroup.map(style => <StyleRow key={`${style.name}-${style.value}`} pluginKey={key} style={style} canManage={data!.canManage} images={images} fonts={fonts} onDraft={onDraft} />)}
+                            {inGroup.map(style => <StyleRow key={`${style.name}-${style.value}`} pluginKey={key} style={style} canManage={data!.canManage} fonts={fonts} onDraft={onDraft} />)}
                         </ul>
                     </Panel>
                 ))}

@@ -3,11 +3,15 @@ import { useState } from 'react';
 
 import { promoImageUrl, useClientAssets } from '#/api/assets';
 import { ARTICLE_LINK_TYPES, type PromoArticle, type PromoArticleDraft, useDeletePromoArticle, usePromoArticles, useReorderPromoArticles, useSavePromoArticle } from '#/api/hotelView';
+import type { ImageAccept } from '#/api/media';
 import { ask } from '#/components/confirm';
 import { Badge, Button, EmptyState, ErrorNotice, IconButton, Input, Labeled, Loading, Panel, Select, Switch, Textarea } from '#/components/ui';
 
 import { inputToIso, isoTime, isoToInput } from './model';
 import { ImageField } from './parts';
+
+/** An article's picture is its path under the client's image library. */
+const ARTICLE_IMAGE: ImageAccept = { shapes: [ 'relative' ], usedIn: 'hotelView.article', folder: 'web_promo' };
 
 const EMPTY: PromoArticleDraft = { title: '', bodyText: '', buttonText: '', linkType: 1, linkContent: '', imageUrl: '', visible: true, startsAt: null, endsAt: null };
 
@@ -56,7 +60,7 @@ const ArticleEditor = ({ article, onDone, disabled }: { article: PromoArticle | 
                 <ImageField
                     label="Picture"
                     hint="Its path under the client's image library, such as web_promo/summer.png."
-                    placeholder="web_promo/summer.png"
+                    accept={ARTICLE_IMAGE}
                     value={draft.imageUrl}
                     onChange={value => set({ imageUrl: value })}
                     resolve={path => promoImageUrl(assets, path) ?? ''}

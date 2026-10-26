@@ -3,6 +3,7 @@ import { ArrowLeft, Check, Coins, Hammer, Wand2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { type BuildPlan, type BuildRequest, catalogCalls, type CatalogPageDetail, type CatalogTree, type PageDisplay, useCatalogEdit, useFurniLines } from '#/api/catalog';
+import { ImagePicker } from '#/components/ImagePicker';
 import { Modal } from '#/components/Modal';
 import { toast } from '#/components/toast';
 import { Button, EmptyState, ErrorNotice, IconButton, Input, Labeled, Segmented, Select, Switch, TextButton, WarningNotice } from '#/components/ui';
@@ -10,7 +11,7 @@ import { cx } from '#/lib/cx';
 
 import { buildersFor, type BuilderSpec } from './builders';
 import { PageSelect } from './fields';
-import { IconPicker } from './IconPicker';
+import { CATALOG_ICON } from './images';
 import { DISPLAY_LABELS } from './labels';
 import { layoutOf } from './layouts';
 import { PageIcon } from './PageTree';
@@ -382,7 +383,7 @@ export const PageBuilder = ({ tree, page, open, onClose, onBuiltPage }: PageBuil
                     )}
                 </div>
             )}
-            <IconPicker value={newIcon ?? 0} open={iconOpen} onPick={setNewIcon} onClose={() => setIconOpen(false)} />
+            <ImagePicker open={iconOpen} title="Pick an icon" accept={CATALOG_ICON} value={String(newIcon ?? 0)} onPick={icon => setNewIcon(Number(icon) || 0)} onClose={() => setIconOpen(false)} none="No icon" />
         </Modal>
     );
 };

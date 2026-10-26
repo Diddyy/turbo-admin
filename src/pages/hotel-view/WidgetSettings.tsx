@@ -1,9 +1,13 @@
+import type { ImageAccept } from '#/api/media';
 import { Input, Labeled, Panel, Switch } from '#/components/ui';
 
 import type { HotelViewDraft } from './draft';
 import { useResolveImage } from './hooks';
-import { CATALOG_PROMO_TEXTS, WIDGET_SETTINGS } from './model';
+import { CATALOG_PROMO_TEXTS, LIBRARY_ADDRESS, WIDGET_SETTINGS } from './model';
 import { Changed, ImageField } from './parts';
+
+const CATALOG_PROMO_IMAGE: ImageAccept = { ...LIBRARY_ADDRESS, usedIn: 'hotelView.catalogPromo' };
+const ROOM_HOPPER_IMAGE: ImageAccept = { ...LIBRARY_ADDRESS, usedIn: 'hotelView.roomHopper' };
 
 /** A variable as one line of text, with a mark when it has changed. */
 const TextSetting = ({ label, hint, settingKey, draft, disabled, mono }: { label: string; hint?: string; settingKey: string; draft: HotelViewDraft; disabled?: boolean; mono?: boolean }) => (
@@ -51,7 +55,7 @@ export const WidgetSettings = ({ draft, disabled }: { draft: HotelViewDraft; dis
             <Panel title="Catalogue promo" description="Nitro doesn't draw this widget yet; set it up for when it does.">
                 <div className="flex flex-col gap-3 p-4">
                     <TextSetting label="The page it opens" hint="A catalogue page's name." settingKey={WIDGET_SETTINGS.catalogPromoTarget} draft={draft} disabled={disabled} mono />
-                    <ImageField label="Picture" value={draft.text(WIDGET_SETTINGS.catalogPromoImage)} onChange={value => draft.setText(WIDGET_SETTINGS.catalogPromoImage, value)} resolve={resolve} changed={draft.changed(WIDGET_SETTINGS.catalogPromoImage)} disabled={disabled} />
+                    <ImageField label="Picture" value={draft.text(WIDGET_SETTINGS.catalogPromoImage)} onChange={value => draft.setText(WIDGET_SETTINGS.catalogPromoImage, value)} accept={CATALOG_PROMO_IMAGE} resolve={resolve} changed={draft.changed(WIDGET_SETTINGS.catalogPromoImage)} disabled={disabled} />
                     <div className="grid gap-3 sm:grid-cols-2">
                         {CATALOG_PROMO_TEXTS.map(text => (
                             <Labeled key={text.key} label={text.label} hint={text.key}>
@@ -72,7 +76,7 @@ export const WidgetSettings = ({ draft, disabled }: { draft: HotelViewDraft; dis
             <Panel title="Room hopper" description="Nitro doesn't draw this widget yet; set it up for when it does.">
                 <div className="flex flex-col gap-3 p-4">
                     <TextSetting label="Network" hint="The room network's id the widget sends players into." settingKey={WIDGET_SETTINGS.roomHopperNetwork} draft={draft} disabled={disabled} mono />
-                    <ImageField label="Picture" value={draft.text(WIDGET_SETTINGS.roomHopperImage)} onChange={value => draft.setText(WIDGET_SETTINGS.roomHopperImage, value)} resolve={resolve} changed={draft.changed(WIDGET_SETTINGS.roomHopperImage)} disabled={disabled} />
+                    <ImageField label="Picture" value={draft.text(WIDGET_SETTINGS.roomHopperImage)} onChange={value => draft.setText(WIDGET_SETTINGS.roomHopperImage, value)} accept={ROOM_HOPPER_IMAGE} resolve={resolve} changed={draft.changed(WIDGET_SETTINGS.roomHopperImage)} disabled={disabled} />
                 </div>
             </Panel>
         </>

@@ -1,15 +1,18 @@
 import { Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 
+import type { ImageAccept } from '#/api/media';
 import { ask } from '#/components/confirm';
 import { Button, Input, Labeled, Panel, Select, Switch } from '#/components/ui';
 
 import type { HotelViewDraft } from './draft';
 import { useResolveImage } from './hooks';
-import { BACKGROUND_LAYERS, BG_TIMING, bgObjectKey, codeProblem, formatSchedule, layerKey, MAX_MOVING_OBJECTS, parseSchedule } from './model';
+import { BACKGROUND_LAYERS, BG_TIMING, bgObjectKey, codeProblem, formatSchedule, layerKey, LIBRARY_ADDRESS, MAX_MOVING_OBJECTS, parseSchedule } from './model';
 import { MovingObjects } from './MovingObjects';
 import { ImageField, ScheduleEditor } from './parts';
 import { ReceptionPreview } from './Preview';
+
+const BACKGROUND_IMAGE: ImageAccept = { ...LIBRARY_ADDRESS, usedIn: 'hotelView.background', folder: 'reception' };
 
 /**
  * The reception's backgrounds: the default set, and sets under a code that a schedule
@@ -86,7 +89,7 @@ export const BackgroundsTab = ({ draft, codes, now, disabled }: { draft: HotelVi
 
                         return (
                             <li key={name} className="flex flex-col gap-2 p-4">
-                                <ImageField label={label} hint={hint} value={draft.text(uri)} onChange={value => draft.setText(uri, value)} resolve={resolve} changed={draft.changed(uri)} disabled={disabled} />
+                                <ImageField label={label} hint={hint} value={draft.text(uri)} onChange={value => draft.setText(uri, value)} accept={BACKGROUND_IMAGE} resolve={resolve} changed={draft.changed(uri)} disabled={disabled} />
                                 <Switch
                                     label="Shown"
                                     hint="Hidden, the layer is not drawn at all while this set shows."

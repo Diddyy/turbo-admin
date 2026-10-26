@@ -1,13 +1,16 @@
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
+import type { ImageAccept } from '#/api/media';
 import { Button, IconButton, Input, Labeled, Select, Switch } from '#/components/ui';
 
 import type { HotelViewDraft } from './draft';
 import { useResolveImage } from './hooks';
-import { ELEMENT_TYPES, formatConf, formatLayout, type GenericElement, type GenericLayout, isTextArg, parseConf, parseLayout } from './model';
+import { ELEMENT_TYPES, formatConf, formatLayout, type GenericElement, type GenericLayout, isTextArg, LIBRARY_ADDRESS, parseConf, parseLayout } from './model';
 import { Changed, ImageField, TextKeyField } from './parts';
 import { GenericPreview } from './Preview';
+
+const WIDGET_IMAGE: ImageAccept = { ...LIBRARY_ADDRESS, usedIn: 'hotelView.widget' };
 
 const ARG_LABELS: Record<string, string> = {
     text: 'Text',
@@ -147,7 +150,7 @@ export const GenericEditor = ({ confKey, layoutKey, draft, wide: initialWide, te
             <div className="flex min-w-0 flex-col gap-5">
                 <section className="flex flex-col gap-3">
                     <h3 className="flex items-center gap-2 text-sm font-semibold">Picture and placement <Changed on={draft.changed(layoutKey)} /></h3>
-                    <ImageField label="Picture" hint="Usually under the client's image library: ${image.library.url}web_promo_small/name.png." value={layout['bitmap.uri']} onChange={value => setLayout('bitmap.uri', value)} resolve={resolve} disabled={disabled} />
+                    <ImageField label="Picture" hint="Usually under the client's image library: ${image.library.url}web_promo_small/name.png." value={layout['bitmap.uri']} onChange={value => setLayout('bitmap.uri', value)} accept={WIDGET_IMAGE} resolve={resolve} disabled={disabled} />
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                         {number('bitmap.x', 'Picture x', '10')}
                         {number('bitmap.y', 'Picture y', '10')}

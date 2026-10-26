@@ -250,7 +250,7 @@ export const Shell = () => {
             <ConfirmHost />
             <Toasts />
             <main ref={main} data-scroll-root className="flex min-h-0 min-w-0 flex-1 flex-col pb-[calc(2rem+env(safe-area-inset-bottom))] max-lg:overflow-y-auto max-lg:overscroll-contain lg:pb-10">
-                <PageErrorBoundary key={pathname}>
+                <PageErrorBoundary resetKey={pathname}>
                     <Outlet />
                 </PageErrorBoundary>
             </main>

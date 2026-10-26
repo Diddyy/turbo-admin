@@ -77,7 +77,7 @@ const Palette = ({ onClose }: { onClose: () => void }) => {
     const id = /^\d+$/.test(needle) ? Number(needle) : null;
     const groups: Group[] = [];
 
-    const pages = allPages.filter(page => needle === '' || page.label.toLowerCase().includes(needle));
+    const pages = allPages.filter(page => needle === '' || page.label.toLowerCase().includes(needle) || !!page.words?.includes(needle));
 
     // Before anything is typed: the players and rooms opened lately, to go back to.
     const recentShown = needle === '' ? recent.filter(item => (item.kind === 'player' ? me?.canViewPlayers : me?.canViewRooms)) : [];
@@ -95,7 +95,7 @@ const Palette = ({ onClose }: { onClose: () => void }) => {
         });
 
     if (pages.length > 0)
-        groups.push({ label: 'Pages', hits: pages.map(page => ({ key: `page:${page.to}`, icon: page.icon, title: page.label, shortcut: page.key, to: page.to })) });
+        groups.push({ label: 'Pages', hits: pages.map(page => ({ key: `page:${page.to}`, icon: page.icon, title: page.label, subtitle: needle && !page.label.toLowerCase().includes(needle) ? page.words : undefined, shortcut: page.key, to: page.to })) });
 
     if (id !== null) {
         const byId: Hit[] = [];

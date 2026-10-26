@@ -257,6 +257,25 @@ export interface GroupDetail {
     roomName: string;
     createdAt: string;
     members: { playerId: number; name: string; rank: number }[];
+    /** Its forum; null until its owner opens one with a forum terminal. */
+    forum: GroupForum | null;
+}
+
+/** Who may do something in a group forum, as GuildForumPermission numbers it. */
+export const FORUM_PERMISSIONS: Record<number, string> = { 0: 'Everybody', 1: 'Members', 2: 'Admins', 3: 'The owner' };
+
+/** A group's forum settings, each a FORUM_PERMISSIONS number. */
+export interface GroupForumSettings {
+    readPermission: number;
+    postMessagePermission: number;
+    postThreadPermission: number;
+    moderatePermission: number;
+}
+
+export interface GroupForum extends GroupForumSettings {
+    threadCount: number;
+    messageCount: number;
+    lastMessageAt: string | null;
 }
 
 export interface GroupBadgePart {
@@ -296,8 +315,9 @@ export const useGroupAction = () => {
     const refresh = useRefreshContent();
 
     return useMutation({
-        mutationFn: (action: { id: number; rename?: { name: string; description: string }; resetBadge?: true; removeMember?: number; remove?: true }) => {
+        mutationFn: (action: { id: number; rename?: { name: string; description: string }; forum?: GroupForumSettings; resetBadge?: true; removeMember?: number; remove?: true }) => {
             if (action.rename) return put<void>(`/content/groups/${action.id}`, action.rename);
+            if (action.forum) return put<void>(`/content/groups/${action.id}/forum`, action.forum);
             if (action.resetBadge) return post<void>(`/content/groups/${action.id}/reset-badge`);
             if (action.removeMember !== undefined) return api<void>(`/content/groups/${action.id}/members/${action.removeMember}`, { method: 'DELETE' });
 

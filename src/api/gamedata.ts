@@ -211,13 +211,16 @@ export interface FurnitureDefinition {
     tags: FurnitureTag[];
     /** The server's own columns (classname, id, logic, usagepolicy, cangroup, cansell, extradata), as a JSON object. */
     serverFields: string;
+    /** The logic the server has for it, by its classname or its asset file's logic; null when only the default. */
+    matchingLogic: string | null;
 }
 
 /** Something to know about a furniture definition at a glance, as the server's FurnitureTag names it. */
-export type FurnitureTag = 'hotel-own' | 'habbo-update' | 'edited' | 'no-bundle' | 'bundle-failed' | 'bundle-outdated' | 'not-sold';
+export type FurnitureTag = 'hotel-own' | 'habbo-update' | 'edited' | 'no-bundle' | 'bundle-failed' | 'bundle-outdated' | 'not-sold' | 'logic-mismatch';
 
 /** Each tag in the order the list shows them: its words, its colour and what it means. */
 export const FURNITURE_TAGS: { value: FurnitureTag; label: string; tone: BadgeTone; meaning: string }[] = [
+    { value: 'logic-mismatch', label: 'wrong logic', tone: 'red', meaning: 'The server has a logic for it but runs it as plain furniture: it does nothing in a room.' },
     { value: 'no-bundle', label: 'no bundle', tone: 'red', meaning: 'No bundle has its asset: the client draws a placeholder.' },
     { value: 'bundle-failed', label: 'bundle failed', tone: 'red', meaning: 'Its bundle could not be downloaded or converted.' },
     { value: 'bundle-outdated', label: 'bundle outdated', tone: 'accent', meaning: 'Habbo has a newer revision of its bundle; a sync takes it.' },
@@ -246,6 +249,10 @@ export interface FurnitureListItem {
     /** Its bundle's size in bytes; null without a bundle file. */
     bundleSize: number | null;
     bundleSource: 'habbo' | 'upload' | null;
+    /** The logic the server runs for it. */
+    logic: string;
+    /** The logic the server has for it, by its classname or its asset file's logic; null when only the default. */
+    matchingLogic: string | null;
 }
 
 export interface FurnitureListPage {
@@ -450,6 +457,19 @@ export const useUpdateDefinition = (id: number) => {
 
     return useMutation({
         mutationFn: (fields: Record<string, unknown>) => put<FurnitureDefinition>(`/gamedata/furniture/${id}`, { fields }),
+        onSuccess: refresh,
+    });
+};
+
+/**
+ * Gives definitions a logic: `logic` to each of `ids`; without a logic, each its matching one;
+ * without ids, every definition tagged wrong logic its matching one. One change set in the history.
+ */
+export const useSetLogic = () => {
+    const refresh = useRefresh();
+
+    return useMutation({
+        mutationFn: (input: { ids?: number[]; logic?: string }) => post<{ changeSet: ChangeSet | null }>('/gamedata/furniture/logic', input),
         onSuccess: refresh,
     });
 };

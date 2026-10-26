@@ -47,6 +47,7 @@ import { ReportsPage } from '#/pages/reports/ReportsPage';
 import { WordFilterPage } from '#/pages/reports/WordFilterPage';
 import { RewardTracksPage } from '#/pages/reward-tracks/RewardTracksPage';
 import { RoomBotsPage } from '#/pages/rooms/RoomBotsPage';
+import { RoomFurniturePage } from '#/pages/rooms/RoomFurniturePage';
 import { RoomPage } from '#/pages/rooms/RoomPage';
 import { RoomPetsPage } from '#/pages/rooms/RoomPetsPage';
 import { RoomSettingsPage } from '#/pages/rooms/RoomSettingsPage';
@@ -76,6 +77,7 @@ export const App = () => (
             <Route path="rooms" element={<RoomsPage />} />
             <Route path="rooms/:id" element={<ToTab to="overview" />} />
             <Route path="rooms/:id/overview" element={<RoomPage />} />
+            <Route path="rooms/:id/furniture" element={<RoomFurniturePage />} />
             <Route path="rooms/:id/bots" element={<RoomBotsPage />} />
             <Route path="rooms/:id/pets" element={<RoomPetsPage />} />
             <Route path="rooms/:id/settings" element={<RoomSettingsPage />} />

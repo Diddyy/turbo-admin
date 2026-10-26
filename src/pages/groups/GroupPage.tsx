@@ -1,10 +1,10 @@
-import { Eraser, Save, Trash2, UserMinus } from 'lucide-react';
+import { Eraser, MessagesSquare, Save, Trash2, UserMinus } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 
-import { GROUP_RANKS, GROUP_TYPES, type GroupDetail, useCanManageContent, useGroup, useGroupAction } from '#/api/content';
+import { FORUM_PERMISSIONS, GROUP_RANKS, GROUP_TYPES, type GroupDetail, type GroupForum, type GroupForumSettings, useCanManageContent, useGroup, useGroupAction } from '#/api/content';
 import { ask } from '#/components/confirm';
-import { Badge, Button, EmptyState, ErrorNotice, IconButton, Input, Kv, Labeled, Loading, PageBody, PageHeader, Panel, Stat, SuccessNotice, Textarea } from '#/components/ui';
+import { Badge, Button, EmptyState, ErrorNotice, IconButton, Input, Kv, Labeled, Loading, PageBody, PageHeader, Panel, Select, Stat, SuccessNotice, Textarea } from '#/components/ui';
 import { fromNow } from '#/lib/time';
 import { formatDateTime } from '#/pages/rooms/labels';
 
@@ -27,6 +27,72 @@ const RenameForm = ({ group, canManage, act }: { group: GroupDetail; canManage: 
             >
                 <Labeled label="Name"><Input value={name} onChange={event => setName(event.target.value)} disabled={!canManage} /></Labeled>
                 <Labeled label="Description"><Textarea value={description} onChange={event => setDescription(event.target.value)} rows={3} disabled={!canManage} /></Labeled>
+                {canManage && <div><Button type="submit" icon={<Save />} disabled={!changed || act.isPending}>Save</Button></div>}
+            </form>
+        </Panel>
+    );
+};
+
+/** Each forum setting: its words, and the lowest it may be (the one before it, as the forum's settings window builds them). */
+const FORUM_FIELDS: { key: keyof GroupForumSettings; label: string; lowest: (draft: GroupForumSettings) => number }[] = [
+    { key: 'readPermission', label: 'Who may read', lowest: () => 0 },
+    { key: 'postMessagePermission', label: 'Who may post messages', lowest: draft => draft.readPermission },
+    { key: 'postThreadPermission', label: 'Who may start threads', lowest: draft => draft.postMessagePermission },
+    { key: 'moderatePermission', label: 'Who may moderate', lowest: () => 2 },
+];
+
+const settingsOf = (forum: GroupForum): GroupForumSettings => ({
+    readPermission: forum.readPermission,
+    postMessagePermission: forum.postMessagePermission,
+    postThreadPermission: forum.postThreadPermission,
+    moderatePermission: forum.moderatePermission,
+});
+
+/**
+ * The group's forum: whether it has one, how busy it is, and who may read, post, start threads
+ * and moderate - set through the forum, as its owner's settings window would.
+ */
+const ForumPanel = ({ group, canManage, act }: { group: GroupDetail; canManage: boolean; act: Act }) => {
+    const forum = group.forum;
+    const [ draft, setDraft ] = useState<GroupForumSettings | null>(forum && settingsOf(forum));
+
+    if (!forum || !draft)
+        return (
+            <Panel title={<span className="flex items-center gap-2"><MessagesSquare className="size-4" />Forum</span>}>
+                <EmptyState>No forum: its owner opens one by buying a forum terminal for the group.</EmptyState>
+            </Panel>
+        );
+
+    // A lower setting lifts the ones after it that would allow more than it.
+    const set = (key: keyof GroupForumSettings, value: number) => setDraft((current) => {
+        const next = { ...current!, [key]: value };
+
+        next.postMessagePermission = Math.max(next.postMessagePermission, next.readPermission);
+        next.postThreadPermission = Math.max(next.postThreadPermission, next.postMessagePermission);
+
+        return next;
+    });
+    const changed = JSON.stringify(draft) !== JSON.stringify(settingsOf(forum));
+
+    return (
+        <Panel
+            title={<span className="flex items-center gap-2"><MessagesSquare className="size-4" />Forum</span>}
+            description={`${forum.threadCount.toLocaleString()} threads, ${forum.messageCount.toLocaleString()} messages${forum.lastMessageAt ? `, the last ${fromNow(forum.lastMessageAt)}` : ''}`}
+        >
+            <form
+                className="flex flex-col gap-3 p-4"
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    act.mutate({ id: group.id, forum: draft });
+                }}
+            >
+                {FORUM_FIELDS.map(field => (
+                    <Labeled key={field.key} label={field.label}>
+                        <Select value={String(draft[field.key])} onChange={event => set(field.key, Number(event.target.value))} disabled={!canManage}>
+                            {Object.entries(FORUM_PERMISSIONS).filter(([ value ]) => Number(value) >= field.lowest(draft)).map(([ value, label ]) => <option key={value} value={value}>{label}</option>)}
+                        </Select>
+                    </Labeled>
+                ))}
                 {canManage && <div><Button type="submit" icon={<Save />} disabled={!changed || act.isPending}>Save</Button></div>}
             </form>
         </Panel>
@@ -128,6 +194,9 @@ export const GroupPage = () => {
                                 <div className="min-w-0 max-lg:order-first max-lg:w-full">
                                     {/* Keyed by what was saved, so a save or another's change shows in the fields. */}
                                     <RenameForm key={`${group.name}\n${group.description}`} group={group} canManage={canManage} act={act} />
+                                </div>
+                                <div className="min-w-0 max-lg:w-full">
+                                    <ForumPanel key={JSON.stringify(group.forum)} group={group} canManage={canManage} act={act} />
                                 </div>
                                 <Panel title="Group" className="max-lg:order-first max-lg:w-full">
                                     <dl>

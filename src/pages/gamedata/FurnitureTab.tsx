@@ -1,12 +1,14 @@
-import { Box, ChevronRight, RotateCcw } from 'lucide-react';
+import { Box, ChevronRight, Cpu, RotateCcw, Wand2, X } from 'lucide-react';
 import { useDeferredValue, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
 import { furniIconUrl, useClientAssets } from '#/api/assets';
 import { type BundleKind, useBundles } from '#/api/bundles';
-import { FILES, FURNITURE_KINDS, FURNITURE_TAGS, type FurnitureListItem, type FurnitureTag, type GamedataStatus, useFurnitureList, useImport, useImportPreview } from '#/api/gamedata';
+import { FILES, FURNITURE_KINDS, FURNITURE_TAGS, type FurnitureListItem, type FurnitureTag, type GamedataStatus, useFurnitureList, useImport, useImportPreview, useLogicTypes, useSetLogic } from '#/api/gamedata';
+import { ask } from '#/components/confirm';
 import { ListToolbar } from '#/components/ListToolbar';
 import { SearchInput } from '#/components/SearchInput';
+import { toast, toastError } from '#/components/toast';
 import { Badge, Button, EmptyState, ErrorNotice, Loading, Select } from '#/components/ui';
 import { cx } from '#/lib/cx';
 import { BundleDetail } from '#/pages/assets/BundleDetail';
@@ -16,6 +18,7 @@ import { formatBytes } from '#/pages/assets/format';
 import { WaitingFromHabbo } from './frame';
 import { FurnitureEditor } from './FurnitureEditor';
 import { HabboValuesPanel } from './HabboValuesPanel';
+import { LogicSelect } from './LogicSelect';
 import { FieldChanges, HabboUpdate, ReviewItem } from './parts';
 
 /** Habbo's newest release: what taking its furniture in would change. */
@@ -85,8 +88,25 @@ const BundleCell = ({ item }: { item: FurnitureListItem }) => (
     </span>
 );
 
-const DefinitionRow = ({ item, onOpen }: { item: FurnitureListItem; onOpen: () => void }) => (
-    <li>
+/** The logic the server runs it with; in red beside the one it has for it when that is not it. */
+const LogicCell = ({ item }: { item: FurnitureListItem }) => {
+    const wrong = item.tags.includes('logic-mismatch');
+
+    return (
+        <span className="hidden w-40 shrink-0 flex-col gap-0.5 font-mono text-[11px] lg:flex" title={wrong ? `Runs ${item.logic}; the server has ${item.matchingLogic ?? ''} for it.` : item.logic}>
+            <span className={cx('truncate', wrong ? 'text-bad' : 'text-ink')}>{item.logic}</span>
+            {wrong && <span className="truncate text-muted">{`→ ${item.matchingLogic ?? ''}`}</span>}
+        </span>
+    );
+};
+
+const DefinitionRow = ({ item, onOpen, picked, onPick }: { item: FurnitureListItem; onOpen: () => void; picked?: boolean; onPick?: (picked: boolean) => void }) => (
+    <li className="flex items-center">
+        {onPick && (
+            <label className="grid shrink-0 cursor-pointer place-items-center self-stretch pl-3 sm:pl-4" title="Pick it, to give several a logic at once">
+                <input type="checkbox" checked={!!picked} onChange={event => onPick(event.target.checked)} aria-label={`Pick ${item.className}`} className="size-4 accent-accent" />
+            </label>
+        )}
         <button
             type="button"
             onClick={onOpen}
@@ -100,7 +120,8 @@ const DefinitionRow = ({ item, onOpen }: { item: FurnitureListItem; onOpen: () =
                 </span>
                 <Tags tags={item.tags} />
             </span>
-            <span className="hidden w-28 shrink-0 truncate text-xs text-muted lg:block" title={item.furniLine ?? undefined}>{item.furniLine || '-'}</span>
+            <span className="hidden w-28 shrink-0 truncate text-xs text-muted xl:block" title={item.furniLine ?? undefined}>{item.furniLine || '-'}</span>
+            <LogicCell item={item} />
             <BundleCell item={item} />
             <span className="hidden w-16 shrink-0 text-right font-mono text-xs text-muted tabular-nums md:block">{item.spriteId}</span>
             <span className="hidden w-12 shrink-0 md:block"><Badge>{FURNITURE_KINDS[item.productType] ?? '?'}</Badge></span>
@@ -126,6 +147,55 @@ const TagChip = ({ label, count, tone, active, title, onClick }: { label: string
         <span className="font-semibold tabular-nums">{(count ?? 0).toLocaleString()}</span>
     </button>
 );
+
+/**
+ * Logics for many at once: a logic for the picked definitions, and, with the wrong logic filter
+ * on, the matching logic for every definition it lists. One change set each, in the history.
+ */
+const LogicBar = ({ picked, mismatched, onDone }: { picked: number[]; mismatched: number; onDone: () => void }) => {
+    const { data: logics } = useLogicTypes();
+    const set = useSetLogic();
+    const [ logic, setLogic ] = useState('');
+    const done = (count: number | undefined) => {
+        toast(count ? `${count} ${count === 1 ? 'logic' : 'logics'} changed. Rooms load them as they reload.` : 'Every one already had that logic.');
+        onDone();
+    };
+    const run = (input: { ids?: number[]; logic?: string }) => set.mutate(input, { onSuccess: result => done(result.changeSet?.changeCount), onError: toastError });
+
+    return (
+        <div className="flex flex-wrap items-center gap-2 border-b border-line bg-accent-soft/40 px-3 py-2.5 text-[13px] sm:px-4 [&>svg]:size-4 [&>svg]:shrink-0">
+            {picked.length > 0
+                ? (
+                        <>
+                            <Cpu className="text-accent" />
+                            <span className="font-medium">{`${picked.length} picked`}</span>
+                            <span className="w-full sm:w-60"><LogicSelect value={logic} logics={logics} onChange={setLogic} /></span>
+                            <Button
+                                disabled={!logic || set.isPending}
+                                onClick={() => ask({ title: `Give ${picked.length} furniture the logic ${logic}?`, body: 'Rooms load the new logic as they reload. It can be rolled back from the history.', confirm: 'Change logic' }, () => run({ ids: picked, logic }))}
+                            >
+                                Set logic
+                            </Button>
+                            <Button variant="secondary" icon={<Wand2 />} disabled={set.isPending} title="Each its own: the logic the server has under its classname or its asset file's logic" onClick={() => run({ ids: picked })}>Matching logic</Button>
+                            <Button variant="ghost" icon={<X />} onClick={onDone}>Clear</Button>
+                        </>
+                    )
+                : (
+                        <>
+                            <Wand2 className="text-bad" />
+                            <span className="min-w-0 flex-1">{`${mismatched} furniture run as plain furniture where the server has their logic.`}</span>
+                            <Button
+                                icon={<Wand2 />}
+                                disabled={set.isPending}
+                                onClick={() => ask({ title: `Use the matching logic for all ${mismatched}?`, body: 'Each gets the logic the server has under its classname or its asset file\'s logic. Rooms load it as they reload; it can be rolled back from the history.', confirm: 'Use matching logic' }, () => run({}))}
+                            >
+                                Use the matching logic for all
+                            </Button>
+                        </>
+                    )}
+        </div>
+    );
+};
 
 /** The filter that lists the furniture bundles no definition is drawn from, instead of definitions. */
 const UNUSED = 'unused-bundles';
@@ -158,6 +228,7 @@ const Definitions = ({ status }: { status: GamedataStatus }) => {
     const [ page, setPage ] = useState(0);
     const [ open, setOpen ] = useState<number | null>(() => Number(params.get('id')) || null);
     const [ bulk, setBulk ] = useState(false);
+    const [ picked, setPicked ] = useState<Set<number>>(() => new Set());
     const q = useDeferredValue(text.trim());
     const unused = tag === UNUSED;
     const { data, error, isFetching } = useFurnitureList(q, type, unused ? '' : tag, unused ? 0 : page);
@@ -266,6 +337,9 @@ const Definitions = ({ status }: { status: GamedataStatus }) => {
                     </>
                 )}
 
+                {!unused && status.canManage && (picked.size > 0 || (tag === 'logic-mismatch' && (data?.total ?? 0) > 0)) && (
+                    <LogicBar picked={[ ...picked ]} mismatched={tag === 'logic-mismatch' ? data?.total ?? 0 : 0} onDone={() => setPicked(new Set())} />
+                )}
                 {!unused && error && <div className="p-4"><ErrorNotice error={error} /></div>}
                 {!unused && !data && !error && <Loading />}
                 {!unused && data && data.items.length === 0 && (
@@ -274,16 +348,26 @@ const Definitions = ({ status }: { status: GamedataStatus }) => {
                 {!unused && data && data.items.length > 0 && (
                     <>
                         <div className="hidden items-center gap-3 border-b border-line px-4 py-2 font-mono text-[11px] font-medium tracking-[0.08em] text-muted uppercase md:flex">
+                            {status.canManage && <span className="w-4 shrink-0" />}
                             <span className="w-10 shrink-0" />
                             <span className="flex-1">Furniture</span>
-                            <span className="hidden w-28 shrink-0 lg:block">Line</span>
+                            <span className="hidden w-28 shrink-0 xl:block">Line</span>
+                            <span className="hidden w-40 shrink-0 lg:block">Logic</span>
                             <span className="w-36 shrink-0 text-right">Bundle</span>
                             <span className="w-16 shrink-0 text-right">Sprite</span>
                             <span className="w-12 shrink-0" />
                             <span className="w-4 shrink-0" />
                         </div>
                         <ul className={cx('divide-y divide-line transition-opacity', isFetching && 'opacity-70')}>
-                            {data.items.map(item => <DefinitionRow key={item.id} item={item} onOpen={() => setOpen(item.id)} />)}
+                            {data.items.map(item => (
+                                <DefinitionRow
+                                    key={item.id}
+                                    item={item}
+                                    onOpen={() => setOpen(item.id)}
+                                    picked={picked.has(item.id)}
+                                    onPick={status.canManage ? on => setPicked(current => (on ? new Set(current).add(item.id) : new Set([ ...current ].filter(x => x !== item.id)))) : undefined}
+                                />
+                            ))}
                         </ul>
                     </>
                 )}

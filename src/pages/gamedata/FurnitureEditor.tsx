@@ -1,5 +1,5 @@
 import { ArrowLeftRight, Box, Download, Fingerprint, LayoutGrid, Palette, RotateCcw, Save, Settings2, Store, Type, Undo2, Upload, Wrench } from 'lucide-react';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { Link } from 'react-router';
 
 import { furniIconUrl, useClientAssets } from '#/api/assets';
@@ -7,7 +7,7 @@ import { downloadBundle, useBundle } from '#/api/bundles';
 import { ApiError } from '#/api/client';
 import { FURNITURE_KINDS, type FurnitureDefinition, furnitureTag, useFurnitureDefinition, useLogicTypes, useUpdateDefinition } from '#/api/gamedata';
 import { Modal } from '#/components/Modal';
-import { toastError } from '#/components/toast';
+import { toast, toastError } from '#/components/toast';
 import { Badge, Button, ErrorNotice, Input, Loading, Segmented, Select, Switch, Textarea } from '#/components/ui';
 import { cx } from '#/lib/cx';
 import { fromNow } from '#/lib/time';
@@ -196,15 +196,29 @@ const BundleCard = ({ definition, canManage }: { definition: FurnitureDefinition
 };
 
 /** The furniture at a glance: its look and tags, where it is sold, its bundle, and what Habbo's file said. */
-const Overview = ({ definition, item, draft, differing, canManage, onUseHabbo }: { definition: FurnitureDefinition; item: Item; draft: Draft; differing: number; canManage: boolean; onUseHabbo: () => void }) => {
+const Overview = ({ definition, item, draft, differing, canManage, onUseHabbo, onUseLogic }: { definition: FurnitureDefinition; item: Item; draft: Draft; differing: number; canManage: boolean; onUseHabbo: () => void; onUseLogic: (logic: string) => void }) => {
     const notSold = definition.tags.includes('not-sold');
     const file = definition.habboFile && definition.habboFileRead ? JSON.parse(definition.habboFile) as FileInfo : null;
     const list = (values: number[]) => (values.length ? values.join(', ') : '-');
     const name = String(draft.name ?? '') || definition.className;
     const description = String(draft.description ?? '');
+    const logic = String(draft.logic ?? '');
+    const wrongLogic = definition.matchingLogic !== null && definition.tags.includes('logic-mismatch') && logic !== definition.matchingLogic;
 
     return (
         <div className="flex flex-col gap-4">
+            {wrongLogic && (
+                <section className="flex flex-col gap-2 rounded-xl border border-bad-line bg-bad-soft px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-[13px] text-bad">
+                        {'The server runs it with '}
+                        <span className="font-mono">{logic}</span>
+                        {', but has '}
+                        <span className="font-mono">{definition.matchingLogic}</span>
+                        {' for it: in a room it does nothing of its own.'}
+                    </p>
+                    {canManage && <Button variant="secondary" icon={<Wrench />} className="h-8 shrink-0 px-2.5 text-xs" onClick={() => onUseLogic(definition.matchingLogic!)}>{`Use ${definition.matchingLogic}`}</Button>}
+                </section>
+            )}
             <section className="flex flex-col gap-4 rounded-xl border border-line bg-surface p-4 sm:flex-row sm:items-start">
                 <Icon className={definition.className} size="lg" />
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
@@ -253,6 +267,7 @@ const Overview = ({ definition, item, draft, differing, canManage, onUseHabbo }:
                                 ? (
                                         <dl className="grid divide-line sm:grid-cols-2 sm:gap-x-6 [&>div]:border-b [&>div]:border-line">
                                             <Fact label="Logic">{file.logic ?? '-'}</Fact>
+                                            <Fact label="Server logic">{logic || '-'}</Fact>
                                             <Fact label="Visualization">{file.visualization ?? '-'}</Fact>
                                             <Fact label="States">{file.states}{file.otherAnimations.length ? ` (+${file.otherAnimations.length})` : ''}</Fact>
                                             <Fact label="Size">{[ file.dimensionX, file.dimensionY, file.dimensionZ ].map(x => x ?? '-').join(' × ')}</Fact>
@@ -288,7 +303,17 @@ const Footprint = ({ width, length }: { width: number; length: number }) => {
 };
 
 /** The definition's fields in sections, Habbo's beside any the hotel holds otherwise. */
-const EditorBody = ({ definition, canManage }: { definition: FurnitureDefinition; canManage: boolean }) => {
+const EditorBody = ({ definition, canManage, section, onSection, onUnsaved, saved, onSaved }: {
+    definition: FurnitureDefinition;
+    canManage: boolean;
+    /** The section shown: the editor's own, so a save (which draws the body again) keeps it. */
+    section: string;
+    onSection: (section: string) => void;
+    onUnsaved: (count: number) => void;
+    /** Whether the last thing done was a save, which the new body's footer still says. */
+    saved: boolean;
+    onSaved: () => void;
+}) => {
     // The item as the file writes it, its states, which the file does not carry, and the
     // server's own columns, which no file carries.
     const item: Item = { ...(JSON.parse(definition.item) as Item), states: definition.states, ...(JSON.parse(definition.serverFields) as Item) };
@@ -299,9 +324,11 @@ const EditorBody = ({ definition, canManage }: { definition: FurnitureDefinition
     const byKey = new Map(fields.map(field => [ field.key, field ]));
     const original: Draft = Object.fromEntries(fields.map(field => [ field.key, toInput(field, item[field.key]) ]));
     const [ draft, setDraft ] = useState<Draft>(original);
-    const [ section, setSection ] = useState('overview');
+    const setSection = onSection;
     const update = useUpdateDefinition(definition.id);
     const changed = fields.filter(field => draft[field.key] !== original[field.key]);
+
+    useEffect(() => onUnsaved(changed.length), [ changed.length, onUnsaved ]);
     const set = (key: string, value: string | boolean) => setDraft(current => ({ ...current, [key]: value }));
 
     const habboOf = (field: FieldInfo) => (habbo && !field.server && field.key in habbo ? toInput(field, habbo[field.key]) : null);
@@ -437,6 +464,10 @@ const EditorBody = ({ definition, canManage }: { definition: FurnitureDefinition
                             differing={differing.length}
                             canManage={canManage}
                             onUseHabbo={() => setDraft(current => ({ ...current, ...Object.fromEntries(differing.map(field => [ field.key, habboOf(field)! ])) }))}
+                            onUseLogic={(logic) => {
+                                set('logic', logic);
+                                setSection('behaviour');
+                            }}
                         />
                     )}
 
@@ -471,12 +502,21 @@ const EditorBody = ({ definition, canManage }: { definition: FurnitureDefinition
                         ? <span className="text-bad">{update.error instanceof Error ? update.error.message : 'It could not be saved.'}</span>
                         : changed.length > 0
                             ? <span className="text-ink">{`${changed.length} unsaved ${changed.length === 1 ? 'change' : 'changes'}`}<span className="text-muted">{`: ${changed.map(x => x.label).join(', ')}`}</span></span>
-                            : <span className="text-muted">{update.isSuccess ? 'Saved. Habbo\'s later updates leave what you changed as it is.' : canManage ? 'No changes.' : 'You can look, not change.'}</span>}
+                            : <span className="text-muted">{update.isSuccess || saved ? 'Saved. Habbo\'s later updates leave what you changed as it is.' : canManage ? 'No changes.' : 'You can look, not change.'}</span>}
                 </div>
                 {canManage && (
                     <div className="flex gap-2">
                         <Button variant="ghost" icon={<Undo2 />} disabled={changed.length === 0} onClick={() => setDraft(original)}>Discard</Button>
-                        <Button icon={<Save />} disabled={changed.length === 0 || update.isPending} onClick={() => update.mutate(Object.fromEntries(changed.map(field => [ field.key, fromInput(field, draft[field.key]!) ])))}>
+                        <Button
+                            icon={<Save />}
+                            disabled={changed.length === 0 || update.isPending}
+                            onClick={() => update.mutate(Object.fromEntries(changed.map(field => [ field.key, fromInput(field, draft[field.key]!) ])), {
+                                onSuccess: () => {
+                                    toast(`Saved ${definition.className}: ${changed.map(x => x.label).join(', ')}.`);
+                                    onSaved();
+                                },
+                            })}
+                        >
                             {update.isPending ? 'Saving' : 'Save'}
                         </Button>
                     </div>
@@ -494,11 +534,35 @@ const EditorBody = ({ definition, canManage }: { definition: FurnitureDefinition
 export const FurnitureEditor = ({ id, canManage, onClose }: { id: number | null; canManage: boolean; onClose: () => void }) => {
     const { data: definition, error } = useFurnitureDefinition(id);
     const shown = definition && definition.id === id ? definition : null;
+    const [ section, setSection ] = useState('overview');
+    const [ unsaved, setUnsaved ] = useState(0);
+    const [ saved, setSaved ] = useState(false);
+    const [ openedId, setOpenedId ] = useState(id);
+
+    // Another definition opens on its overview, with nothing saved or waiting yet.
+    if (openedId !== id) {
+        setOpenedId(id);
+        setSection('overview');
+        setUnsaved(0);
+        setSaved(false);
+    }
+
+    useEffect(() => {
+        if (unsaved === 0)
+            return;
+
+        const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+
+        window.addEventListener('beforeunload', warn);
+
+        return () => window.removeEventListener('beforeunload', warn);
+    }, [ unsaved ]);
 
     return (
         <Modal
             open={id !== null}
             onClose={onClose}
+            leave={unsaved > 0 ? { title: 'Close without saving?', body: `${unsaved} unsaved ${unsaved === 1 ? 'change is' : 'changes are'} lost.`, confirm: 'Discard', danger: true } : null}
             className="sm:min-h-[88dvh] sm:max-w-6xl"
             title={shown
                 ? (
@@ -511,7 +575,18 @@ export const FurnitureEditor = ({ id, canManage, onClose }: { id: number | null;
         >
             {error && <div className="p-5"><ErrorNotice error={error} /></div>}
             {!shown && !error && <Loading />}
-            {shown && <EditorBody key={`${shown.id}:${shown.item}:${shown.serverFields}:${shown.tags.join()}`} definition={shown} canManage={canManage} />}
+            {shown && (
+                <EditorBody
+                    key={`${shown.id}:${shown.item}:${shown.serverFields}:${shown.tags.join()}`}
+                    definition={shown}
+                    canManage={canManage}
+                    section={section}
+                    onSection={setSection}
+                    onUnsaved={setUnsaved}
+                    saved={saved}
+                    onSaved={() => setSaved(true)}
+                />
+            )}
         </Modal>
     );
 };

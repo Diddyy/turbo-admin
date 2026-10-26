@@ -3,16 +3,18 @@ import type { ReactNode } from 'react';
 
 import { cx } from '#/lib/cx';
 
-import { useModalDialog } from './dialog';
+import type { Question } from './confirm';
+import { closeOrAsk, useModalDialog } from './dialog';
 
 /**
  * A wide dialog over the page, for picking from many or editing one thing at length: on a phone
  * it fills the screen, with its title and a close button along the top. On a bigger screen the
  * dialog covers the window and the card in it grows as tall as it needs, so the scrollbar at the
- * window's edge scrolls the card (the page behind stays put). `className` sizes the card.
+ * window's edge scrolls the card (the page behind stays put). `className` sizes the card. With
+ * `leave` (an editor with unsaved changes), closing it asks that question first.
  */
-export const Modal = ({ title, open, onClose, children, className }: { title: ReactNode; open: boolean; onClose: () => void; children: ReactNode; className?: string }) => {
-    const dialog = useModalDialog(open, onClose);
+export const Modal = ({ title, open, onClose, children, className, leave }: { title: ReactNode; open: boolean; onClose: () => void; children: ReactNode; className?: string; leave?: Question | null }) => {
+    const dialog = useModalDialog(open, onClose, leave);
 
     return (
         <dialog
@@ -28,7 +30,7 @@ export const Modal = ({ title, open, onClose, children, className }: { title: Re
                 >
                     <div className="flex items-center justify-between gap-3 border-b border-line bg-surface px-5 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
                         <h2 className="min-w-0 truncate text-sm font-semibold">{title}</h2>
-                        <button type="button" onClick={onClose} aria-label="Close" className="grid size-10 shrink-0 place-items-center rounded-lg text-muted hover:bg-subtle hover:text-ink sm:size-8">
+                        <button type="button" onClick={() => closeOrAsk(onClose, leave)} aria-label="Close" className="grid size-10 shrink-0 place-items-center rounded-lg text-muted hover:bg-subtle hover:text-ink sm:size-8">
                             <X className="size-4" />
                         </button>
                     </div>

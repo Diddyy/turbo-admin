@@ -230,6 +230,9 @@ export interface RoomAbilities {
     muteRoom: boolean;
     unload: boolean;
     alert: boolean;
+    transferOwner: boolean;
+    /** Owning the room or `room.furni.pickup_any`: may take its furniture back to their owners. */
+    pickUpFurni: boolean;
 }
 
 export interface RoomCategoryItem {

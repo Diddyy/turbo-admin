@@ -1,4 +1,4 @@
-import { Bot, House, PawPrint, Settings } from 'lucide-react';
+import { Armchair, Bot, House, PawPrint, Settings } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import type { RoomDetailResponse } from '#/api/types';
@@ -12,11 +12,12 @@ import { doorModeLabel } from './labels';
  * The header of a room's pages: its name, the facts that identify it, whether it is live, and its
  * tabs. Settings is a tab only for staff who may change them.
  */
-export const RoomHeader = ({ id, room, tab, children }: { id: number; room: RoomDetailResponse | undefined; tab: 'overview' | 'bots' | 'pets' | 'settings'; children?: ReactNode }) => {
+export const RoomHeader = ({ id, room, tab, children }: { id: number; room: RoomDetailResponse | undefined; tab: 'overview' | 'furniture' | 'bots' | 'pets' | 'settings'; children?: ReactNode }) => {
     useRememberRecent('room', id, room?.name);
 
     const tabs: TabItem[] = [
         { value: 'overview', label: 'Overview', icon: <House />, to: `/rooms/${id}/overview` },
+        { value: 'furniture', label: 'Furniture', icon: <Armchair />, to: `/rooms/${id}/furniture` },
         { value: 'bots', label: 'Bots', icon: <Bot />, to: `/rooms/${id}/bots` },
         { value: 'pets', label: 'Pets', icon: <PawPrint />, to: `/rooms/${id}/pets` },
         ...(room?.can.editSettings ? [ { value: 'settings', label: 'Settings', icon: <Settings />, to: `/rooms/${id}/settings` } ] : []),

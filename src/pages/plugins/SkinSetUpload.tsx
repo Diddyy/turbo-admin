@@ -155,7 +155,7 @@ export const SkinSetUpload = ({ skins, target, canManage }: { skins: SkinMap; ta
     const [ applying, setApplying ] = useState<string | null>(null);
     const [ dropping, setDropping ] = useState(false);
     const [ shownWindow, setShownWindow ] = useState<string | null>(null);
-    const overlays = useOverlaysChange();
+    const overlays = useOverlaysChange(target);
     const saved = useSaved();
 
     // The last file for a sprite wins: an earlier one for it is said to be left out.

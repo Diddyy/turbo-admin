@@ -1,13 +1,15 @@
-import { AppWindow, ImageIcon, Layers, Palette, Power, PowerOff } from 'lucide-react';
-import { Link } from 'react-router';
+import { AppWindow, CopyPlus, FolderPen, ImageIcon, Layers, Palette, Plus, Power, PowerOff } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router';
 
 import { useThemes } from '#/api/appearance';
 import { type PluginActionResponse, useSetPluginEnabled } from '#/api/plugins';
+import { folderOf, useWorkingOn } from '#/appearance/workingOn';
 import { ask } from '#/components/confirm';
 import { toast, toastError } from '#/components/toast';
 import { Badge, Button, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Panel } from '#/components/ui';
 import { plural } from '#/lib/plural';
 
+import { NewThemeDialog } from './NewThemeDialog';
 import { themeName, themeTree } from './themes';
 
 /** A plugin action's answer as a toast: what it did, or why not. */
@@ -23,10 +25,17 @@ export const ThemesPage = () => {
     const { data, error } = useThemes();
     const setEnabled = useSetPluginEnabled();
     const tree = data ? themeTree(data.themes, data.base) : [];
+    const working = useWorkingOn();
+    const [ params, setParams ] = useSearchParams();
+    // ?new=1 opens New theme (the Working on picker links here), ?copy=<key> Duplicate.
+    const making = params.has('new') || params.has('copy');
+    const closeMaking = () => setParams({}, { replace: true });
 
     return (
         <>
-            <PageHeader title="Themes" description="Every theme the hotel runs, under the one it extends. Every theme that is on applies; a later one in the tree changes what its parent set." />
+            <PageHeader title="Themes" description="Every theme the hotel runs, under the one it extends. Every theme that is on applies; a later one in the tree changes what its parent set. The one you work on is where every appearance editor saves.">
+                {data?.canManage && <Button icon={<Plus />} onClick={() => setParams({ new: '1' }, { replace: true })}>New theme</Button>}
+            </PageHeader>
             <PageBody className="flex flex-col gap-4 lg:gap-5">
                 {error && <ErrorNotice error={error} />}
                 {!data && !error && <Loading />}
@@ -45,6 +54,7 @@ export const ThemesPage = () => {
                                     <span className="font-medium">{themeName(theme)}</span>
                                     <span className="font-mono text-xs text-muted">{theme.key}</span>
                                     {theme.state === 'loaded' ? <Badge tone="green">on</Badge> : <Badge>{theme.state.replace('_', ' ')}</Badge>}
+                                    {working.key === theme.key && <Badge tone="amber">{`working on: saves land in ${folderOf(theme.key)}`}</Badge>}
                                     {theme.error
                                         ? <span className="text-xs text-bad">{theme.error}</span>
                                         : (
@@ -56,6 +66,8 @@ export const ThemesPage = () => {
                                         <Link to={`/appearance/styles/${encodeURIComponent(theme.key)}`} className={link}><Palette className="size-4" />Style properties</Link>
                                         <Link to={`/appearance/images/${encodeURIComponent(theme.key)}`} className={link}><ImageIcon className="size-4" />Images</Link>
                                         <Link to={`/appearance/patches#${encodeURIComponent(theme.key)}`} className={link}><Layers className="size-4" />Patches</Link>
+                                        {data.canManage && working.key !== theme.key && <Button variant="ghost" icon={<FolderPen />} title={`Save every appearance edit into ${folderOf(theme.key)}`} onClick={() => working.setKey(theme.key)}>Work on it</Button>}
+                                        {data.canManage && <Button variant="ghost" icon={<CopyPlus />} onClick={() => setParams({ copy: theme.key }, { replace: true })}>Duplicate</Button>}
                                         {data.canManage && theme.key !== 'hotel' && (theme.state === 'loaded'
                                             ? (
                                                     <Button
@@ -77,6 +89,7 @@ export const ThemesPage = () => {
                         {tree.length === 0 && <EmptyState>No theme yet.</EmptyState>}
                     </Panel>
                 )}
+                <NewThemeDialog open={making} copyOf={params.get('copy')} onClose={closeMaking} />
                 <p className="flex items-center gap-1 text-xs text-muted">
                     <AppWindow className="size-3.5" />
                     A theme is a data plugin with a theme.json; this hotel&apos;s own changes are the theme &quot;This hotel&quot;, which extends Habbo&apos;s.

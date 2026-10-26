@@ -5,13 +5,15 @@ import { Link, useSearchParams } from 'react-router';
 
 import { useClientAssets } from '#/api/assets';
 import { useTextSearch } from '#/api/gamedata';
-import { type HotelPatch, type PluginStyle, uploadPluginImage, useHotelOverlays, useHotelPatches, useOverlayChange, usePluginStyles, useStyleChange } from '#/api/noCode';
+import { type HotelPatch, type PluginStyle, uploadPluginImage, useHotelOverlays, useOverlayChange, usePatches, usePluginStyles, useStyleChange } from '#/api/noCode';
 import { type Plugin, usePluginContributions, usePlugins } from '#/api/plugins';
 import { readWindowsAgain, type SkinEntry, type SkinMap, type SkinSprite, type TemplateIndex, type ThemeSheet, useSkinMap, useTemplateIndex, useThemeSheet, type WindowElement, windowOf } from '#/api/windows';
+import { useWorkingOn } from '#/appearance/workingOn';
+import { WorkingOnPicker } from '#/appearance/WorkingOnPicker';
 import { useSaved } from '#/components/SaveFeedback';
 import { SearchInput } from '#/components/SearchInput';
 import { toast, toastError } from '#/components/toast';
-import { Badge, Button, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Panel, Select } from '#/components/ui';
+import { Badge, Button, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Panel } from '#/components/ui';
 import { useDebounced } from '#/lib/debounce';
 import { usePathTab } from '#/lib/tabs';
 import { DesignPreview } from '#/preview/DesignPreview';
@@ -89,8 +91,8 @@ interface Replacing {
  * it), or else the hotel's `asset.overlays` entry for the sprite. Remove gives the sprite back.
  */
 const SpriteReplacement = ({ sprite, replacing }: { sprite: SkinSprite; replacing: Replacing }) => {
-    const overlay = useOverlayChange();
-    const style = useStyleChange('hotel');
+    const overlay = useOverlayChange(replacing.target);
+    const style = useStyleChange(replacing.target, true);
     const saved = useSaved();
     const [ uploading, setUploading ] = useState(false);
     const styled = replacing.styles.get(sprite.overlay);
@@ -104,7 +106,8 @@ const SpriteReplacement = ({ sprite, replacing }: { sprite: SkinSprite; replacin
             const extension = /\.[a-z0-9]+$/i.exec(file.name)?.[0].toLowerCase() ?? '';
             const image = await uploadPluginImage(replacing.target, file, `${sprite.overlay.split('/').pop()}${extension}`);
 
-            if (styled) await style.mutateAsync({ name: styled.name, value: replacing.target === 'hotel' ? image.path : image.url! });
+            // The style is the target's own (the hotel's value, or the theme's default): it names its own image by its path.
+            if (styled) await style.mutateAsync({ name: styled.name, value: image.path });
             else await overlay.mutateAsync({ overlay: sprite.overlay, url: image.url });
 
             saved(`${sprite.sprite}: replaced by ${image.path} (${replacing.target})`);
@@ -202,9 +205,9 @@ const SkinCard = ({ id, skin, sheet, replacing }: { id: string; skin: SkinEntry;
 const SkinsTab = () => {
     const { data: skins, error } = useSkinMap();
     const { data: plugins } = usePlugins();
-    const { data: hotelStyles } = usePluginStyles('hotel');
+    const { key: target } = useWorkingOn();
+    const { data: hotelStyles } = usePluginStyles(target);
     const { data: overlays, error: overlaysError } = useHotelOverlays();
-    const [ target, setTarget ] = useState('hotel');
     const replacing = useMemo<Replacing | undefined>(() => {
         if (!overlays || !plugins) return undefined;
 
@@ -212,7 +215,6 @@ const SkinsTab = () => {
 
         return { target, overlays, styles, canManage: plugins.canManage };
     }, [ target, overlays, plugins, hotelStyles ]);
-    const targets = [ 'hotel', ...(plugins?.plugins.map(plugin => plugin.key).filter(key => key !== 'hotel') ?? []) ];
     const { data: sheet, error: sheetError } = useThemeSheet();
     const assets = useClientAssets();
     const [ params, setParams ] = useSearchParams();
@@ -236,14 +238,7 @@ const SkinsTab = () => {
                         aria-label="Find skins"
                     />
                     {skins && <span className="text-xs text-muted">{`${found.length} of ${Object.keys(skins.skins).length} skins`}</span>}
-                    {replacing?.canManage && (
-                        <label className="ml-auto flex items-center gap-2 text-xs text-muted">
-                            Upload replacements into
-                            <Select aria-label="Plugin the replacements are uploaded into" value={target} onChange={event => setTarget(event.target.value)} className="w-auto">
-                                {targets.map(key => <option key={key} value={key}>{key === 'hotel' ? 'hotel (this hotel\'s own)' : key}</option>)}
-                            </Select>
-                        </label>
-                    )}
+                    {replacing?.canManage && <span className="ml-auto"><WorkingOnPicker /></span>}
                 </div>
                 {error && <div className="p-4"><ErrorNotice error={error} /></div>}
                 {overlaysError && <div className="p-4"><ErrorNotice error={overlaysError} /></div>}
@@ -281,7 +276,7 @@ const PluginWindowPatches = ({ plugin, id }: { plugin: Plugin; id: string }) => 
 /** A window: the patches on it with their client status, a new one, and its element tree. */
 const WindowDetail = ({ index, skins, id }: { index: TemplateIndex; skins: SkinMap | undefined; id: string }) => {
     const found = windowOf(index, id);
-    const { data: hotel } = useHotelPatches();
+    const { data: hotel } = usePatches(useWorkingOn().key);
     const { data: plugins } = usePlugins();
     const [ draft, setDraft ] = useState<HotelPatch | null>(null);
     const [ editing, setEditing ] = useState<string | null>(null);

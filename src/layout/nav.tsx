@@ -1,4 +1,4 @@
-import { Activity, AppWindow, Armchair, BellRing, Bug, CalendarClock, CalendarDays, ChartColumn, CloudDownload, Coins, Disc3, DoorOpen, Flag, FunnelX, Gauge, History, House, ImageIcon, KeyRound, Landmark, Languages, Layers, Mail, MessagesSquare, Milestone, MonitorSmartphone, PackagePlus, Palette, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, SwatchBook, Ticket, Timer, TriangleAlert, Type, UserRound, Users } from 'lucide-react';
+import { Activity, AppWindow, Armchair, BellRing, Bug, CalendarClock, CalendarDays, ChartColumn, CloudDownload, Coins, Disc3, DoorOpen, Flag, FunnelX, Gauge, History, House, ImageIcon, KeyRound, Landmark, Languages, Layers, Mail, MessageCircle, MessagesSquare, Milestone, MonitorSmartphone, PackagePlus, Palette, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, SwatchBook, Ticket, Timer, TriangleAlert, Type, UserRound, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router';
 
@@ -45,7 +45,7 @@ const PAGES = {
     rewardTracks: { to: '/reward-tracks', label: 'Reward tracks', icon: <Milestone />, end: false, key: 'w', needs: 'canManageRewardTracks' },
     campaigns: { to: '/campaigns', label: 'Campaigns', icon: <CalendarDays />, end: false, needs: 'canManageCampaigns' },
     onlineRewards: { to: '/online-rewards', label: 'Online rewards', icon: <Timer />, end: false, needs: 'canViewSettings' },
-    content: { to: '/content', label: 'Content', icon: <Puzzle />, end: false, key: 't', needs: 'canViewContent', words: 'achievements badges pets chat styles currencies daily tasks' },
+    content: { to: '/content', label: 'Content', icon: <Puzzle />, end: false, key: 't', needs: 'canViewContent', words: 'achievements badges pets currencies daily tasks' },
     updates: { to: '/gamedata/updates', label: 'Habbo updates', icon: <CloudDownload />, end: false, key: 'g', needs: 'canViewGamedata' },
     library: { to: '/gamedata/library', label: 'Library', icon: <Armchair />, end: false, key: 'f', needs: 'canViewGamedata', words: 'furniture definitions furnidata logic bundles clothing figures effects pets' },
     texts: { to: '/gamedata/products', also: [ '/gamedata/texts', '/gamedata/variables' ], label: 'Texts & variables', icon: <Languages />, end: false, key: 'x', needs: 'canViewGamedata', words: 'product data external texts variables' },
@@ -55,6 +55,7 @@ const PAGES = {
     windows: { to: '/appearance/windows', label: 'Windows & skins', icon: <AppWindow />, end: false, needs: 'canViewPlugins', words: 'templates elements keys sprites overlays nine-slice inspector' },
     patches: { to: '/appearance/patches', label: 'Template patches', icon: <Layers />, end: false, needs: 'canViewPlugins', words: 'template modifications ops applied unmatched ineffective' },
     images: { to: '/appearance/images', label: 'Images', icon: <ImageIcon />, end: false, needs: 'canViewPlugins', words: 'upload art icons pictures styles folder' },
+    chatBubbles: { to: '/appearance/chat-bubbles', label: 'Chat bubbles', icon: <MessageCircle />, end: false, needs: 'canViewContent', words: 'chat styles speech bubbles chatstyles club staff art reg points' },
     appearanceTexts: { to: '/appearance/texts', label: 'Texts', icon: <Type />, end: false, needs: 'canViewGamedata', words: 'captions labels shown text window phrases' },
     outdated: { to: '/appearance/outdated', label: 'Outdated patches', icon: <TriangleAlert />, end: false, needs: 'canViewPlugins', words: 'client update broken missing elements' },
     permissions: { to: '/permissions', label: 'Permissions', icon: <KeyRound />, end: false, key: 'k', needs: 'canViewPermissions' },
@@ -125,7 +126,7 @@ const SECTIONS: NavSection[] = [
             { label: 'Reward tracks', icon: <Milestone />, pages: [ 'rewardTracks' ], hint: 'Progression tracks: tasks, prizes and premium' },
             { label: 'Campaigns', icon: <CalendarDays />, pages: [ 'campaigns' ], hint: 'Gift calendars: a door a day, each with a gift' },
             { label: 'Online rewards', icon: <Timer />, pages: [ 'onlineRewards' ], hint: 'Currency paid to players for time online' },
-            { label: 'Content', icon: <Puzzle />, pages: [ 'content' ], hint: 'Achievements, badges, pets, chat styles' },
+            { label: 'Content', icon: <Puzzle />, pages: [ 'content' ], hint: 'Achievements, badges, pets, currencies' },
         ],
     },
     {
@@ -137,6 +138,7 @@ const SECTIONS: NavSection[] = [
             { label: 'Windows & skins', icon: <AppWindow />, pages: [ 'windows' ], hint: 'Every window\'s elements and every skin\'s sprites' },
             { label: 'Template patches', icon: <Layers />, pages: [ 'patches' ], hint: 'Changes to windows by who made them, with what clients report' },
             { label: 'Images', icon: <ImageIcon />, pages: [ 'images' ], hint: 'Art a theme names: upload, copy its path' },
+            { label: 'Chat bubbles', icon: <MessageCircle />, pages: [ 'chatBubbles' ], hint: 'The bubbles players speak in, drawn as the game draws them' },
             { label: 'Texts', icon: <Type />, pages: [ 'appearanceTexts' ], hint: 'The texts windows show, by window or by what they say' },
             { label: 'Outdated patches', icon: <TriangleAlert />, pages: [ 'outdated' ], hint: 'Patches a client update broke, with why' },
         ],

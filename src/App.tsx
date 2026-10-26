@@ -9,6 +9,7 @@ import { Loading } from '#/components/ui';
 import { Shell } from '#/layout/Shell';
 import { AccountPage } from '#/pages/AccountPage';
 import { AppearanceTextsPage } from '#/pages/appearance/AppearanceTextsPage';
+import { ChatBubblesPage } from '#/pages/appearance/ChatBubblesPage';
 import { ImagesPage } from '#/pages/appearance/ImagesPage';
 import { OutdatedPage } from '#/pages/appearance/OutdatedPage';
 import { ThemesPage } from '#/pages/appearance/ThemesPage';
@@ -135,6 +136,7 @@ export const App = () => (
             <Route path="appearance/patches" element={<PatchesPage />} />
             <Route path="appearance/images/:key?" element={<ImagesPage />} />
             <Route path="appearance/texts/:tab?" element={<AppearanceTextsPage />} />
+            <Route path="appearance/chat-bubbles" element={<ChatBubblesPage />} />
             <Route path="appearance/outdated" element={<OutdatedPage />} />
             <Route path="plugin/:key/:page" element={<PluginPage />} />
             <Route path="plugin/:key/:page/:id" element={<PluginPage />} />

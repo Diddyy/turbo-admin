@@ -2,6 +2,8 @@
  * The chat bubbles players speak in, built as Nitro Studio builds them: every style the hotel has,
  * each drawn as a room draws it, and changed or copied into new ones.
  *
+ * - Under it the game's own bubble (`ChatBubbleGamePreview`): the client's preview host drawing the
+ *   draft - bitmaps, recolouring, reg points, flags, the speaker - as a room would, before it is saved.
  * - The stage draws the style picked as the client does (`#/preview/chatBubble`): the client's own
  *   text, a name, words and a look to try, the speaker's head from the imager and their shirt's
  *   colour in a coloured bubble, at any of a room's bubble widths and chat font sizes, on a
@@ -32,6 +34,7 @@ import { useFillHeight } from '#/lib/fillHeight';
 import { SAMPLE_LOOKS, useChatHead } from '#/preview/avatar';
 import type { Backdrop } from '#/preview/backdrops';
 import { CHAT_BUBBLE_WIDTH_NORMAL, CHAT_BUBBLE_WIDTH_THIN, CHAT_BUBBLE_WIDTH_WIDE, CHAT_FONT_SIZE_LABELS, CHAT_FONT_SIZE_SCALES, type ChatStyleRegPoints, DEFAULT_FONT_FACE, DEFAULT_FONT_SIZE, layoutBubble, NO_CHEST_COLOR, paintBubble, paintGuides, recolour, tintBackground } from '#/preview/chatBubble';
+import { type ChatBubbleDraft, ChatBubbleGamePreview } from '#/preview/ChatBubbleGamePreview';
 import { apiImageKey, apiImageQuery, base64Of, dataUrlOf, pngBase64, urlImageQuery, useApiImage } from '#/preview/images';
 import { Stage, ToolChoice } from '#/preview/Stage';
 import { useFlashFonts } from '#/preview/text';
@@ -205,6 +208,26 @@ export const ChatStylesTab = ({ canManage }: { canManage: boolean }) => {
         // `fontsReady`: drawn again in the client's text once its fonts are in.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ base, pointer, colorLayer, icon, emblem, emblemMultiline, head, chestColor, regPoints, hue, saturation, lightness, name, words, flags.system, flags.notification, bubbleWidth, fontSizeMode, showGuides, fontsReady ]);
+
+    const flagsKey = JSON.stringify(flags);
+    // The same as the game draws it: every bitmap as saving would send it, recoloured as asked.
+    const gameDraft = useMemo((): ChatBubbleDraft | null => {
+        if (!base || !regPoints)
+            return null;
+
+        const files: Record<string, string> = {};
+
+        for (const file of CHAT_STYLE_FILES) {
+            const image = drawn(file);
+
+            if (image)
+                files[file] = (RECOLOURED.includes(file) ? recolour(image, hue, saturation, lightness) : recolour(image, 0, 1, 0)).toDataURL('image/png');
+        }
+
+        return { assetId: draft?.assetId ?? current?.assetId ?? 'preview', regPoints, flags: JSON.parse(flagsKey) as Flags, files, text: words, name, figure, color: chestColor ?? null, width: bubbleWidth };
+        // `drawn` reads `images` and `shownBitmaps`, both listed.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ base, regPoints, images, shownBitmaps, hue, saturation, lightness, draft?.assetId, current?.assetId, flagsKey, words, name, figure, chestColor, bubbleWidth ]);
 
     if (error)
         return <ErrorNotice error={error} />;
@@ -398,6 +421,7 @@ export const ChatStylesTab = ({ canManage }: { canManage: boolean }) => {
                             </>
                         )}
                     />
+                    <ChatBubbleGamePreview draft={gameDraft} />
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-[9rem_minmax(0,1fr)_minmax(0,1fr)]">
                         <Labeled label="Who says it">
                             <Input value={name} onChange={event => setName(event.target.value)} placeholder="A name" className="w-full" />

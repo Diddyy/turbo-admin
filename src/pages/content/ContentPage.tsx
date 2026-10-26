@@ -1,10 +1,11 @@
+import { Link } from 'react-router';
+
 import { useCanManageContent } from '#/api/content';
-import { PageBody, PageHeader } from '#/components/ui';
+import { PageBody, PageHeader, Panel } from '#/components/ui';
 import { usePathTab } from '#/lib/tabs';
 
 import { AchievementsTab } from './AchievementsTab';
 import { BadgesTab } from './BadgesTab';
-import { ChatStylesTab } from './ChatStylesTab';
 import { CurrenciesTab } from './CurrenciesTab';
 import { DailyTasksTab } from './DailyTasksTab';
 import { NavigatorTab } from './NavigatorTab';
@@ -50,7 +51,15 @@ export const ContentPage = () => {
                 {tab === 'navigator' && <NavigatorTab canManage={canManage} />}
                 {tab === 'pets' && <PetsTab canManage={canManage} />}
                 {tab === 'currencies' && <CurrenciesTab canManage={canManage} />}
-                {tab === 'chat-styles' && <ChatStylesTab canManage={canManage} />}
+                {tab === 'chat-styles' && (
+                    <Panel title="Chat styles" description="The chat bubbles are with the rest of the hotel's look now.">
+                        <p className="p-4 text-sm">
+                            {'Edit them, and see each drawn as the game draws it, under '}
+                            <Link to="/appearance/chat-bubbles" className="font-medium text-accent hover:underline">Appearance &gt; Chat bubbles</Link>
+                            .
+                        </p>
+                    </Panel>
+                )}
                 {tab === 'daily-tasks' && <DailyTasksTab />}
                 {tab === 'quests' && <QuestsTab />}
                 {tab === 'polls' && <PollsTab />}

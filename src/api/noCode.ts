@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { postForm } from './bundles';
 import { api, apiBlob, post, put, remove } from './client';
+import type { VariableEntry, VariableSearchResult } from './gamedata';
 
 /** What a theme style holds; staff type each as `theme.json` says (turbo-cloud `docs/plugin-data.md`). */
 export type PluginStyleType = 'color' | 'number' | 'image' | 'font' | 'text' | 'position';
@@ -104,22 +105,69 @@ export const usePluginImages = (key: string) => useQuery({
     queryFn: () => api<PluginImagesResponse>(`/plugins/${encodeURIComponent(key)}/images`),
 });
 
+/** Uploads an image into a plugin's `wwwroot/styles/`, under `name` or its own file name. */
+export const uploadPluginImage = (key: string, file: File, name?: string) => {
+    const form = new FormData();
+
+    form.append('file', file);
+
+    if (name) form.append('name', name);
+
+    return postForm<PluginImage>(`/plugins/${encodeURIComponent(key)}/images`, form);
+};
+
 /** Uploads an image into the plugin's `wwwroot/styles/` (one by that name is replaced), or takes one away. */
 export const useImageChange = (key: string) => {
     const queryClient = useQueryClient();
     const base = `/plugins/${encodeURIComponent(key)}/images`;
 
     return useMutation({
-        mutationFn: ({ file, path }: { file?: File; path?: string }) => {
-            if (path) return remove<undefined>(`${base}?path=${encodeURIComponent(path)}`);
-
-            const form = new FormData();
-
-            form.append('file', file!);
-
-            return postForm<PluginImage>(base, form);
-        },
+        mutationFn: ({ file, path }: { file?: File; path?: string }) => path ? remove<undefined>(`${base}?path=${encodeURIComponent(path)}`) : uploadPluginImage(key, file!),
         onSettled: () => void queryClient.invalidateQueries({ queryKey: imagesKey(key) }),
+    });
+};
+
+const OVERLAYS = 'asset.overlays';
+
+const OVERLAYS_KEY = [ 'gamedata', 'variables', OVERLAYS ];
+
+/** The hotel's own `asset.overlays` entries, as Gamedata > Variables keeps them; refused when it holds something else than a JSON object. */
+const readOverlays = async (): Promise<Record<string, string>> => {
+    const found = await api<VariableSearchResult>(`/gamedata/variables?${new URLSearchParams({ q: OVERLAYS, page: '0' })}`);
+    const value = found.items.find(item => item.key === OVERLAYS)?.value;
+
+    if (!value) return {};
+
+    const parsed: unknown = JSON.parse(value);
+
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error(`${OVERLAYS} is not a JSON object: fix it under Gamedata > Variables first.`);
+
+    return parsed as Record<string, string>;
+};
+
+/** The hotel's own replacement of each library bitmap (`asset.overlays`: a url per overlay key); a plugin's own are added to them in the client's file. */
+export const useHotelOverlays = () => useQuery({ queryKey: OVERLAYS_KEY, queryFn: readOverlays });
+
+/**
+ * Replaces one library bitmap for the hotel (`url`), or gives it back (null), keeping the hotel's
+ * other `asset.overlays` entries; with none left the variable goes.
+ */
+export const useOverlayChange = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ overlay, url }: { overlay: string; url: string | null }) => {
+            const entries = await readOverlays();
+
+            if (url === null && !(overlay in entries)) return;
+
+            if (url === null) delete entries[overlay];
+            else entries[overlay] = url;
+
+            if (Object.keys(entries).length) await put<VariableEntry>('/gamedata/variables', { key: OVERLAYS, value: JSON.stringify(entries) });
+            else await remove<undefined>(`/gamedata/variables?${new URLSearchParams({ key: OVERLAYS })}`);
+        },
+        onSettled: () => void queryClient.invalidateQueries({ queryKey: [ 'gamedata', 'variables' ] }),
     });
 };
 

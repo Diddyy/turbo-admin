@@ -11,7 +11,7 @@ import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, PageBo
 import { PackageDialog } from './PackageDialog';
 
 /** How a patch stands in players' clients, by the reports' kinds. */
-const TONES: Record<string, 'green' | 'amber' | 'red'> = { 'patch.applied': 'green', 'patch.unmatched': 'amber', 'patch.conflict': 'amber', 'module.failed': 'red' };
+const TONES: Record<string, 'green' | 'amber' | 'red'> = { 'patch.applied': 'green', 'patch.unmatched': 'amber', 'patch.conflict': 'amber', 'patch.ineffective': 'amber', 'module.failed': 'red' };
 
 /**
  * What a pasted text is as a patch: the inspector's "copy patch" (`api.templates.patch('<id>', [ ...ops ])`
@@ -71,8 +71,10 @@ const PatchEditor = ({ patch, onDone }: { patch: HotelPatch | null; onDone: () =
             {problem && <p className="text-xs text-warn">{problem}</p>}
             {save.error && <ErrorNotice error={save.error} />}
             <div className="flex gap-2">
-                <Button type="submit" icon={<Save />} disabled={save.isPending || !!problem || !name.trim()}>Save</Button>
+                <Button type="submit" icon={<Save />} disabled={save.isPending || !!problem || !name.trim()}>{save.isPending ? 'Saving...' : 'Save'}</Button>
                 <Button variant="ghost" icon={<X />} onClick={onDone}>Cancel</Button>
+                {/* The hotel's plugin is loaded again to serve the new file, which takes a few seconds: said, so a click is not taken for nothing. */}
+                {save.isPending && <span className="self-center text-xs text-muted">Loading the hotel plugin again with it; this takes a few seconds.</span>}
             </div>
         </form>
     );

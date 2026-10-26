@@ -115,7 +115,7 @@ export interface PluginContribution {
     detail: string | null;
 }
 
-/** What players' clients report of a plugin's client half: `module.refused`, `module.failed`, `patch.unmatched`, `patch.conflict`, `patch.applied`. */
+/** What players' clients report of a plugin's client half: `module.refused`, `module.failed`, `patch.unmatched`, `patch.conflict`, `patch.ineffective`, `patch.applied`. */
 export interface PluginClientIssue {
     kind: string;
     /** The module's URL, or the template's id. */

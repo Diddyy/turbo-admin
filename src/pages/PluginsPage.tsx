@@ -48,6 +48,7 @@ const ISSUE_LABELS: Record<string, string> = {
     'module.failed': 'module threw',
     'patch.unmatched': 'patch matched nothing',
     'patch.conflict': 'patch clash',
+    'patch.ineffective': 'patch changes nothing',
     'patch.applied': 'patch applied',
 };
 
@@ -110,7 +111,7 @@ const PluginInspector = ({ pluginKey }: { pluginKey: string }) => {
                                 {data.clientIssues.map(issue => (
                                     <li key={`${issue.kind} ${issue.subject} ${issue.message}`} className="flex flex-col gap-0.5">
                                         <span className="flex flex-wrap items-center gap-2">
-                                            <Badge tone={issue.kind === 'patch.applied' ? 'green' : issue.kind === 'patch.conflict' ? 'amber' : 'red'}>{ISSUE_LABELS[issue.kind] ?? issue.kind}</Badge>
+                                            <Badge tone={issue.kind === 'patch.applied' ? 'green' : (issue.kind === 'patch.conflict' || issue.kind === 'patch.ineffective') ? 'amber' : 'red'}>{ISSUE_LABELS[issue.kind] ?? issue.kind}</Badge>
                                             <code className="break-all">{issue.subject}</code>
                                             <span className="text-muted" title={issue.lastReportedUtc}>{issue.clients} {issue.clients === 1 ? 'player' : 'players'}, {fromNow(issue.lastReportedUtc)}</span>
                                         </span>

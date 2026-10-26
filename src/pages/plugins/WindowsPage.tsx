@@ -8,6 +8,7 @@ import { useTextSearch } from '#/api/gamedata';
 import { type HotelPatch, type PluginStyle, uploadPluginImage, useHotelOverlays, useHotelPatches, useOverlayChange, usePluginStyles, useStyleChange } from '#/api/noCode';
 import { type Plugin, usePluginContributions, usePlugins } from '#/api/plugins';
 import { readWindowsAgain, type SkinEntry, type SkinMap, type SkinSprite, type TemplateIndex, type ThemeSheet, useSkinMap, useTemplateIndex, useThemeSheet, type WindowElement, windowOf } from '#/api/windows';
+import { useSaved } from '#/components/SaveFeedback';
 import { SearchInput } from '#/components/SearchInput';
 import { toast, toastError } from '#/components/toast';
 import { Badge, Button, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Panel, Select } from '#/components/ui';
@@ -18,8 +19,8 @@ import { PatchEditor } from './PatchesPage';
 import { WindowTree } from './WindowTree';
 
 const TABS = [
-    { value: 'windows', label: 'Windows', to: '/plugins/windows/windows' },
-    { value: 'skins', label: 'Skins', to: '/plugins/windows/skins' },
+    { value: 'windows', label: 'Windows', to: '/appearance/windows/windows' },
+    { value: 'skins', label: 'Skins', to: '/appearance/windows/skins' },
 ];
 
 /** How a patch stands in players' clients, by the reports' kinds (as on Template patches). */
@@ -88,6 +89,7 @@ interface Replacing {
 const SpriteReplacement = ({ sprite, replacing }: { sprite: SkinSprite; replacing: Replacing }) => {
     const overlay = useOverlayChange();
     const style = useStyleChange('hotel');
+    const saved = useSaved();
     const [ uploading, setUploading ] = useState(false);
     const styled = replacing.styles.get(sprite.overlay);
     const current = replacing.overlays[sprite.overlay];
@@ -103,7 +105,7 @@ const SpriteReplacement = ({ sprite, replacing }: { sprite: SkinSprite; replacin
             if (styled) await style.mutateAsync({ name: styled.name, value: replacing.target === 'hotel' ? image.path : image.url! });
             else await overlay.mutateAsync({ overlay: sprite.overlay, url: image.url });
 
-            toast(`${sprite.sprite} is replaced by ${image.path} (${replacing.target}): players see it at their next load.`);
+            saved(`${sprite.sprite}: replaced by ${image.path} (${replacing.target})`);
         } catch (error) {
             toastError(error);
         } finally {
@@ -114,7 +116,7 @@ const SpriteReplacement = ({ sprite, replacing }: { sprite: SkinSprite; replacin
     const giveBack = () => (styled
         ? style.mutateAsync({ name: styled.name, value: null })
         : overlay.mutateAsync({ overlay: sprite.overlay, url: null }))
-        .then(() => toast(`${sprite.sprite} is Habbo's own again.`), toastError);
+        .then(() => saved(`${sprite.sprite}: Habbo's own again`), toastError);
 
     return (
         <>
@@ -185,7 +187,7 @@ const SkinCard = ({ id, skin, sheet, replacing }: { id: string; skin: SkinEntry;
                 <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
                     <span className="text-muted">Drawn by:</span>
                     {windows.map(([ win, keys ]) => (
-                        <Link key={win} to={`/plugins/windows/windows?${new URLSearchParams({ id: win })}`} className="font-mono text-accent hover:underline">{`${win} ${keys.map(key => `'${key}'`).join(' ')}`}</Link>
+                        <Link key={win} to={`/appearance/windows/windows?${new URLSearchParams({ id: win })}`} className="font-mono text-accent hover:underline">{`${win} ${keys.map(key => `'${key}'`).join(' ')}`}</Link>
                     ))}
                 </p>
             )}
@@ -264,7 +266,7 @@ const PluginWindowPatches = ({ plugin, id }: { plugin: Plugin; id: string }) => 
                 <span className="font-medium">{plugin.name ?? plugin.key}</span>
                 {patches.map(patch => <span key={patch.name} className="text-xs text-muted">{patch.detail}</span>)}
                 {issues.map(issue => <Badge key={issue.kind} tone={TONES[issue.kind] ?? 'neutral'}>{`${issue.kind.slice('patch.'.length)} - ${issue.clients} client(s)`}</Badge>)}
-                <Link to={`/plugins/${encodeURIComponent(plugin.key)}/theme`} className="ml-auto text-xs text-accent hover:underline">Theme</Link>
+                <Link to={`/appearance/styles/${encodeURIComponent(plugin.key)}`} className="ml-auto text-xs text-accent hover:underline">Theme</Link>
             </div>
             {issues.filter(issue => issue.kind !== 'patch.applied').map(issue => <p key={issue.kind} className="text-xs text-warn">{issue.message}</p>)}
         </li>
@@ -385,7 +387,6 @@ export const WindowsPage = () => {
             <PageHeader
                 title="Windows & skins"
                 description="Every window of the client with the names a patch uses, and every skin with its sprites"
-                back={{ to: '/plugins/patches', label: 'Template patches' }}
                 tabs={{ items: TABS, value: tab }}
             >
                 <Button variant="secondary" icon={<RefreshCw />} title="Read the client's files again, after a new client is deployed" onClick={() => void readWindowsAgain(queryClient).catch(toastError)}>Read again</Button>

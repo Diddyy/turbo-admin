@@ -1,4 +1,4 @@
-import { Activity, Armchair, BellRing, Bug, CalendarClock, CalendarDays, ChartColumn, CloudDownload, Coins, Disc3, DoorOpen, Flag, FunnelX, Gauge, History, House, KeyRound, Landmark, Languages, Mail, MessagesSquare, Milestone, MonitorSmartphone, PackagePlus, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, Ticket, Timer, UserRound, Users } from 'lucide-react';
+import { Activity, AppWindow, Armchair, BellRing, Bug, CalendarClock, CalendarDays, ChartColumn, CloudDownload, Coins, Disc3, DoorOpen, Flag, FunnelX, Gauge, History, House, ImageIcon, KeyRound, Landmark, Languages, Layers, Mail, MessagesSquare, Milestone, MonitorSmartphone, PackagePlus, Palette, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, SwatchBook, Ticket, Timer, TriangleAlert, Type, UserRound, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router';
 
@@ -50,6 +50,13 @@ const PAGES = {
     library: { to: '/gamedata/library', label: 'Library', icon: <Armchair />, end: false, key: 'f', needs: 'canViewGamedata', words: 'furniture definitions furnidata logic bundles clothing figures effects pets' },
     texts: { to: '/gamedata/products', also: [ '/gamedata/texts', '/gamedata/variables' ], label: 'Texts & variables', icon: <Languages />, end: false, key: 'x', needs: 'canViewGamedata', words: 'product data external texts variables' },
     publish: { to: '/gamedata/publish', label: 'Publish', icon: <Send />, end: false, key: 'n', needs: 'canViewGamedata' },
+    themes: { to: '/appearance/themes', label: 'Themes', icon: <Palette />, end: false, key: 'z', needs: 'canViewPlugins', words: 'look design styles extends habbo theme.json' },
+    styleProperties: { to: '/appearance/styles', label: 'Style properties', icon: <SwatchBook />, end: false, needs: 'canViewPlugins', words: 'colours colors fonts frame art purse catalogue position loading screen reset' },
+    windows: { to: '/appearance/windows', label: 'Windows & skins', icon: <AppWindow />, end: false, needs: 'canViewPlugins', words: 'templates elements keys sprites overlays nine-slice inspector' },
+    patches: { to: '/appearance/patches', label: 'Template patches', icon: <Layers />, end: false, needs: 'canViewPlugins', words: 'template modifications ops applied unmatched ineffective' },
+    images: { to: '/appearance/images', label: 'Images', icon: <ImageIcon />, end: false, needs: 'canViewPlugins', words: 'upload art icons pictures styles folder' },
+    appearanceTexts: { to: '/appearance/texts', label: 'Texts', icon: <Type />, end: false, needs: 'canViewGamedata', words: 'captions labels shown text window phrases' },
+    outdated: { to: '/appearance/outdated', label: 'Outdated patches', icon: <TriangleAlert />, end: false, needs: 'canViewPlugins', words: 'client update broken missing elements' },
     permissions: { to: '/permissions', label: 'Permissions', icon: <KeyRound />, end: false, key: 'k', needs: 'canViewPermissions' },
     staff: { to: '/staff', label: 'Staff passkeys', icon: <ShieldCheck />, end: false, key: 's', needs: 'canResetPasskeys' },
     commandLog: { to: '/command-log', label: 'Command log', icon: <ScrollText />, end: false, key: 'l', needs: 'canViewCommandLog' },
@@ -119,6 +126,19 @@ const SECTIONS: NavSection[] = [
             { label: 'Campaigns', icon: <CalendarDays />, pages: [ 'campaigns' ], hint: 'Gift calendars: a door a day, each with a gift' },
             { label: 'Online rewards', icon: <Timer />, pages: [ 'onlineRewards' ], hint: 'Currency paid to players for time online' },
             { label: 'Content', icon: <Puzzle />, pages: [ 'content' ], hint: 'Achievements, badges, pets, chat styles' },
+        ],
+    },
+    {
+        // Everything a designer changes, in one place (XenForo's Appearance): themes and their styles, the windows, patches, art and texts.
+        label: 'Appearance',
+        entries: [
+            { label: 'Themes', icon: <Palette />, pages: [ 'themes' ], hint: 'Every theme under the one it extends, on or off' },
+            { label: 'Style properties', icon: <SwatchBook />, pages: [ 'styleProperties' ], hint: 'Colours, art, fonts and places, by theme and area' },
+            { label: 'Windows & skins', icon: <AppWindow />, pages: [ 'windows' ], hint: 'Every window\'s elements and every skin\'s sprites' },
+            { label: 'Template patches', icon: <Layers />, pages: [ 'patches' ], hint: 'Changes to windows by who made them, with what clients report' },
+            { label: 'Images', icon: <ImageIcon />, pages: [ 'images' ], hint: 'Art a theme names: upload, copy its path' },
+            { label: 'Texts', icon: <Type />, pages: [ 'appearanceTexts' ], hint: 'The texts windows show, by window or by what they say' },
+            { label: 'Outdated patches', icon: <TriangleAlert />, pages: [ 'outdated' ], hint: 'Patches a client update broke, with why' },
         ],
     },
     {

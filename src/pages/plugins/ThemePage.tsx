@@ -1,11 +1,13 @@
 import { Copy, ExternalLink, ImageIcon, Package, RotateCcw, Save, Trash2, Upload } from 'lucide-react';
 import { useState } from 'react';
-import { useParams } from 'react-router';
+import { Link, useParams, useSearchParams } from 'react-router';
 
 import { useClientAssets } from '#/api/assets';
 import { type PluginImage, type PluginStyle, useImageChange, usePluginImages, usePluginStyles, useStyleChange } from '#/api/noCode';
+import { useSaved } from '#/components/SaveFeedback';
 import { toast, toastError } from '#/components/toast';
-import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, PageBody, PageHeader, Panel } from '#/components/ui';
+import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, PageBody, PageHeader, Panel, Select } from '#/components/ui';
+import { ThemePicker } from '#/pages/appearance/ThemePicker';
 
 import { PackageDialog } from './PackageDialog';
 
@@ -17,14 +19,28 @@ const IMAGE_TYPES = 'image/png,image/gif,image/jpeg,image/webp';
 /** What a style with no value shows: the base theme's are the client's own, Habbo's look. */
 const CLIENTS_OWN = 'Habbo\'s own';
 
+/** What each area of the base theme's styles restyles, said under its heading. */
+const GROUP_HINTS: Record<string, string> = {
+    Windows: 'The frame, title bar and colour most windows are drawn with: catalogue, inventory, navigator.',
+    Purse: 'The purse at the top right: its border art.',
+    Catalogue: 'The catalogue window: its colour and where it first opens.',
+    Navigator: 'The navigator window: its colour and where it first opens.',
+    Fonts: 'The typefaces windows and chat are written in.',
+    'Loading screen': 'What players see while the hotel loads: the picture, the bar and the words.',
+};
+
+/** Whose default a style goes back to: Habbo's own (the base theme's, or the client's) or that of the theme that set one. */
+const resetTo = (style: PluginStyle) => (style.origin === 'habbo' || style.origin === null ? CLIENTS_OWN : `${style.origin}'s default`);
+
 const copy = (text: string) => void navigator.clipboard.writeText(text).then(() => toast(`Copied ${text}`));
 
 /** One style: its picker, what the hotel has, and Reset back to the theme's default. */
 const StyleRow = ({ pluginKey, style, canManage, images }: { pluginKey: string; style: PluginStyle; canManage: boolean; images: PluginImage[] }) => {
     const [ value, setValue ] = useState(style.value ?? '');
     const change = useStyleChange(pluginKey);
+    const saved = useSaved();
     const dirty = value !== (style.value ?? '');
-    const said = { onSuccess: () => toast(`${style.label ?? style.name}: saved.`), onError: toastError };
+    const said = { onSuccess: () => saved(style.label ?? style.name), onError: toastError };
     const target = style.overlay ?? (style.variable.length > 0 ? style.variable.join(' > ') : null);
 
     return (
@@ -88,16 +104,16 @@ const StyleRow = ({ pluginKey, style, canManage, images }: { pluginKey: string; 
                         variant="ghost"
                         icon={<RotateCcw />}
                         disabled={change.isPending}
-                        title={`The theme's default: ${style.default ?? CLIENTS_OWN}`}
+                        title={`Back to ${resetTo(style)}: ${style.default ?? 'nothing set, the client draws it as Habbo does'}`}
                         onClick={() => change.mutate({ name: style.name, value: null }, { onSuccess: (reset) => {
                             setValue(reset.value ?? '');
-                            toast(`${style.label ?? style.name}: back to ${style.default === null ? CLIENTS_OWN : `the theme's ${style.default}`}.`);
+                            saved(`${style.label ?? style.name}: back to ${style.default === null ? CLIENTS_OWN : `${resetTo(style)} ${style.default}`}`);
                         }, onError: toastError })}
                     >
-                        Reset
+                        {`Reset to ${resetTo(style)}`}
                     </Button>
                 )}
-                {!style.changed && <span className="text-xs text-muted">{style.default === null ? CLIENTS_OWN : 'the theme\'s default'}</span>}
+                {!style.changed && <span className="text-xs text-muted">{style.default === null ? CLIENTS_OWN : resetTo(style)}</span>}
             </div>
         </li>
     );
@@ -107,7 +123,7 @@ const StyleRow = ({ pluginKey, style, canManage, images }: { pluginKey: string; 
  * The plugin's images (its `wwwroot/styles/`): upload one, see each with the path a patch or an image
  * style names it by and the address a variable names it by, and take one away.
  */
-const ImagesPanel = ({ pluginKey }: { pluginKey: string }) => {
+export const ImagesPanel = ({ pluginKey }: { pluginKey: string }) => {
     const { data, error } = usePluginImages(pluginKey);
     const change = useImageChange(pluginKey);
 
@@ -166,17 +182,30 @@ const ImagesPanel = ({ pluginKey }: { pluginKey: string }) => {
  * player's next load. The hotel's own plugin extends the base theme, Habbo's look.
  */
 export const ThemePage = () => {
-    const { key = '' } = useParams();
+    const { key = 'hotel' } = useParams();
+    const [ params, setParams ] = useSearchParams();
     const { data, error } = usePluginStyles(key);
     const images = usePluginImages(key).data?.images ?? [];
     const assets = useClientAssets();
     const [ packaging, setPackaging ] = useState(false);
-    const groups = Map.groupBy(data?.styles ?? [], style => style.group ?? 'Styles');
+    const all = Map.groupBy(data?.styles ?? [], style => style.group ?? 'Styles');
+    const area = params.get('group');
+    const groups = [ ...all ].filter(([ name ]) => !area || name === area);
     const client = assets?.preview ? assets.preview.replace(/[?&]preview\b.*$/, '') : null;
 
     return (
         <>
-            <PageHeader title={`Theme: ${key}`} description="Its style properties, as its theme.json declares them (and the theme it extends), and this hotel's values. Players see a change at their next load." back={{ to: '/plugins', label: 'Plugins' }}>
+            <PageHeader title="Style properties" description={`The colours, art, fonts and places a theme names, and this hotel's values${data?.extends ? `: ${key} extends ${data.extends} and has its properties unless it names them again` : ''}. Players see a change at their next load.`}>
+                <ThemePicker value={key} to={next => `/appearance/styles/${encodeURIComponent(next)}`} />
+                {all.size > 1 && (
+                    <label className="inline-flex items-center gap-2 text-sm">
+                        <span className="text-muted">Area</span>
+                        <Select aria-label="Area" value={area ?? ''} className="w-auto" onChange={event => setParams(event.target.value ? { group: event.target.value } : {}, { replace: true })}>
+                            <option value="">All areas</option>
+                            {[ ...all.keys() ].map(name => <option key={name} value={name}>{`${name} (${all.get(name)!.length})`}</option>)}
+                        </Select>
+                    </label>
+                )}
                 {client && (
                     <Button variant="secondary" icon={<ExternalLink />} onClick={() => window.open(client, '_blank', 'noopener')}>
                         Preview in the client
@@ -192,14 +221,18 @@ export const ThemePage = () => {
                 {error && <ErrorNotice error={error} />}
                 {!data && !error && <Loading />}
                 {data && data.styles.length === 0 && <EmptyState framed>This plugin declares no style properties: it has no theme.json (one with &quot;extends&quot;: &quot;habbo&quot; gets Habbo&apos;s).</EmptyState>}
-                {[ ...groups ].map(([ group, styles ]) => (
-                    <Panel key={group} title={group}>
+                {groups.map(([ name, styles ]) => (
+                    <Panel key={name} title={name} description={GROUP_HINTS[name]}>
                         <ul className="divide-y divide-line">
                             {styles.map(style => <StyleRow key={`${style.name}-${style.value}`} pluginKey={key} style={style} canManage={data!.canManage} images={images} />)}
                         </ul>
                     </Panel>
                 ))}
-                {key && <ImagesPanel pluginKey={key} />}
+                <p className="text-xs text-muted">
+                    {'An image property picks from the images uploaded under '}
+                    <Link to={`/appearance/images/${encodeURIComponent(key)}`} className="text-accent hover:underline">Images</Link>
+                    .
+                </p>
                 {data && data.styles.length > 0 && (
                     <Labeled label="In a patch" hint="A value that is a whole style takes its type (a colour stays a number); inside text it is written in. A style that is Habbo's own has no value for a patch to read.">
                         <code className="rounded bg-subtle px-2 py-1 font-mono text-xs">{`{ "element": "help_button", "set": { "color": "\${style:${(data.styles.find(style => style.type === 'color') ?? data.styles[0]!).name}}" } }`}</code>

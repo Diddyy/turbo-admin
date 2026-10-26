@@ -27,6 +27,8 @@ export interface PluginStyle {
     default: string | null;
     value: string | null;
     changed: boolean;
+    /** The theme whose default it has: the base theme `habbo`'s, or one that names it again. */
+    origin: string | null;
 }
 
 /** An image in a plugin's `wwwroot/styles/`: `path` as a patch's `asset` or an image style names it, `url` as a variable does. */
@@ -45,6 +47,8 @@ export interface PluginImagesResponse {
 
 export interface PluginStylesResponse {
     key: string;
+    /** The theme it extends; null for one that extends none. */
+    extends: string | null;
     styles: PluginStyle[];
     canManage: boolean;
 }

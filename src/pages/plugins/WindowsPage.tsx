@@ -14,6 +14,7 @@ import { toast, toastError } from '#/components/toast';
 import { Badge, Button, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Panel, Select } from '#/components/ui';
 import { useDebounced } from '#/lib/debounce';
 import { usePathTab } from '#/lib/tabs';
+import { DesignPreview } from '#/preview/DesignPreview';
 
 import { PatchEditor } from './PatchesPage';
 import { WindowTree } from './WindowTree';
@@ -280,6 +281,8 @@ const WindowDetail = ({ index, skins, id }: { index: TemplateIndex; skins: SkinM
     const { data: plugins } = usePlugins();
     const [ draft, setDraft ] = useState<HotelPatch | null>(null);
     const [ editing, setEditing ] = useState<string | null>(null);
+    const [ hovered, setHovered ] = useState<string | null>(null);
+    const [ picked, setPicked ] = useState<string | null>(null);
     const bySkin = useMemo(() => skinsByKey(skins, id), [ skins, id ]);
     const own = hotel?.patches.filter(patch => patch.template === id) ?? [];
     const others = plugins?.plugins.filter(plugin => plugin.state === 'loaded' && plugin.key !== hotel?.key) ?? [];
@@ -315,8 +318,10 @@ const WindowDetail = ({ index, skins, id }: { index: TemplateIndex; skins: SkinM
                             {others.map(plugin => <PluginWindowPatches key={plugin.key} plugin={plugin} id={id} />)}
                         </ul>
                     </div>
-                    <div className="overflow-x-auto">
-                        <WindowTree elements={found.elements} skinsOf={key => bySkin.get(key) ?? []} onPick={hotel?.canManage ? start : undefined} />
+                    {/* One client at a time: an open editor has its own preview, with its draft. */}
+                    {!draft && !editing && <DesignPreview template={id} highlight={hovered} onSelect={selection => setPicked(selection.key)} />}
+                    <div className="max-h-[60vh] overflow-auto">
+                        <WindowTree elements={found.elements} skinsOf={key => bySkin.get(key) ?? []} onPick={hotel?.canManage ? start : undefined} selected={picked} onHover={setHovered} />
                     </div>
                 </div>
             </Panel>

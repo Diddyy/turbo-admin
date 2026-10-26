@@ -11,6 +11,7 @@ import { useSaved } from '#/components/SaveFeedback';
 import { toast, toastError } from '#/components/toast';
 import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, PageBody, PageHeader, Panel, Textarea } from '#/components/ui';
 import { outdatedReasons } from '#/pages/appearance/outdated';
+import { DesignPreview, type DesignSelection } from '#/preview/DesignPreview';
 
 import { PackageDialog } from './PackageDialog';
 import { PatchTest } from './PatchTest';
@@ -99,8 +100,16 @@ export const PatchEditor = ({ patch, onDone }: { patch: HotelPatch | null; onDon
     const [ ops, setOps ] = useState(patch ? JSON.stringify(patch.ops, null, 2) : '[\n  { "element": "help_button", "set": { "color": 4281244476 } }\n]');
     const save = useSaveHotelPatch();
     const saved = useSaved();
+    const hotel = useHotelPatches().data;
+    const [ picked, setPicked ] = useState<DesignSelection | null>(null);
     const pasted = readPasted(ops);
     const problem = pasted === null ? 'The ops are not JSON yet.' : !Array.isArray(pasted.ops) ? 'The ops are a list: [ { "element": ..., "set": { ... } } ].' : null;
+    const target = pasted?.template ?? template;
+    // The hotel's patch file as players would get it with this draft saved: its other patches that are on, and this one.
+    const others = hotel?.patches.filter(other => !other.disabled && other.id !== patch?.id).map(other => ({ template: other.template, ops: other.ops, order: other.order })) ?? [];
+    const draft = (!problem && pasted && hotel)
+        ? { patches: { [hotel.key]: { patches: [ ...others, { template: target, ops: pasted.ops, order: order === '' ? null : Number(order) } ] } } }
+        : undefined;
 
     return (
         <form
@@ -129,6 +138,23 @@ export const PatchEditor = ({ patch, onDone }: { patch: HotelPatch | null; onDon
             </Labeled>
             {problem && <p className="text-xs text-warn">{problem}</p>}
             {!problem && pasted && <PatchTest template={pasted.template ?? template} ops={pasted.ops as unknown[]} />}
+            {target && (
+                <div className="flex flex-col gap-1.5">
+                    <span className="text-xs font-medium text-muted">Preview: the window as players will see it once saved, drawn by the client as you type</span>
+                    <DesignPreview template={target} draft={draft} owner={hotel?.key} onSelect={setPicked} />
+                </div>
+            )}
+            {picked?.key !== null && picked !== null && !problem && pasted && (
+                <div>
+                    <Button
+                        variant="secondary"
+                        icon={<Plus />}
+                        onClick={() => setOps(JSON.stringify([ ...(pasted.ops as unknown[]), { element: picked.key, set: {} } ], null, 2))}
+                    >
+                        {`Add an op on '${picked.key}'`}
+                    </Button>
+                </div>
+            )}
             {save.error && <ErrorNotice error={save.error} />}
             <div className="flex gap-2">
                 <Button type="submit" icon={<Save />} disabled={save.isPending || !!problem || !name.trim()}>{save.isPending ? 'Saving...' : 'Save'}</Button>

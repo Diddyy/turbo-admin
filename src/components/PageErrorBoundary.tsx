@@ -7,16 +7,27 @@ interface State {
     error: Error | null;
 }
 
+interface Props {
+    children: ReactNode;
+    /** The path: a page that threw starts clean once it changes. */
+    resetKey: string;
+}
+
 /**
  * A page that throws while drawing: says so where the page was, and keeps the navigation, the
- * search and the rest of the panel working. The shell keys it by the path, so going to another
- * page starts it clean.
+ * search and the rest of the panel working. Going to another path clears the error, also within a
+ * page the shell keeps drawn across its own paths (a workspace such as the notices).
  */
-export class PageErrorBoundary extends Component<{ children: ReactNode }, State> {
+export class PageErrorBoundary extends Component<Props, State> {
     override state: State = { error: null };
 
     static getDerivedStateFromError(error: unknown): State {
         return { error: error instanceof Error ? error : new Error(String(error)) };
+    }
+
+    override componentDidUpdate(previous: Props) {
+        if (this.state.error && previous.resetKey !== this.props.resetKey)
+            this.setState({ error: null });
     }
 
     override render() {

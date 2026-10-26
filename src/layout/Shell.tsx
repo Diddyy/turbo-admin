@@ -229,6 +229,18 @@ const useFreshPage = (root: RefObject<HTMLElement | null>) => {
 };
 
 /**
+ * Pages whose unsaved work spans their own paths: the notices (drafts of several notices, a new one
+ * opening at its key) and the hotel view (one change set across its tabs).
+ */
+const WORKSPACES = [ '/notices', '/hotel-view' ];
+
+/**
+ * What a page is drawn again from nothing on: its path, so another room, player or plugin page
+ * starts from its own data, but one key for each workspace's paths, so moving within it keeps its work.
+ */
+const pageKeyOf = (pathname: string) => WORKSPACES.find(x => pathname === x || pathname.startsWith(`${x}/`)) ?? pathname;
+
+/**
  * The frame every signed-in page sits in, and the live stream that keeps them current. From a
  * laptop up the window scrolls beside the sidebar; on a phone the page scrolls under its header,
  * and the sidebar is a menu that slides in from the left.
@@ -250,7 +262,7 @@ export const Shell = () => {
             <ConfirmHost />
             <Toasts />
             <main ref={main} data-scroll-root className="flex min-h-0 min-w-0 flex-1 flex-col pb-[calc(2rem+env(safe-area-inset-bottom))] max-lg:overflow-y-auto max-lg:overscroll-contain lg:pb-10">
-                <PageErrorBoundary key={pathname}>
+                <PageErrorBoundary key={pageKeyOf(pathname)} resetKey={pathname}>
                     <Outlet />
                 </PageErrorBoundary>
             </main>

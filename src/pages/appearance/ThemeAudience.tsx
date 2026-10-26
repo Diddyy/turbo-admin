@@ -8,6 +8,8 @@ import { Badge, Button, Checkbox, Input, Select } from '#/components/ui';
 
 const STATUS_LABEL: Record<ThemeStatus, string> = { live: 'Live', development: 'In development', off: 'Off' };
 
+// A theme no one set (one just made or installed) is in development: no player gets it until it is set Live.
+
 /** The client page staff open a theme in for one load: the preview host's page without `?preview`, with `?theme=`. */
 const previewLink = (preview: string | undefined, key: string) => {
     if (!preview) return null;
@@ -87,6 +89,8 @@ const ThemeAudienceEditor = ({ theme, groups }: { theme: ThemeAudience; groups: 
                     <Select
                         aria-label="Status"
                         value={theme.status}
+                        disabled={theme.key === 'hotel'}
+                        title={theme.key === 'hotel' ? 'The hotel\'s own theme is always Live: every theme ends in it' : undefined}
                         onChange={event => save({ status: event.target.value as ThemeStatus }, `${theme.key} is ${STATUS_LABEL[event.target.value as ThemeStatus]} - players see it from their next load`)}
                     >
                         {(Object.keys(STATUS_LABEL) as ThemeStatus[]).map(status => <option key={status} value={status}>{STATUS_LABEL[status]}</option>)}

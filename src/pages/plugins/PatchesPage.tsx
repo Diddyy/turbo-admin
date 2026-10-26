@@ -1,5 +1,5 @@
-import { AppWindow, Package, Plus, Power, PowerOff, Save, Trash2, X } from 'lucide-react';
-import { useState } from 'react';
+import { AppWindow, Braces, Package, Plus, Power, PowerOff, Save, Trash2, X } from 'lucide-react';
+import { useCallback, useState } from 'react';
 import { Link } from 'react-router';
 
 import { usePluginTemplatePatches } from '#/api/appearance';
@@ -11,7 +11,9 @@ import { useSaved } from '#/components/SaveFeedback';
 import { toast, toastError } from '#/components/toast';
 import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, PageBody, PageHeader, Panel, Textarea } from '#/components/ui';
 import { outdatedReasons } from '#/pages/appearance/outdated';
-import { DesignPreview, type DesignSelection } from '#/preview/DesignPreview';
+import { DesignPreview } from '#/preview/DesignPreview';
+import { useOpsHistory } from '#/preview/opsHistory';
+import { VisualEditor } from '#/preview/VisualEditor';
 
 import { PackageDialog } from './PackageDialog';
 import { PatchTest } from './PatchTest';
@@ -101,7 +103,7 @@ export const PatchEditor = ({ patch, onDone }: { patch: HotelPatch | null; onDon
     const save = useSaveHotelPatch();
     const saved = useSaved();
     const hotel = useHotelPatches().data;
-    const [ picked, setPicked ] = useState<DesignSelection | null>(null);
+    const [ showJson, setShowJson ] = useState(false);
     const pasted = readPasted(ops);
     const problem = pasted === null ? 'The ops are not JSON yet.' : !Array.isArray(pasted.ops) ? 'The ops are a list: [ { "element": ..., "set": { ... } } ].' : null;
     const target = pasted?.template ?? template;
@@ -110,6 +112,8 @@ export const PatchEditor = ({ patch, onDone }: { patch: HotelPatch | null; onDon
     const draft = (!problem && pasted && hotel)
         ? { patches: { [hotel.key]: { patches: [ ...others, { template: target, ops: pasted.ops, order: order === '' ? null : Number(order) } ] } } }
         : undefined;
+    const list = (!problem && pasted) ? (pasted.ops as unknown[]) : null;
+    const history = useOpsHistory(list ?? [], useCallback((next: unknown[]) => setOps(JSON.stringify(next, null, 2)), []));
 
     return (
         <form
@@ -133,28 +137,34 @@ export const PatchEditor = ({ patch, onDone }: { patch: HotelPatch | null; onDon
                 <Labeled label="Template" hint={<>{'<library>/<asset>, as '}<Link to="/appearance/windows" className="text-accent hover:underline">Windows &amp; skins</Link>{' lists it.'}</>}><Input value={pasted?.template ?? template} onChange={event => setTemplate(event.target.value)} placeholder="habbo-toolbar-com/purse_xml" className="w-full font-mono" /></Labeled>
                 <Labeled label="Order" hint="Lower first; a theme takes a negative one."><Input type="number" value={order} onChange={event => setOrder(event.target.value)} className="w-full" /></Labeled>
             </div>
-            <Labeled label="Ops" hint="JSON: each names its element and does one of set, remove, insert, move, wrap or bind (a value per window or per list row, from placeholders such as ctx.key and item.key). Paste the client's alt-click &quot;copy patch&quot; straight in.">
-                <Textarea value={ops} onChange={event => setOps(event.target.value)} rows={10} className="font-mono text-xs" spellCheck={false} />
-            </Labeled>
+            {target && list && (
+                <div className="flex flex-col gap-1.5">
+                    <span className="text-xs font-medium text-muted">The window as players will see it once saved, drawn by the client as you change it: click an element, drag it or its handles, or change it on the right</span>
+                    <VisualEditor
+                        template={target}
+                        ops={list}
+                        history={history}
+                        draft={draft}
+                        owner={hotel?.key}
+                        footer={picked => showJson && picked?.key !== null && picked !== null && (
+                            <Button variant="secondary" icon={<Plus />} onClick={() => history.change([ ...list, { element: picked.key, set: {} } ])}>
+                                {`Add an op on '${picked.key}'`}
+                            </Button>
+                        )}
+                    />
+                </div>
+            )}
+            {target && !list && <DesignPreview template={target} />}
+            <div>
+                <Button variant="ghost" icon={<Braces />} aria-expanded={showJson || !!problem} onClick={() => setShowJson(!showJson)}>{showJson || problem ? 'Hide JSON' : 'Show JSON'}</Button>
+            </div>
+            {(showJson || problem) && (
+                <Labeled label="Ops" hint="JSON: each names its element and does one of set, remove, insert, move, wrap or bind (a value per window or per list row, from placeholders such as ctx.key and item.key). Paste the client's alt-click &quot;copy patch&quot; straight in.">
+                    <Textarea value={ops} onChange={event => setOps(event.target.value)} rows={10} className="font-mono text-xs" spellCheck={false} />
+                </Labeled>
+            )}
             {problem && <p className="text-xs text-warn">{problem}</p>}
             {!problem && pasted && <PatchTest template={pasted.template ?? template} ops={pasted.ops as unknown[]} />}
-            {target && (
-                <div className="flex flex-col gap-1.5">
-                    <span className="text-xs font-medium text-muted">Preview: the window as players will see it once saved, drawn by the client as you type</span>
-                    <DesignPreview template={target} draft={draft} owner={hotel?.key} onSelect={setPicked} />
-                </div>
-            )}
-            {picked?.key !== null && picked !== null && !problem && pasted && (
-                <div>
-                    <Button
-                        variant="secondary"
-                        icon={<Plus />}
-                        onClick={() => setOps(JSON.stringify([ ...(pasted.ops as unknown[]), { element: picked.key, set: {} } ], null, 2))}
-                    >
-                        {`Add an op on '${picked.key}'`}
-                    </Button>
-                </div>
-            )}
             {save.error && <ErrorNotice error={save.error} />}
             <div className="flex gap-2">
                 <Button type="submit" icon={<Save />} disabled={save.isPending || !!problem || !name.trim()}>{save.isPending ? 'Saving...' : 'Save'}</Button>

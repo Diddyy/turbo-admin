@@ -22,14 +22,23 @@ const LABELS: Record<Name, string> = {
     SkipSleeping: 'Skip sleeping',
 };
 
-/** One rule as the server keeps it (`OnlineRewardRule`): its property names as they are, since the server reads them so. */
+/**
+ * One rule as the server keeps it (`OnlineRewardRule`): its property names as they are, since the
+ * server reads them so. `IdleMinutes` and `SkipSleeping` are the rule's own; null takes the
+ * hotel's. Whatever else the server sends with a rule is kept as it came and saved back with it,
+ * so a field this page does not know yet is never lost.
+ */
 interface Rule {
     Currency: string;
     Amount: number;
     IntervalMinutes: number;
     HcBonus: number;
     DailyCap: number;
+    InRoomOnly: boolean;
+    IdleMinutes: number | null;
+    SkipSleeping: boolean | null;
     Enabled: boolean;
+    [other: string]: unknown;
 }
 
 interface Draft {
@@ -55,11 +64,15 @@ const ruleOf = (value: unknown): Rule | null => {
     const rule = value as Partial<Rule>;
 
     return {
+        ...rule,
         Currency: typeof rule.Currency === 'string' ? rule.Currency : '',
         Amount: typeof rule.Amount === 'number' ? rule.Amount : 0,
         IntervalMinutes: typeof rule.IntervalMinutes === 'number' ? rule.IntervalMinutes : 15,
         HcBonus: typeof rule.HcBonus === 'number' ? rule.HcBonus : 0,
         DailyCap: typeof rule.DailyCap === 'number' ? rule.DailyCap : 0,
+        InRoomOnly: rule.InRoomOnly === true,
+        IdleMinutes: typeof rule.IdleMinutes === 'number' ? rule.IdleMinutes : null,
+        SkipSleeping: typeof rule.SkipSleeping === 'boolean' ? rule.SkipSleeping : null,
         Enabled: typeof rule.Enabled === 'boolean' ? rule.Enabled : true,
     };
 };
@@ -143,6 +156,42 @@ const Count = ({ value, onChange, min, label, disabled }: { value: number; onCha
     );
 };
 
+/** A whole number at least 0, or empty for the hotel's own (null). */
+const OwnCount = ({ value, onChange, label, disabled }: { value: number | null; onChange: (value: number | null) => void; label: string; disabled?: boolean }) => {
+    const [ text, setText ] = useState(value === null ? '' : String(value));
+    const [ was, setWas ] = useState(value);
+
+    if (value !== was) {
+        setWas(value);
+        setText(value === null ? '' : String(value));
+    }
+
+    return (
+        <Input
+            type="number"
+            inputMode="numeric"
+            step={1}
+            min={0}
+            aria-label={label}
+            placeholder="hotel's"
+            disabled={disabled}
+            value={text}
+            onChange={(event) => {
+                const typed = event.target.value;
+                const number = Number(typed);
+
+                setText(typed);
+
+                if (typed.trim() === '') onChange(null);
+                else if (Number.isInteger(number) && number >= 0) onChange(number);
+            }}
+            className="w-24"
+        />
+    );
+};
+
+const SLEEPING = { hotel: 'The hotel\'s', yes: 'Skip', no: 'Pay' } as const;
+
 /** The rules, one row each, changed in place. */
 const RulesTable = ({ rules, currencies, disabled, onChange }: { rules: Rule[]; currencies: string[] | null; disabled: boolean; onChange: (rules: Rule[]) => void }) => {
     const set = (index: number, change: Partial<Rule>) => onChange(rules.map((rule, i) => (i === index ? { ...rule, ...change } : rule)));
@@ -162,6 +211,9 @@ const RulesTable = ({ rules, currencies, disabled, onChange }: { rules: Rule[]; 
                                         <Th>Every (minutes)</Th>
                                         <Th>HC bonus</Th>
                                         <Th>Daily cap</Th>
+                                        <Th>Rooms only</Th>
+                                        <Th>Idle after</Th>
+                                        <Th>Sleeping</Th>
                                         <Th>On</Th>
                                         <Th><span className="sr-only">Remove</span></Th>
                                     </tr>
@@ -189,6 +241,19 @@ const RulesTable = ({ rules, currencies, disabled, onChange }: { rules: Rule[]; 
                                                 <Td><Count label="Every (minutes)" value={rule.IntervalMinutes} min={1} disabled={disabled} onChange={IntervalMinutes => set(index, { IntervalMinutes })} /></Td>
                                                 <Td><Count label="HC bonus" value={rule.HcBonus} min={0} disabled={disabled} onChange={HcBonus => set(index, { HcBonus })} /></Td>
                                                 <Td><Count label="Daily cap" value={rule.DailyCap} min={0} disabled={disabled} onChange={DailyCap => set(index, { DailyCap })} /></Td>
+                                                <Td><Switch label={<span className="sr-only">Rooms only</span>} checked={rule.InRoomOnly} disabled={disabled} onChange={InRoomOnly => set(index, { InRoomOnly })} className="min-h-0" /></Td>
+                                                <Td><OwnCount label="Idle after (minutes)" value={rule.IdleMinutes} disabled={disabled} onChange={IdleMinutes => set(index, { IdleMinutes })} /></Td>
+                                                <Td>
+                                                    <Select
+                                                        value={rule.SkipSleeping === null ? 'hotel' : rule.SkipSleeping ? 'yes' : 'no'}
+                                                        disabled={disabled}
+                                                        aria-label="Sleeping"
+                                                        onChange={event => set(index, { SkipSleeping: event.target.value === 'hotel' ? null : event.target.value === 'yes' })}
+                                                        className="w-28"
+                                                    >
+                                                        {Object.entries(SLEEPING).map(([ key, text ]) => <option key={key} value={key}>{text}</option>)}
+                                                    </Select>
+                                                </Td>
                                                 <Td><Switch label={<span className="sr-only">On</span>} checked={rule.Enabled} disabled={disabled} onChange={Enabled => set(index, { Enabled })} className="min-h-0" /></Td>
                                                 <Td><IconButton label="Remove this rule" icon={<Trash2 />} tone="bad" disabled={disabled} onClick={() => onChange(rules.filter((_, i) => i !== index))} /></Td>
                                             </tr>
@@ -203,7 +268,7 @@ const RulesTable = ({ rules, currencies, disabled, onChange }: { rules: Rule[]; 
                     <Button
                         variant="ghost"
                         icon={<Plus />}
-                        onClick={() => onChange([ ...rules, { Currency: unused[0] ?? '', Amount: 5, IntervalMinutes: 15, HcBonus: 0, DailyCap: 0, Enabled: true } ])}
+                        onClick={() => onChange([ ...rules, { Currency: unused[0] ?? '', Amount: 5, IntervalMinutes: 15, HcBonus: 0, DailyCap: 0, InRoomOnly: false, IdleMinutes: null, SkipSleeping: null, Enabled: true } ])}
                     >
                         Add a rule
                     </Button>
@@ -271,9 +336,13 @@ const OnlineRewardsForm = ({ settings, canManage }: { settings: Record<Name, Ser
                     <dd>Added for a player in Habbo Club.</dd>
                     <dt className="font-medium">Daily cap</dt>
                     <dd>The most one player gets from the rule in a day (UTC), however often they log in. 0 for no limit.</dd>
+                    <dt className="font-medium">Rooms only</dt>
+                    <dd>Paid only to a player who is in a room when the payout comes round, not on the hotel view.</dd>
+                    <dt className="font-medium">Idle after, Sleeping</dt>
+                    <dd>The rule's own idle minutes and whether a sleeping avatar is paid. Left empty or Hotel's, the Idle players settings below.</dd>
                 </dl>
             </Panel>
-            <Panel title="Idle players" description="A player who is away when a payout comes round misses that one.">
+            <Panel title="Idle players" description="A player who is away when a payout comes round misses that one. For every rule without its own.">
                 <div className="flex flex-col gap-3 p-4">
                     <Labeled label="Idle after (minutes)" hint="Not paid after this long without doing anything: walking, chatting, clicking. The client's own timers don't count. 0 to leave it to the room's sleep alone.">
                         <Count label="Idle after (minutes)" value={draft.idleMinutes} min={0} disabled={!editable('IdleMinutes')} onChange={idleMinutes => set({ idleMinutes })} />

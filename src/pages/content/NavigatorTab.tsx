@@ -1,11 +1,13 @@
 import { Eye, EyeOff, Plus, Save, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 
 import { type NavigatorFlatCategory, type NavigatorList, useDeleteNavigator, useNavigatorContent, useSaveNavigator } from '#/api/content';
 import { ask } from '#/components/confirm';
-import { Badge, Button, EmptyState, ErrorNotice, IconButton, Input, Labeled, Loading, Panel, Switch } from '#/components/ui';
+import { Badge, Button, EmptyState, ErrorNotice, IconButton, Input, Labeled, Loading, Panel, Segmented, Switch } from '#/components/ui';
 import { plural } from '#/lib/plural';
+
+import { PublicRoomsTab } from './PublicRoomsTab';
 
 /** A room category's fields as staff write them. */
 const CategoryEditor = ({ category, onDone, canManage }: { category: NavigatorFlatCategory | null; onDone: () => void; canManage: boolean }) => {
@@ -123,10 +125,30 @@ const SimpleList = ({ list, title, description, rows, placeholder, canManage }: 
 
 /**
  * The navigator: its room categories (who may see each and put rooms in it), its event
- * categories and the tabs along its top. A change reaches players the next time they open the
- * navigator. Staff picks are set on each room's page.
+ * categories and the tabs along its top, or its Public tab (Public rooms). A change reaches
+ * players the next time they open the navigator. Staff picks are set on each room's page.
  */
 export const NavigatorTab = ({ canManage }: { canManage: boolean }) => {
+    const [ params, setParams ] = useSearchParams();
+    const view = params.get('view') === 'public' ? 'public' : 'lists';
+
+    return (
+        <div className="flex flex-col gap-4">
+            <div className="self-start">
+                <Segmented
+                    label="Navigator part"
+                    value={view}
+                    onChange={value => setParams(value === 'public' ? { view: 'public' } : {}, { replace: true })}
+                    options={[ { value: 'lists', label: 'Categories and tabs' }, { value: 'public', label: 'Public rooms' } ]}
+                />
+            </div>
+            {view === 'public' ? <PublicRoomsTab /> : <NavigatorLists canManage={canManage} />}
+        </div>
+    );
+};
+
+/** The room categories, event categories and tabs. */
+const NavigatorLists = ({ canManage }: { canManage: boolean }) => {
     const { data, error } = useNavigatorContent();
     const [ open, setOpen ] = useState<number | 'new' | null>(null);
 

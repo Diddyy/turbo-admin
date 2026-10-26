@@ -222,6 +222,71 @@ export const useDeleteNavigator = () => {
     });
 };
 
+/** A room in a Public tab category: who owns it, and who put it there when. */
+export interface PublicRoom {
+    roomId: number;
+    name: string;
+    ownerId: number;
+    ownerName: string;
+    addedAt: string;
+    addedBy: number | null;
+}
+
+/**
+ * A category of the navigator's Public tab, one block of Habbo's `official_view`: `manual` (staff
+ * put rooms in it) or `staffpicks` (the staff-picked rooms, newest first); `viewMode` 0 a list, 1
+ * thumbnails; `pluginKey` the plugin that made it.
+ */
+export interface PublicCategory {
+    id: number;
+    name: string;
+    orderNum: number;
+    forceClosed: boolean;
+    viewMode: number;
+    visible: boolean;
+    kind: 'manual' | 'staffpicks';
+    pluginKey: string | null;
+    searchCode: string;
+    rooms: PublicRoom[];
+}
+
+export interface PublicTab {
+    categories: PublicCategory[];
+    canManage: boolean;
+}
+
+/** A block of the Public tab as players get it now; `doorMode` 0 open, 1 doorbell, 2 password, 3 invisible. */
+export interface PublicPreviewBlock {
+    searchCode: string;
+    text: string;
+    forceClosed: boolean;
+    viewMode: number;
+    rooms: { roomId: number; name: string; ownerName: string; users: number; maxUsers: number; doorMode: number }[];
+}
+
+export const usePublicTab = () => useQuery({
+    queryKey: [ 'content', 'navigator', 'public' ],
+    queryFn: () => api<PublicTab>('/content/navigator/public'),
+});
+
+/** What the Public tab answers now, user counts included; asked again with every change and every 15 s. */
+export const usePublicPreview = () => useQuery({
+    queryKey: [ 'content', 'navigator', 'public', 'preview' ],
+    queryFn: () => api<{ blocks: PublicPreviewBlock[] }>('/content/navigator/public/preview'),
+    refetchInterval: 15_000,
+});
+
+/** One change to the Public tab: a path under `/content/navigator/public`, its method and body. */
+export const usePublicTabEdit = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ path, method, body }: { path: string; method: 'POST' | 'PUT' | 'DELETE'; body?: unknown }) =>
+            api<unknown>(`/content/navigator/public${path}`, { method, body: body === undefined ? undefined : JSON.stringify(body) }),
+        onSettled: () => queryClient.invalidateQueries({ queryKey: [ 'content', 'navigator', 'public' ] }),
+    });
+};
+
 /** GuildMemberRank, as groups number it. */
 export const GROUP_RANKS: Record<number, string> = { 0: 'Owner', 1: 'Admin', 2: 'Member', 3: 'Requested', 4: 'Blocked' };
 

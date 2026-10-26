@@ -19,6 +19,8 @@ export interface TestElement extends WindowElement {
     moved?: boolean;
     /** `bind`'s values. */
     binds?: unknown[];
+    /** `arrange`'s fields, worked out by the client once the window is laid out. */
+    arranges?: unknown[];
     children?: TestElement[];
 }
 
@@ -28,7 +30,7 @@ export interface TestResult {
     applied: string[];
     /** Each op whose element (or `to`) the window does not have: the client reports these unmatched. */
     unmatched: string[];
-    /** Each op the test does not read (not one of set, remove, insert, move, wrap, bind). */
+    /** Each op the test does not read (not one of set, remove, insert, move, wrap, bind, arrange). */
     unknown: string[];
     /** The keys `remove` took away. */
     removed: string[];
@@ -206,6 +208,9 @@ export const testPatch = (source: readonly WindowElement[], ops: readonly unknow
         } else if (op.bind !== undefined) {
             target.binds = [ ...(target.binds ?? []), op.bind ];
             result.applied.push(`${line}: bound ${JSON.stringify(op.bind)}${op.items ? ' in each row' : ''}`);
+        } else if (op.arrange !== undefined) {
+            target.arranges = [ ...(target.arranges ?? []), op.arrange ];
+            result.applied.push(`${line}: arranged ${JSON.stringify(op.arrange)} once laid out`);
         } else {
             result.unknown.push(JSON.stringify(op));
         }

@@ -159,7 +159,7 @@ export const PatchEditor = ({ patch, onDone }: { patch: HotelPatch | null; onDon
                 <Button variant="ghost" icon={<Braces />} aria-expanded={showJson || !!problem} onClick={() => setShowJson(!showJson)}>{showJson || problem ? 'Hide JSON' : 'Show JSON'}</Button>
             </div>
             {(showJson || problem) && (
-                <Labeled label="Ops" hint="JSON: each names its element and does one of set, remove, insert, move, wrap or bind (a value per window or per list row, from placeholders such as ctx.key and item.key). Paste the client's alt-click &quot;copy patch&quot; straight in.">
+                <Labeled label="Ops" hint="JSON: each names its element and does one of set, remove, insert, move, wrap, bind (a value per window or per list row, from placeholders such as ctx.key and item.key) or arrange (x, y, width, height once the window is laid out, as numbers or formulas over element measures and ctx keys). Paste the client's alt-click &quot;copy patch&quot; straight in.">
                     <Textarea value={ops} onChange={event => setOps(event.target.value)} rows={10} className="font-mono text-xs" spellCheck={false} />
                 </Labeled>
             )}

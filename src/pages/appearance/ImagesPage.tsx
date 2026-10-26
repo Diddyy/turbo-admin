@@ -1,11 +1,11 @@
 import { useParams } from 'react-router';
 
 import { PageBody, PageHeader } from '#/components/ui';
-import { ImagesPanel } from '#/pages/plugins/ThemePage';
+import { FontsPanel, ImagesPanel } from '#/pages/plugins/ThemePage';
 
 import { ThemePicker } from './ThemePicker';
 
-/** A theme's images (its `wwwroot/styles/`), the hotel's by default: upload, copy the path a patch or style names, remove. */
+/** A theme's images and fonts (its `wwwroot/styles/`), the hotel's by default: upload, copy the path a patch or style names, remove. */
 export const ImagesPage = () => {
     const { key = 'hotel' } = useParams();
 
@@ -16,6 +16,7 @@ export const ImagesPage = () => {
             </PageHeader>
             <PageBody className="flex flex-col gap-4 lg:gap-5">
                 <ImagesPanel pluginKey={key} />
+                <FontsPanel pluginKey={key} />
             </PageBody>
         </>
     );

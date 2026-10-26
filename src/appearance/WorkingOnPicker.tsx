@@ -3,21 +3,23 @@ import { Link } from 'react-router';
 
 import { useThemes } from '#/api/appearance';
 import { Select } from '#/components/ui';
+import { cx } from '#/lib/cx';
 import { themeName, themeTree } from '#/pages/appearance/themes';
 
 import { folderOf, useWorkingOn } from './workingOn';
 
 /**
  * "Working on: <theme>" at the top of every appearance editor: the themes as a tree, the one picked
- * is where this page's saves land. Shown with the folder so it is never a guess.
+ * is where this page's saves land. Shown with the folder so it is never a guess; a bar at the top of the page body (never
+ * folded into the header's overflow menu), or in a toolbar.
  */
-export const WorkingOnPicker = () => {
+export const WorkingOnPicker = ({ className }: { className?: string }) => {
     const { key, setKey } = useWorkingOn();
     const { data } = useThemes();
     const tree = data ? themeTree(data.themes, data.base) : [];
 
     return (
-        <span className="inline-flex flex-wrap items-center gap-2 text-sm" data-working-on={key}>
+        <div className={cx('flex flex-wrap items-center gap-2 text-sm', className)} data-working-on={key}>
             <label className="inline-flex items-center gap-2">
                 <FolderPen className="size-4 text-muted" />
                 <span className="text-muted">Working on</span>
@@ -35,6 +37,6 @@ export const WorkingOnPicker = () => {
                     New theme
                 </Link>
             )}
-        </span>
+        </div>
     );
 };

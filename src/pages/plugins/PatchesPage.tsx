@@ -302,13 +302,13 @@ export const PatchesPage = () => {
     return (
         <>
             <PageHeader title="Template patches" description="Changes to the game's windows, as data, by who made them: this hotel and each plugin. Beside each window: how many players' clients report it applied / unmatched / ineffective, and what a client update took away. Players get a change at their next load.">
-                <WorkingOnPicker />
                 <Link to="/appearance/windows" className="inline-flex items-center gap-1 rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-subtle">
                     <AppWindow className="size-4" />
                     Windows &amp; skins
                 </Link>
             </PageHeader>
             <PageBody className="flex flex-col gap-4 lg:gap-5">
+                <WorkingOnPicker className="rounded-xl border border-line bg-surface px-4 py-2.5" />
                 {error && <ErrorNotice error={error} />}
                 <HotelPatches />
                 <Panel title="Plugins" description="From each plugin's wwwroot/template-patches.json, by plugin.">

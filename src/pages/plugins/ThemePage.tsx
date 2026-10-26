@@ -352,7 +352,8 @@ export const ThemePage = () => {
     const [ values, setValues ] = useState<Record<string, string>>({});
     const [ previewed, setPreviewed ] = useState<string | null>(null);
     const styles = useMemo(() => data?.styles ?? [], [ data ]);
-    const draft = useMemo(() => styleDraft(key, styles, values, fonts), [ key, styles, values, fonts ]);
+    // Working on a theme, the preview draws its chain: its own saved defaults (players have them from its files), then what is typed.
+    const draft = useMemo(() => styleDraft(key, styles, intoTheme ? { ...Object.fromEntries(styles.filter(style => style.changed && style.value !== null).map(style => [ style.name, style.value! ])), ...values } : values, fonts), [ key, styles, values, fonts, intoTheme ]);
     const windows = useMemo(() => [ ...new Set(styles.map(style => windowOfStyle(index, style)).filter(id => id !== undefined)) ], [ index, styles ]);
     const shownWindow = previewed ?? windows[0] ?? null;
     const onDraft = (name: string, value: string) => {
@@ -366,7 +367,6 @@ export const ThemePage = () => {
     return (
         <>
             <PageHeader title="Style properties" description={`The colours, art, fonts and places a theme names, and ${intoTheme ? `${working.name}'s own defaults, saved into ${folderOf(key)}theme.json` : 'this hotel\'s values'}${data?.extends ? `: ${key} extends ${data.extends} and has its properties unless it names them again` : ''}. Players see a change at their next load.`}>
-                <WorkingOnPicker />
                 {!intoTheme && <ThemePicker value={key} to={next => `/appearance/styles/${encodeURIComponent(next)}`} />}
                 {all.size > 1 && (
                     <label className="inline-flex items-center gap-2 text-sm">
@@ -389,6 +389,7 @@ export const ThemePage = () => {
                 )}
             </PageHeader>
             <PageBody className="flex flex-col gap-4 lg:gap-5">
+                <WorkingOnPicker className="rounded-xl border border-line bg-surface px-4 py-2.5" />
                 {error && <ErrorNotice error={error} />}
                 {!data && !error && <Loading />}
                 {data && data.styles.length === 0 && <EmptyState framed>This plugin declares no style properties: it has no theme.json (one with &quot;extends&quot;: &quot;habbo&quot; gets Habbo&apos;s).</EmptyState>}

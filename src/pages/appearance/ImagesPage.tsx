@@ -17,10 +17,10 @@ export const ImagesPage = () => {
     return (
         <>
             <PageHeader title="Images" description="The art a theme's patches and image properties name: frame art, icons, backgrounds. Upload here, then pick it on Style properties or paste its path into a patch.">
-                <WorkingOnPicker />
                 {working.hotel && <ThemePicker value={key} to={next => `/appearance/images/${encodeURIComponent(next)}`} />}
             </PageHeader>
             <PageBody className="flex flex-col gap-4 lg:gap-5">
+                <WorkingOnPicker className="rounded-xl border border-line bg-surface px-4 py-2.5" />
                 <ImagesPanel pluginKey={key} />
                 <FontsPanel pluginKey={key} />
             </PageBody>

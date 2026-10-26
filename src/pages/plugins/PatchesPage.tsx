@@ -65,7 +65,7 @@ const PatchEditor = ({ patch, onDone }: { patch: HotelPatch | null; onDone: () =
                 <Labeled label="Template" hint="<library>/<asset>, as the inspector shows it."><Input value={pasted?.template ?? template} onChange={event => setTemplate(event.target.value)} placeholder="habbo-toolbar-com/purse_xml" className="w-full font-mono" /></Labeled>
                 <Labeled label="Order" hint="Lower first; a theme takes a negative one."><Input type="number" value={order} onChange={event => setOrder(event.target.value)} className="w-full" /></Labeled>
             </div>
-            <Labeled label="Ops" hint="JSON: each names its element and does one of set, remove, insert or move. Paste the client's alt-click &quot;copy patch&quot; straight in.">
+            <Labeled label="Ops" hint="JSON: each names its element and does one of set, remove, insert, move, wrap or bind (a value per window or per list row, from placeholders such as ctx.key and item.key). Paste the client's alt-click &quot;copy patch&quot; straight in.">
                 <Textarea value={ops} onChange={event => setOps(event.target.value)} rows={10} className="font-mono text-xs" spellCheck={false} />
             </Labeled>
             {problem && <p className="text-xs text-warn">{problem}</p>}

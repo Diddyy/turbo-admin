@@ -1,4 +1,4 @@
-import { Package, Plus, Power, PowerOff, Save, Trash2, X } from 'lucide-react';
+import { AppWindow, Package, Plus, Power, PowerOff, Save, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 
@@ -9,6 +9,7 @@ import { toast, toastError } from '#/components/toast';
 import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, PageBody, PageHeader, Panel, Textarea } from '#/components/ui';
 
 import { PackageDialog } from './PackageDialog';
+import { PatchTest } from './PatchTest';
 
 /** How a patch stands in players' clients, by the reports' kinds. */
 const TONES: Record<string, 'green' | 'amber' | 'red'> = { 'patch.applied': 'green', 'patch.unmatched': 'amber', 'patch.conflict': 'amber', 'module.failed': 'red' };
@@ -34,7 +35,8 @@ const readPasted = (text: string): { template?: string; ops: unknown } | null =>
     }
 };
 
-const PatchEditor = ({ patch, onDone }: { patch: HotelPatch | null; onDone: () => void }) => {
+/** A patch's form; a `patch` with no id (a draft from the windows browser) is saved as a new one. */
+export const PatchEditor = ({ patch, onDone }: { patch: HotelPatch | null; onDone: () => void }) => {
     const [ name, setName ] = useState(patch?.name ?? '');
     const [ template, setTemplate ] = useState(patch?.template ?? '');
     const [ order, setOrder ] = useState(patch?.order === null || patch?.order === undefined ? '' : String(patch.order));
@@ -62,13 +64,14 @@ const PatchEditor = ({ patch, onDone }: { patch: HotelPatch | null; onDone: () =
         >
             <div className="grid gap-3 sm:grid-cols-[1fr_1fr_8rem]">
                 <Labeled label="Name"><Input value={name} onChange={event => setName(event.target.value)} placeholder="Green help button" className="w-full" /></Labeled>
-                <Labeled label="Template" hint="<library>/<asset>, as the inspector shows it."><Input value={pasted?.template ?? template} onChange={event => setTemplate(event.target.value)} placeholder="habbo-toolbar-com/purse_xml" className="w-full font-mono" /></Labeled>
+                <Labeled label="Template" hint={<>{'<library>/<asset>, as '}<Link to="/plugins/windows" className="text-accent hover:underline">Windows &amp; skins</Link>{' lists it.'}</>}><Input value={pasted?.template ?? template} onChange={event => setTemplate(event.target.value)} placeholder="habbo-toolbar-com/purse_xml" className="w-full font-mono" /></Labeled>
                 <Labeled label="Order" hint="Lower first; a theme takes a negative one."><Input type="number" value={order} onChange={event => setOrder(event.target.value)} className="w-full" /></Labeled>
             </div>
             <Labeled label="Ops" hint="JSON: each names its element and does one of set, remove, insert, move, wrap or bind (a value per window or per list row, from placeholders such as ctx.key and item.key). Paste the client's alt-click &quot;copy patch&quot; straight in.">
                 <Textarea value={ops} onChange={event => setOps(event.target.value)} rows={10} className="font-mono text-xs" spellCheck={false} />
             </Labeled>
             {problem && <p className="text-xs text-warn">{problem}</p>}
+            {!problem && pasted && <PatchTest template={pasted.template ?? template} ops={pasted.ops as unknown[]} />}
             {save.error && <ErrorNotice error={save.error} />}
             <div className="flex gap-2">
                 <Button type="submit" icon={<Save />} disabled={save.isPending || !!problem || !name.trim()}>Save</Button>
@@ -174,7 +177,12 @@ export const PatchesPage = () => {
 
     return (
         <>
-            <PageHeader title="Template patches" description="Changes to the game's windows, as data: by plugin and by this hotel. Players get a change at their next load." back={{ to: '/plugins', label: 'Plugins' }} />
+            <PageHeader title="Template patches" description="Changes to the game's windows, as data: by plugin and by this hotel. Players get a change at their next load." back={{ to: '/plugins', label: 'Plugins' }}>
+                <Link to="/plugins/windows" className="inline-flex items-center gap-1 rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-subtle">
+                    <AppWindow className="size-4" />
+                    Windows &amp; skins
+                </Link>
+            </PageHeader>
             <PageBody className="flex flex-col gap-4 lg:gap-5">
                 {error && <ErrorNotice error={error} />}
                 <HotelPatches />

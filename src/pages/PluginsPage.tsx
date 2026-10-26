@@ -445,6 +445,10 @@ export const PluginsPage = () => {
                     <Layers className="size-4" />
                     Template patches
                 </Link>
+                <Link to="/plugins/hotel/theme" className="inline-flex items-center gap-1 rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-subtle">
+                    <Palette className="size-4" />
+                    Hotel theme
+                </Link>
                 <Link to="/plugins/windows" className="inline-flex items-center gap-1 rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-subtle">
                     <AppWindow className="size-4" />
                     Windows &amp; skins

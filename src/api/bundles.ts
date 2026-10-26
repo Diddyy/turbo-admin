@@ -2,7 +2,7 @@ import { keepPreviousData, type QueryClient, useMutation, useQuery, useQueryClie
 
 import { useSession } from '#/auth/session';
 
-import { api, API_URL, ApiError, MESSAGES, post, put, remove } from './client';
+import { api, API_URL, apiBlob, ApiError, MESSAGES, post, put, remove } from './client';
 
 /**
  * The asset bundles the client draws furniture, effects and pets from: kept on this server, taken
@@ -180,6 +180,77 @@ export interface AssetPending {
     bytes: number;
     new: number;
     changed: number;
+}
+
+/** What comparing the target's copy of a file with the hotel's found. */
+export type CompareResult = 'changed' | 'stamp-only' | 'same' | 'not-on-target' | 'unreadable';
+
+/** How a part of a file differs from the target's copy to the hotel's. */
+export type DiffChange = 'added' | 'removed' | 'changed';
+
+/** A window template that differs, with its elements (by name) and text keys that do. */
+export interface CompareWindow {
+    /** `<library>/<asset>`, as `templates.json` keys it. */
+    id: string;
+    change: DiffChange;
+    elementsAdded: string[];
+    elementsRemoved: string[];
+    elementsChanged: string[];
+    textKeysAdded: string[];
+    textKeysRemoved: string[];
+}
+
+/** One language's texts that differ: how many keys, and the first of them with their texts. */
+export interface CompareTexts {
+    language: string;
+    added: number;
+    removed: number;
+    changed: number;
+    edits: { key: string; change: DiffChange; before: string | null; after: string | null }[];
+}
+
+/** Another file that differs (an image, the asset data), with its bytes and pixels on each side. */
+export interface CompareEntry {
+    name: string;
+    change: DiffChange;
+    bytesBefore: number | null;
+    bytesAfter: number | null;
+    widthBefore: number | null;
+    heightBefore: number | null;
+    widthAfter: number | null;
+    heightAfter: number | null;
+}
+
+/**
+ * What changed in a file a target holds an older copy of, its copy read through the target: with
+ * the hotel's bundle row (where its copy came from, when it changed) and each copy's build stamp.
+ */
+export interface AssetComparison {
+    kind: BundleKind;
+    name: string;
+    path: string;
+    size: number;
+    result: CompareResult;
+    problem: string | null;
+    targetSize: number | null;
+    /** Whether the target's copy is the one recorded as sent to it. */
+    targetAsRecorded: boolean;
+    source: 'habbo' | 'upload' | 'built' | null;
+    revision: string | null;
+    updatedAt: string | null;
+    stampBefore: string | null;
+    stampAfter: string | null;
+    windows: CompareWindow[];
+    texts: CompareTexts[];
+    entries: CompareEntry[];
+    /** Every other file that differs; `entries` holds the first of them. */
+    entriesChanged: number;
+}
+
+export interface AssetCompare {
+    items: AssetComparison[];
+    /** The files pending as changed, when every one was asked (the largest are compared). */
+    total: number;
 }
 
 export interface AssetTargetInput {
@@ -600,6 +671,21 @@ export const useTargetPending = (id: number | null, q: string, page: number) => 
     enabled: id !== null,
     placeholderData: keepPreviousData,
 });
+
+/**
+ * What changed in the file at `path` (or, with `path` empty, in every file pending as changed),
+ * its copy read through the target, while `id` is set.
+ */
+export const useTargetCompare = (id: number | null, path: string) => useQuery({
+    queryKey: [ 'assets', 'targets', id, 'compare', path ],
+    queryFn: () => api<AssetCompare>(`/assets/targets/${id}/compare${path ? `?${new URLSearchParams({ path })}` : ''}`),
+    enabled: id !== null,
+    staleTime: 60_000,
+});
+
+/** An image a comparison names, as the target holds it or the hotel does: the file, or its `entry` in that bundle. */
+export const comparedImage = (id: number, path: string, entry: string | null, side: 'target' | 'hotel') =>
+    apiBlob(`/assets/targets/${id}/compare/image?${new URLSearchParams({ path, side, ...(entry ? { entry } : {}) })}`);
 
 export const useTargetHistory = (id: number | null) => useQuery({
     queryKey: [ 'assets', 'targets', id, 'history' ],

@@ -1,4 +1,4 @@
-import { ChevronDown, ExternalLink, FlaskConical, History, KeyRound, Pencil, Plug, Plus, Send, Trash2 } from 'lucide-react';
+import { ChevronDown, ExternalLink, FlaskConical, GitCompare, History, KeyRound, Pencil, Plug, Plus, Send, Trash2 } from 'lucide-react';
 import { useDeferredValue, useState } from 'react';
 
 import { type AssetPublishEntry, type AssetTarget, DEFAULT_PORTS, PROTOCOLS, useDeleteTarget, useForgetHostKey, usePublish, useTargetHistory, useTargetPending, useTargets, useTestTarget } from '#/api/bundles';
@@ -11,6 +11,7 @@ import { Badge, Button, EmptyState, ErrorNotice, IconButton, Loading, Panel, Suc
 import { cx } from '#/lib/cx';
 import { fromNow } from '#/lib/time';
 
+import { CompareModal } from './CompareModal';
 import { formatBytes, formatTime } from './format';
 import { TargetForm } from './TargetForm';
 
@@ -65,6 +66,8 @@ const HistoryModal = ({ target, onClose }: { target: AssetTarget | null; onClose
 const PendingList = ({ target }: { target: AssetTarget }) => {
     const [ text, setText ] = useState('');
     const [ page, setPage ] = useState(0);
+    // The file compared, '' for every changed one; null while none is.
+    const [ comparing, setComparing ] = useState<string | null>(null);
     const q = useDeferredValue(text.trim());
     const { data, error } = useTargetPending(target.id, q, page);
 
@@ -74,9 +77,16 @@ const PendingList = ({ target }: { target: AssetTarget }) => {
             {!data && !error && <Loading />}
             {data && (
                 <>
-                    <p className="text-xs text-muted">
-                        {`${data.count.toLocaleString()} ${data.count === 1 ? 'file' : 'files'}, ${formatBytes(data.bytes)}: ${data.new.toLocaleString()} never sent, ${data.changed.toLocaleString()} changed since sent`}
-                    </p>
+                    <div className="flex items-center gap-2">
+                        <p className="min-w-0 flex-1 text-xs text-muted">
+                            {`${data.count.toLocaleString()} ${data.count === 1 ? 'file' : 'files'}, ${formatBytes(data.bytes)}: ${data.new.toLocaleString()} never sent, ${data.changed.toLocaleString()} changed since sent`}
+                        </p>
+                        {data.changed > 0 && (
+                            <Button variant="ghost" icon={<GitCompare />} className="h-8 shrink-0 px-2 text-xs sm:h-7" onClick={() => setComparing('')}>
+                                Compare all
+                            </Button>
+                        )}
+                    </div>
                     <div className="flex items-center gap-2">
                         <SearchInput
                             placeholder="Find by path"
@@ -98,12 +108,16 @@ const PendingList = ({ target }: { target: AssetTarget }) => {
                                             <Badge tone={file.change === 'new' ? 'accent' : 'amber'}>{file.change}</Badge>
                                             <span className="min-w-0 flex-1 truncate font-mono" title={file.path}>{file.path}</span>
                                             <span className="shrink-0 text-muted tabular-nums">{formatBytes(file.size)}</span>
+                                            {file.change === 'changed' && (
+                                                <IconButton small label={`Compare ${file.path}`} icon={<GitCompare />} onClick={() => setComparing(file.path)} />
+                                            )}
                                         </li>
                                     ))}
                                 </ul>
                             )}
                 </>
             )}
+            <CompareModal target={target} path={comparing} onClose={() => setComparing(null)} />
         </div>
     );
 };

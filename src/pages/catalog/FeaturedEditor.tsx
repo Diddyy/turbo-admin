@@ -105,7 +105,7 @@ const ItemCard = ({ item, index, tree, offers, onChange, onRemove, disabled }: {
                         <p className="text-xs text-muted">A product code is for in-app purchases; on the web, clicking it does nothing.</p>
                     </>
                 )}
-                <Labeled label="Until" hint={item.expiresAtUtc ? 'The client counts down to it; then it is gone.' : 'Empty: until it is taken off.'}>
+                <Labeled label="Until" hint={item.expiresAtUtc ? 'It comes off the front page then (no countdown is shown, as in Habbo).' : 'Empty: until it is taken off.'}>
                     <Input type="datetime-local" value={toLocal(item.expiresAtUtc)} onChange={event => set('expiresAtUtc', event.target.value ? new Date(event.target.value).toISOString() : null)} disabled={disabled} aria-label="Until" />
                 </Labeled>
             </div>

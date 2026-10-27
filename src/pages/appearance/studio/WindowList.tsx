@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Monitor } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { useTextSearch } from '#/api/gamedata';
@@ -7,7 +7,7 @@ import { SearchInput } from '#/components/SearchInput';
 import { cx } from '#/lib/cx';
 import { useDebounced } from '#/lib/debounce';
 
-import { AREAS, type StudioWindow, windowMatches } from './windows';
+import { AREAS, HUD_WINDOW, type StudioWindow, windowMatches } from './windows';
 
 const THUMB_WIDTH = 44;
 const THUMB_HEIGHT = 32;
@@ -57,7 +57,9 @@ export const WindowList = ({ index, windows, value, onPick }: { index: TemplateI
     const { data: texts } = useTextSearch(words.length >= 3 ? words : '', 0);
     const shown = useMemo(() => new Set(words.length >= 3 ? texts?.items.map(item => item.key) ?? [] : []), [ texts, words ]);
     const found = useMemo(() => windows.filter(window => windowMatches(index, window, words, shown)), [ index, windows, words, shown ]);
-    const byArea = Map.groupBy([ ...found ].sort((a, b) => a.name.localeCompare(b.name)), window => window.area);
+    // The room screen heads the list: the HUD's windows where players see them, together.
+    const hud = found.find(window => window.id === HUD_WINDOW);
+    const byArea = Map.groupBy(found.filter(window => window !== hud).sort((a, b) => a.name.localeCompare(b.name)), window => window.area);
 
     return (
         <div className="flex min-h-0 flex-col">
@@ -66,6 +68,21 @@ export const WindowList = ({ index, windows, value, onPick }: { index: TemplateI
                 <span className="text-xs text-muted">{`${found.length} of ${windows.length} windows${shown.size ? `, ${shown.size} text(s) say those words` : ''}`}</span>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto">
+                {hud && (
+                    <button
+                        type="button"
+                        title="The toolbar, purse, friend bar, chat input, room tools, infostand and notifications, where players see them"
+                        aria-current={hud.id === value ? 'true' : undefined}
+                        className={cx('flex w-full items-center gap-2 border-b border-line px-2 py-2 text-left text-[13px] font-medium hover:bg-subtle', hud.id === value && 'bg-subtle text-accent')}
+                        onClick={() => onPick(hud.id)}
+                    >
+                        <Monitor className="size-5 shrink-0" />
+                        <span className="flex flex-col">
+                            <span>{hud.name}</span>
+                            <span className="text-xs font-normal text-muted">Toolbar, purse, friend bar, chat, room tools...</span>
+                        </span>
+                    </button>
+                )}
                 {AREAS.filter(area => byArea.has(area)).map((area) => {
                     const open = !!words || !closed.has(area);
 

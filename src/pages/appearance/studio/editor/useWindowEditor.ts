@@ -8,6 +8,7 @@ import { dragged, type DragKind, unionOf } from '#/preview/VisualEditor';
 
 import { withBind } from '../inspector/model';
 import type { Studio } from '../studio';
+import { HUD_WINDOW } from '../windows';
 import type { Move, Picked } from './EditorOverlay';
 import type { DropWhere } from './Hierarchy';
 import { type EditNode, type EditTree, editTree, freeName, isInside, keyOf, nodeOf, portable, walk, withMove, withNodeSets, withoutNode } from './tree';
@@ -114,9 +115,12 @@ export const useWindowEditor = (studio: Studio, index: TemplateIndex | undefined
     const treeOf = (template: string) => trees.find(entry => entry.tree.template === template)?.tree;
     const resolved = (picks: readonly Picked[]) => picks.map(each => ({ each, tree: treeOf(each.template) })).map(({ each, tree }) => ({ tree, node: tree ? nodeOf(tree, each.key) : undefined })).filter((entry): entry is { tree: EditTree; node: EditNode } => !!entry.tree && !!entry.node);
 
-    /** The picked elements an edit moves: not the window itself, not one inside another picked one. */
+    /**
+     * The picked elements an edit moves: not the window itself, not one inside another picked one. A whole piece of the room
+     * screen moves (its code places it; the client moves it by its root's x/y).
+     */
     const movable = () => {
-        const all = resolved(shownSelected).filter(({ node }) => node.parent);
+        const all = resolved(shownSelected).filter(({ node, tree }) => node.parent || ((window === HUD_WINDOW) && (tree.template !== window)));
 
         return all.filter(({ node, tree }) => !all.some(other => (other.node !== node) && (other.tree === tree) && isInside(node, other.node)));
     };

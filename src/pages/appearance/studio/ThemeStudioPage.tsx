@@ -35,7 +35,7 @@ import { NewWindowDialog } from './NewWindowDialog';
 import { draftCount, type Studio, StudioContext, type StudioDraft, type StudioSelection, useDraftHistory } from './studio';
 import { ThemeSettings } from './ThemeSettings';
 import { WindowList } from './WindowList';
-import { studioWindows } from './windows';
+import { HUD_WINDOW, studioWindows } from './windows';
 
 const TABS = [ { value: 'windows', label: 'Windows' }, { value: 'settings', label: 'Theme settings' }, { value: 'changes', label: 'Changes' } ];
 
@@ -472,6 +472,13 @@ export const ThemeStudioPage = () => {
                                 />
                             )}
                             {windowId && <EditorToolbar editor={editor} view={view} onView={setView} canEdit={canManage} />}
+                            {windowId === HUD_WINDOW && (
+                                <p className="text-xs text-muted" data-testid="hud-hint">
+                                    {'Every piece is its own window: click it to change it. To move a whole piece, pick "the window" under its name in Element and drag it. The chat bubbles are chat styles: '}
+                                    <Link to="/appearance/chat-bubbles" className="text-accent hover:underline">Chat bubbles</Link>
+                                    .
+                                </p>
+                            )}
                             <div ref={centreRef} className="min-w-0">
                                 {windowId
                                     ? (
@@ -482,6 +489,7 @@ export const ThemeStudioPage = () => {
                                                 draft={previewDraft}
                                                 owner={theme}
                                                 selected={selection?.key ?? null}
+                                                selectedIn={selection && selection.template !== windowId ? selection.template : undefined}
                                                 controls={controls}
                                                 onRects={setRects}
                                                 onStates={setHostStates}

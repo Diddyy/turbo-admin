@@ -51,8 +51,11 @@ It has:
   `admin.plugins.view`. With `admin.plugins.manage`, reload one, rescan the plugin folders and turn
   one off or on (it stays off across restarts). Installing a plugin package (a zip) also needs
   `admin.plugins.install`, which no wildcard grants, and the server's `Turbo:Plugin:UploadEnabled`.
-  So does **Link from GitHub**: a repository whose releases carry the plugin package, following its
-  newest release or one tag, with an optional token (never shown). The server checks the links on
+  So does **Link from GitHub**: a repository whose releases install the plugin's sources at their tag
+  (from the folder holding its `manifest.json`, named when it has several), following its newest
+  release or one tag, with an optional token (never shown). The server compiles a plugin's sources
+  as it loads it; one it refuses (an executable file in its folder, or code plugins may not run) is
+  listed as **refused**, with why. The server checks the links on
   a schedule and shows **update available**; **Update** and **Check now** run as a job with its log.
   Every install keeps the version it replaced: **Roll back** under Earlier versions puts one back.
   Every action is in the command log.

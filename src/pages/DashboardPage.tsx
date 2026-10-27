@@ -89,12 +89,18 @@ const HotelCard = ({ phase, atUtc }: { phase: AvailabilityPhase; atUtc: string |
 };
 
 /**
- * What to do about a plugin that failed to load, from why it failed: one built against another
- * server's contracts (a type, method or assembly it names is gone) is rebuilt against this one.
+ * What to do about a plugin that failed to load or was refused, from why: one refused is tried
+ * again once its folder changes; one written against another server's contracts (its code names a
+ * type, member or namespace this server lacks) is updated to this one.
  */
-const fixFor = (error: string | null) => (/could not load (type|file or assembly)|typeload|missingmethod|missingfield|method not found|entrypointnotfound/i.test(error ?? '')
-    ? 'Rebuild it against this server\'s version and install it again, then reload it.'
-    : 'Fix what the error names, then reload it.');
+const fixFor = (plugin: Plugin) => {
+    if (plugin.state === 'rejected')
+        return 'Take out what the error names (an executable file, or code plugins may not run): it is tried again once a file in its folder changes.';
+
+    return /\bCS(0234|0246|1061|0117)\b|could not load (type|file or assembly)|typeload|missingmethod|missingfield|method not found/i.test(plugin.error ?? '')
+        ? 'Update it to this server\'s version and install it again, then reload it.'
+        : 'Fix what the error names, then reload it.';
+};
 
 /**
  * The plugins whose last load failed, at the top of the overview: a plugin that failed adds
@@ -105,7 +111,7 @@ const FailedPlugins = ({ plugins, canManage }: { plugins: Plugin[]; canManage: b
 
     return (
         <Panel
-            title={<span className="flex items-center gap-2 text-bad"><PlugZap className="size-4" />{`${plugins.length} ${plugins.length === 1 ? 'plugin' : 'plugins'} failed to load`}</span>}
+            title={<span className="flex items-center gap-2 text-bad"><PlugZap className="size-4" />{`${plugins.length} ${plugins.length === 1 ? 'plugin' : 'plugins'} did not load`}</span>}
             description="What a plugin adds is missing from the hotel until it loads."
             actions={<TextLink to="/plugins">Open plugins</TextLink>}
             className="border-bad-line"
@@ -116,9 +122,9 @@ const FailedPlugins = ({ plugins, canManage }: { plugins: Plugin[]; canManage: b
                         <div className="min-w-0 flex-[1_1_16rem]">
                             <span className="block truncate font-medium">{plugin.name ?? plugin.folder}</span>
                             <span className="block truncate font-mono text-[11px] text-bad" title={plugin.error ?? undefined}>{plugin.error ?? 'Its manifest could not be read.'}</span>
-                            <span className="block text-xs text-muted">{fixFor(plugin.error)}</span>
+                            <span className="block text-xs text-muted">{fixFor(plugin)}</span>
                         </div>
-                        {canManage && plugin.name && (
+                        {canManage && plugin.name && plugin.state !== 'rejected' && (
                             <Button variant="secondary" disabled={reload.isPending} onClick={() => reload.mutate(plugin.key)}>Reload</Button>
                         )}
                     </li>
@@ -128,10 +134,10 @@ const FailedPlugins = ({ plugins, canManage }: { plugins: Plugin[]; canManage: b
     );
 };
 
-/** The failed plugins, for staff who may see plugins; nothing when every plugin loaded. */
+/** The failed and refused plugins, for staff who may see plugins; nothing when every plugin loaded. */
 const PluginAlerts = () => {
     const { data } = usePlugins();
-    const failed = data?.plugins.filter(x => x.state === 'failed') ?? [];
+    const failed = data?.plugins.filter(x => x.state === 'failed' || x.state === 'rejected') ?? [];
 
     return failed.length > 0 ? <FailedPlugins plugins={failed} canManage={data?.canManage ?? false} /> : null;
 };

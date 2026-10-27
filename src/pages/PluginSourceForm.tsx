@@ -12,8 +12,8 @@ const FOLLOWS: { value: PluginSourceFollow; label: string }[] = [
 ];
 
 const inputOf = (source: PluginSource | null): PluginSourceInput => source
-    ? { repository: source.repository, follow: source.follow, tag: source.tag, asset: source.asset, token: '', autoUpdate: source.autoUpdate }
-    : { repository: '', follow: 'latest', tag: null, asset: null, token: '', autoUpdate: false };
+    ? { repository: source.repository, follow: source.follow, tag: source.tag, folder: source.folder, token: '', autoUpdate: source.autoUpdate }
+    : { repository: '', follow: 'latest', tag: null, folder: null, token: '', autoUpdate: false };
 
 /**
  * Links a GitHub repository to install a plugin from, or edits a link (`source`). The saved token
@@ -34,7 +34,7 @@ export const PluginSourceForm = ({ source, allowed, onClose }: { source: PluginS
             ...input,
             repository: input.repository.trim(),
             tag: input.follow === 'tag' ? input.tag?.trim() ?? null : null,
-            asset: input.asset?.trim() || null,
+            folder: input.folder?.trim() || null,
             token,
         };
         const done = {
@@ -65,7 +65,7 @@ export const PluginSourceForm = ({ source, allowed, onClose }: { source: PluginS
                     value={input.repository}
                     onChange={event => set({ repository: event.target.value })}
                     placeholder="https://github.com/owner/repo"
-                    hint={allowed.length > 0 ? `From ${allowed.join(', ')} only (Turbo:Plugin:AllowedSources).` : 'Its releases carry the plugin package as a .zip asset.'}
+                    hint={allowed.length > 0 ? `From ${allowed.join(', ')} only (Turbo:Plugin:AllowedSources).` : 'A release installs the plugin\'s sources at its tag, which the server compiles.'}
                     disabled={source !== null}
                     required
                     autoFocus={source === null}
@@ -81,12 +81,12 @@ export const PluginSourceForm = ({ source, allowed, onClose }: { source: PluginS
                 )}
 
                 <Field
-                    label="Asset"
-                    name="source-asset"
-                    value={input.asset ?? ''}
-                    onChange={event => set({ asset: event.target.value })}
-                    placeholder="The release's only .zip"
-                    hint="Only when a release has more than one .zip."
+                    label="Folder"
+                    name="source-folder"
+                    value={input.folder ?? ''}
+                    onChange={event => set({ folder: event.target.value })}
+                    placeholder="The only folder with a manifest.json"
+                    hint="The folder holding the plugin's manifest.json, only when the repository has more than one plugin."
                     className="w-full font-mono"
                 />
 

@@ -3,8 +3,12 @@ import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tansta
 import { type AssetJob, postForm } from './bundles';
 import { api, apiBlob, post, put, remove } from './client';
 
-/** How a plugin stands: running, its last load failed, turned off, or found and not loaded yet. */
-export type PluginState = 'loaded' | 'failed' | 'disabled' | 'not_loaded';
+/**
+ * How a plugin stands: running, its last load failed, refused (its folder holds an executable file,
+ * or its code does what plugins may not; not tried again until a file in its folder changes), turned
+ * off, or found and not loaded yet.
+ */
+export type PluginState = 'loaded' | 'failed' | 'rejected' | 'disabled' | 'not_loaded';
 
 /** One plugin the server found. `name` is null for a folder whose manifest could not be read. */
 export interface Plugin {
@@ -17,7 +21,7 @@ export interface Plugin {
     /** Loaded from `Turbo:Plugin:DevPluginPaths`, not the plugin folder. */
     dev: boolean;
     state: PluginState;
-    /** Why the manifest could not be read, or why its last load failed. */
+    /** Why the manifest could not be read, why its last load failed, or why it was refused. */
     error: string | null;
     dependencies: string[];
     /** The client capabilities it registered. */
@@ -41,8 +45,8 @@ export interface PluginSource {
     repository: string;
     follow: PluginSourceFollow;
     tag: string | null;
-    /** The release asset installed; null takes the release's only zip. */
-    asset: string | null;
+    /** The repository's folder holding the plugin's `manifest.json` (`""` its root); null takes the only one. */
+    folder: string | null;
     hasToken: boolean;
     autoUpdate: boolean;
     /** The plugin's key, once a release has been installed. */
@@ -63,7 +67,7 @@ export interface PluginSourceInput {
     repository: string;
     follow: PluginSourceFollow;
     tag: string | null;
-    asset: string | null;
+    folder: string | null;
     token?: string;
     autoUpdate: boolean;
 }
@@ -171,7 +175,7 @@ export const useSetPluginEnabled = () => usePluginAction(({ key, enabled }: { ke
 
 export const useRescanPlugins = () => usePluginAction<void>(() => post<PluginActionResponse>('/plugins/rescan'));
 
-/** Installs a plugin package: a zip with `manifest.json` and the plugin's assembly. */
+/** Installs a plugin package: a zip with `manifest.json` and the plugin's sources, which the server compiles. */
 export const useInstallPlugin = () => usePluginAction((file: File) => {
     const form = new FormData();
 

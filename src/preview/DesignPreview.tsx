@@ -45,6 +45,21 @@ export interface DesignSelection {
     name: string | null;
     /** What it is drawn with, its patches applied (the client's own element). */
     element?: DesignElementValues;
+    /** From the window's root down to it, each step's template and key. */
+    path?: DesignPathStep[];
+    /** Its style and caption as the client draws it. */
+    style?: string | null;
+    caption?: string | null;
+    /** The text the client shows for each `${key}` of its caption. */
+    texts?: Record<string, string>;
+}
+
+/** One step of the way from the window down to a picked element. */
+export interface DesignPathStep {
+    template: string;
+    key: string | null;
+    tag: string;
+    name: string | null;
 }
 
 /** A picked element's own values as the client draws it, as a patch's `set` names them. */
@@ -106,6 +121,10 @@ type HostMessage = {
     tag?: string;
     name?: string | null;
     element?: DesignElementValues;
+    path?: DesignPathStep[];
+    style?: string | null;
+    caption?: string | null;
+    texts?: Record<string, string>;
     rects?: DesignBox[];
     scale?: number;
     /** On `ready`: the named states of the windows the host draws with sample content, by window. */
@@ -216,7 +235,7 @@ export const DesignPreview = ({ template, part, state, zoom = 1, draft, owner, h
             else if (data.event === 'rect') {
                 if (typeof data.key === 'string') rects.current?.({ key: data.key, rects: data.rects ?? [], scale: data.scale ?? 1 });
             } else if (data.event === 'select') {
-                const selection = { template: data.template ?? '', ...(data.part ? { part: data.part } : {}), key: data.key ?? null, tag: data.tag ?? '', name: data.name ?? null, ...(data.element ? { element: data.element } : {}) };
+                const selection = { template: data.template ?? '', ...(data.part ? { part: data.part } : {}), key: data.key ?? null, tag: data.tag ?? '', name: data.name ?? null, ...(data.element ? { element: data.element } : {}), ...(data.path ? { path: data.path } : {}), style: data.style ?? null, caption: data.caption ?? null, ...(data.texts ? { texts: data.texts } : {}) };
 
                 setPicked(selection);
                 select.current?.(selection);

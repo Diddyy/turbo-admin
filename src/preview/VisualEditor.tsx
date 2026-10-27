@@ -7,7 +7,7 @@ import { Button, IconButton, Input, Labeled, Select, Switch } from '#/components
 
 import { type DesignBox, type DesignDraft, DesignPreview, type DesignPreviewControls, type DesignRects, type DesignSelection } from './DesignPreview';
 import { type OpsHistory } from './opsHistory';
-import { colourOf, colourParts, colourValue, setOf, skinComponentOf, withEntry, withSet, withSets } from './patchOps';
+import { ALIGN_H, ALIGN_V, colourOf, colourParts, colourValue, SCALES, setOf, skinComponentOf, withEntry, withSet, withSets } from './patchOps';
 
 /** A press that moves less than this is a click: it picks what is under it instead of moving the element. */
 const CLICK_SLOP_PX = 3;
@@ -37,7 +37,7 @@ export const keyedElements = (elements: readonly WindowElement[]) => {
 };
 
 /** A sprite cut from the theme sheet, at most `max` pixels a side. */
-const SheetSprite = ({ sheet, sprite, max = 24 }: { sheet: ThemeSheet | undefined; sprite: string; max?: number }) => {
+export const SheetSprite = ({ sheet, sprite, max = 24 }: { sheet: ThemeSheet | undefined; sprite: string; max?: number }) => {
     const frame = sheet?.frames[sprite];
 
     if (!sheet || !frame) return <span className="inline-block size-6 rounded border border-dashed border-line" />;
@@ -156,12 +156,8 @@ export const TextKeyPicker = ({ onPick }: { onPick: (key: string) => void }) => 
     );
 };
 
-const SCALES = [ 'fixed', 'move', 'stretch', 'center' ];
-const ALIGN_H = [ 'left', 'center', 'right' ];
-const ALIGN_V = [ 'top', 'middle', 'bottom' ];
-
 /** A pair param (`scale`, `align`) as two drop-downs. */
-const PairParam = ({ label, value, own, options, onChange }: { label: string; value: unknown; own: unknown; options: [ string[], string[] ]; onChange: (pair: [ string, string ]) => void }) => {
+export const PairParam = ({ label, value, own, options, onChange }: { label: string; value: unknown; own: unknown; options: [ string[], string[] ]; onChange: (pair: [ string, string ]) => void }) => {
     const pair = (Array.isArray(value) ? value : Array.isArray(own) ? own : [ options[0][0], options[1][0] ]) as [ string, string ];
 
     return (
@@ -178,7 +174,7 @@ const PairParam = ({ label, value, own, options, onChange }: { label: string; va
 };
 
 /** A variable as a field of its kind: a switch, a number or a text. */
-const VarField = ({ name, value, own, onChange }: { name: string; value: unknown; own: unknown; onChange: (value: unknown) => void }) => {
+export const VarField = ({ name, value, own, onChange }: { name: string; value: unknown; own: unknown; onChange: (value: unknown) => void }) => {
     const shown = value ?? own;
 
     if (typeof shown === 'boolean') return <Switch label={name} checked={shown} onChange={onChange} />;

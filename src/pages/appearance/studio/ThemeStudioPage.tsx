@@ -5,7 +5,7 @@ import { Link, useSearchParams } from 'react-router';
 import { useThemeAudiences, useThemes } from '#/api/appearance';
 import { useClientAssets } from '#/api/assets';
 import { useSaveText } from '#/api/gamedata';
-import { type HotelPatch, type PluginStyle, usePatches, usePluginFonts, usePluginStyles, useRemovePatch, useSavePatch, useStyleChange } from '#/api/noCode';
+import { type HotelPatch, type PluginStyle, useOverlaysChange, usePatches, usePluginFonts, usePluginStyles, useRemovePatch, useSavePatch, useStyleChange } from '#/api/noCode';
 import { useTemplateIndex, windowOf } from '#/api/windows';
 import { styleDraft, windowOfStyle } from '#/appearance/styleValues';
 import { folderOf, useWorkingOn } from '#/appearance/workingOn';
@@ -165,6 +165,7 @@ export const ThemeStudioPage = () => {
     const removePatch = useRemovePatch(theme);
     const styleChange = useStyleChange(theme, intoTheme);
     const saveText = useSaveText();
+    const overlaysChange = useOverlaysChange(theme);
     const saved = useSaved();
     const [ saving, setSaving ] = useState(false);
     const patches = useMemo(() => patchData?.patches ?? [], [ patchData ]);
@@ -225,6 +226,8 @@ export const ThemeStudioPage = () => {
         setStyle: (name, value, group) => change({ ...draft, styles: value === undefined ? without(draft.styles, name) : { ...draft.styles, [name]: value } }, group),
         text: key => draft.texts[key],
         setText: (key, value, group) => change({ ...draft, texts: value === undefined ? without(draft.texts, key) : { ...draft.texts, [key]: value } }, group),
+        overlay: key => draft.overlays[key],
+        setOverlay: (key, url, group) => change({ ...draft, overlays: url === undefined ? without(draft.overlays, key) : { ...draft.overlays, [key]: url } }, group),
         rects,
         pick: (x, y) => controls.current?.pick(x, y),
     };
@@ -250,7 +253,10 @@ export const ThemeStudioPage = () => {
 
         const drawn = styleDraft(theme, styles, values, fonts);
 
-        return { patches: { [theme]: { patches: files } }, styles: drawn.styles, variables: drawn.variables, texts: draft.texts };
+        // New art is drawn at once: each bitmap's uploaded image in the asset manager (the library's own for one given back).
+        const art = Object.entries(draft.overlays).filter(([ , url ]) => url !== null).map(([ key, url ]) => ({ path: [ 'asset.overlays', key ], value: url }));
+
+        return { patches: { [theme]: { patches: files } }, styles: drawn.styles, variables: [ ...(drawn.variables ?? []), ...art ], texts: draft.texts };
     }, [ patches, draft, styles, fonts, theme, intoTheme ]);
 
     const save = async () => {
@@ -272,6 +278,9 @@ export const ThemeStudioPage = () => {
             for (const [ name, value ] of Object.entries(draft.styles)) await styleChange.mutateAsync({ name, value });
 
             for (const [ key, value ] of Object.entries(draft.texts)) await saveText.mutateAsync({ key, value });
+
+            // Every bitmap in one change: each is checked before any is written.
+            if (Object.keys(draft.overlays).length) await overlaysChange.mutateAsync(draft.overlays);
 
             history.clear();
             saved(`${unsaved} change(s) to ${working.name}`);
@@ -406,7 +415,7 @@ export const ThemeStudioPage = () => {
                                                 controls={controls}
                                                 onRects={setRects}
                                                 onStates={setHostStates}
-                                                onSelect={picked => setSelection({ window: windowId, template: picked.part ?? windowId, key: picked.key, tag: picked.tag, name: picked.name, ...(picked.element ? { element: picked.element } : {}) })}
+                                                onSelect={picked => setSelection({ window: windowId, template: picked.part ?? windowId, key: picked.key, tag: picked.tag, name: picked.name, ...(picked.element ? { element: picked.element } : {}), ...(picked.path ? { path: picked.path } : {}), style: picked.style ?? null, caption: picked.caption ?? null, ...(picked.texts ? { texts: picked.texts } : {}) })}
                                                 overlay={box && canManage && <Handles box={box} onDrag={(kind, dx, dy, done) => onDrag(kind, dx, dy, done)} onClick={(x, y) => controls.current?.pick(x, y)} />}
                                             />
                                         )

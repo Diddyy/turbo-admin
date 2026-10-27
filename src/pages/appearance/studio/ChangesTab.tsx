@@ -76,6 +76,7 @@ export const ChangesTab = ({ index, windows, patches, draft, onJump }: { index: 
     }
 
     for (const [ key, value ] of Object.entries(draft.texts)) add(null, { id: `text:${key}`, what: `Text ${key}`, detail: `${value}, unsaved`, unsaved: true, drop: () => studio.setText(key, undefined) });
+    for (const [ key, url ] of Object.entries(draft.overlays)) add(null, { id: `art:${key}`, what: `Art of ${key.split('/').pop()}`, detail: url === null ? 'the library\'s own again on Save' : 'new art, unsaved', unsaved: true, drop: () => studio.setOverlay(key, undefined) });
 
     if (!groups.size) return <EmptyState>This theme changes nothing yet: pick a window and click what to change.</EmptyState>;
 

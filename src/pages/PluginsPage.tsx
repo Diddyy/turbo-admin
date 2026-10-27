@@ -20,6 +20,7 @@ import { PluginUninstall } from './PluginUninstall';
 const STATES: Record<PluginState, { label: string; tone: BadgeTone }> = {
     loaded: { label: 'loaded', tone: 'green' },
     failed: { label: 'failed', tone: 'red' },
+    rejected: { label: 'refused', tone: 'red' },
     disabled: { label: 'off', tone: 'amber' },
     not_loaded: { label: 'not loaded', tone: 'neutral' },
 };
@@ -83,7 +84,7 @@ const PluginInspector = ({ pluginKey }: { pluginKey: string }) => {
                 <div className="flex flex-col gap-2 text-xs">
                     {data.conflicts.map(conflict => <WarningNotice key={conflict}>{conflict}</WarningNotice>)}
                     {kinds.size === 0
-                        ? <span className="text-muted">It registers nothing{data.state === 'failed' ? ' (its load failed before anything was registered)' : ''}.</span>
+                        ? <span className="text-muted">It registers nothing{data.state === 'failed' ? ' (its load failed before anything was registered)' : data.state === 'rejected' ? ' (it was refused before it loaded)' : ''}.</span>
                         : (
                                 <dl className="grid gap-x-4 gap-y-1.5 sm:grid-cols-[9rem_1fr]">
                                     {[ ...kinds ].map(([ kind, items ]) => (
@@ -157,7 +158,7 @@ const MissingNodes = ({ canManage, canInstall, canUninstall, uploadEnabled }: { 
             <span className="flex flex-col gap-1" data-testid="plugins-missing-nodes">
                 <span>
                     {!canManage && <>Installing, reloading and turning plugins off need <code>{MANAGE}</code>. </>}
-                    {canManage && !canInstall && <>{uploadEnabled ? 'You can install a data plugin: a theme, texts, patches and images, no AssemblyFile. ' : ''}A package with code, Link from GitHub and Update need <code>{INSTALL}</code>. </>}
+                    {canManage && !canInstall && <>{uploadEnabled ? 'You can install a data plugin: a theme, texts, patches and images, no C# source. ' : ''}A package with code, Link from GitHub and Update need <code>{INSTALL}</code>. </>}
                     {!canUninstall && <>Uninstall needs <code>{UNINSTALL}</code>. </>}
                     {missing.some(node => node !== MANAGE) && 'No wildcard grants those: each is given by its name.'}
                 </span>
@@ -329,7 +330,7 @@ const InstallButton = ({ maxBytes, code }: { maxBytes: number; code: boolean }) 
                         ask(
                             {
                                 title: `Install ${file.name}?`,
-                                body: `${code ? 'A plugin is server code: it runs with the hotel\'s own access.' : `Only a data plugin installs without ${INSTALL}: a theme, texts, patches and images, no AssemblyFile.`} One with the same key is replaced. Up to ${Math.floor(maxBytes / (1024 * 1024))} MB.`,
+                                body: `${code ? 'A plugin is server code: it runs with the hotel\'s own access.' : `Only a data plugin installs without ${INSTALL}: a theme, texts, patches and images, no C# source.`} One with the same key is replaced. Up to ${Math.floor(maxBytes / (1024 * 1024))} MB.`,
                                 confirm: 'Install',
                             },
                             () => install.mutate(file, said),

@@ -29,10 +29,12 @@ export const MoreProperties = ({ editor }: { editor: WindowEditor }) => {
     const studio = useStudio();
     const primary = editor.primary;
 
-    if (!primary || !primary.node.parent) return null;
+    if (!primary) return null;
 
     const { tree, node } = primary;
     const values = valuesOf(tree, studio.ops(tree.template), node);
+    // The window itself is the inspector's (its first-open place is not drawn by the preview, so not offered here).
+    if (!node.parent) return null;
     const added = node.insertedAt !== undefined;
     const disabled = !studio.canManage;
     const drawn = (studio.selection?.element?.params ?? {}) as Op;
@@ -47,6 +49,9 @@ export const MoreProperties = ({ editor }: { editor: WindowEditor }) => {
         <div className="flex flex-col gap-3 p-3 pt-0 text-sm" aria-label="More properties">
             <Group title="Fill and opacity" hint="A plain fill in the element's colour behind it, and how see-through all of it is.">
                 <Switch label="Fill with its colour" checked={typeof values.background === 'boolean' ? values.background : false} disabled={disabled} onChange={on => editor.setValues({ background: on }, 'background')} />
+                <Labeled label="Dynamic style" hint="A look Flash works out from what is under it (brightness_and_shadow_under, ...). Empty: its own.">
+                    <Input aria-label="Dynamic style" disabled={disabled} value={typeof values.dynamicStyle === 'string' ? values.dynamicStyle : ''} onChange={event => editor.setValues({ dynamicStyle: event.target.value || undefined }, 'dynamicStyle')} />
+                </Labeled>
                 <Labeled label={`Opacity ${Math.round((typeof values.blend === 'number' ? values.blend : 1) * 100)}%`}>
                     <input type="range" aria-label="Opacity" min={0} max={1} step={0.05} disabled={disabled} value={typeof values.blend === 'number' ? values.blend : 1} onChange={event => editor.setValues({ blend: Number(event.target.value) }, 'blend')} className="w-full accent-[var(--color-accent)]" />
                 </Labeled>

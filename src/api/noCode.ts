@@ -269,6 +269,25 @@ export interface PluginFontsResponse {
 /** The font files a font can be: WOFF2, WOFF, TrueType, OpenType. */
 export const FONT_TYPES = '.woff2,.woff,.ttf,.otf,font/woff2,font/woff,font/ttf,font/otf';
 
+const textsKey = (key: string) => [ 'plugins', key, 'texts' ];
+
+/** A theme's own texts (its `gamedata/external_texts.txt`): drawn over the hotel's for its players, for every key staff never changed. */
+export const useThemeTexts = (key: string, enabled = true) => useQuery({
+    queryKey: textsKey(key),
+    queryFn: () => api<{ texts: Record<string, string> }>(`/plugins/${encodeURIComponent(key)}/texts`),
+    enabled,
+});
+
+/** Sets texts in a theme's own file (null takes the theme's away); the theme's texts are read again after. */
+export const useThemeTextsChange = (key: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (texts: Record<string, string | null>) => put<{ texts: Record<string, string> }>(`/plugins/${encodeURIComponent(key)}/texts`, { texts }),
+        onSettled: () => void queryClient.invalidateQueries({ queryKey: textsKey(key) }),
+    });
+};
+
 const fontsKey = (key: string) => [ 'plugins', key, 'fonts' ];
 
 export const usePluginFonts = (key: string) => useQuery({

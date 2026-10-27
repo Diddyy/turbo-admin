@@ -3,7 +3,8 @@ import { useState } from 'react';
 
 import { type ThemeAudience, type ThemeAudienceChange, type ThemeStatus, useSetThemeAudience, useThemeAudiences } from '#/api/appearance';
 import { useClientAssets } from '#/api/assets';
-import { toast, toastError } from '#/components/toast';
+import { useSaved } from '#/components/SaveFeedback';
+import { toastError } from '#/components/toast';
 import { Badge, Button, Checkbox, Input, Select } from '#/components/ui';
 
 export const STATUS_LABEL: Record<ThemeStatus, string> = { live: 'Live', development: 'In development', off: 'Off' };
@@ -71,7 +72,8 @@ const ThemeAudienceEditor = ({ theme, groups }: { theme: ThemeAudience; groups: 
     const [ chosenGroups, setChosenGroups ] = useState<string[]>([]);
     const set = useSetThemeAudience();
 
-    const save = (change: ThemeAudienceChange, said: string) => set.mutate({ key: theme.key, change }, { onSuccess: () => toast(said), onError: toastError });
+    const saved = useSaved();
+    const save = (change: ThemeAudienceChange, said: string) => set.mutate({ key: theme.key, change }, { onSuccess: () => saved(said), onError: toastError });
 
     const start = () => {
         setPlayers(theme.players.map(x => x.name ?? String(x.id)).join(', '));
@@ -91,7 +93,7 @@ const ThemeAudienceEditor = ({ theme, groups }: { theme: ThemeAudience; groups: 
                         value={theme.status}
                         disabled={theme.key === 'hotel'}
                         title={theme.key === 'hotel' ? 'The hotel\'s own theme is always Live: every theme ends in it' : undefined}
-                        onChange={event => save({ status: event.target.value as ThemeStatus }, `${theme.key} is ${STATUS_LABEL[event.target.value as ThemeStatus]} - players see it from their next load`)}
+                        onChange={event => save({ status: event.target.value as ThemeStatus }, `${theme.key} is ${STATUS_LABEL[event.target.value as ThemeStatus]}`)}
                     >
                         {(Object.keys(STATUS_LABEL) as ThemeStatus[]).map(status => <option key={status} value={status}>{STATUS_LABEL[status]}</option>)}
                     </Select>
@@ -106,7 +108,7 @@ const ThemeAudienceEditor = ({ theme, groups }: { theme: ThemeAudience; groups: 
                     icon={<Star />}
                     disabled={theme.isDefault || theme.status !== 'live'}
                     title={theme.status !== 'live' ? 'Only a Live theme can be the default' : undefined}
-                    onClick={() => save({ isDefault: true }, `${theme.key} is the hotel's default - every player without a theme of their own draws it from their next load`)}
+                    onClick={() => save({ isDefault: true }, `${theme.key} is the hotel's default`)}
                 >
                     Make default
                 </Button>
@@ -132,7 +134,7 @@ const ThemeAudienceEditor = ({ theme, groups }: { theme: ThemeAudience; groups: 
                 <Button variant="ghost" onClick={() => setOpen(false)}>Close</Button>
             </span>
             <span className="text-xs text-muted">
-                Staff with appearance.themes.preview may draw any theme in development (the client&apos;s Other settings, or Preview as). Players see a change from their next load.
+                Staff with appearance.themes.preview may draw any theme in development (the client&apos;s Other settings, or Preview as). Players online draw a change as it is saved.
             </span>
         </span>
     );

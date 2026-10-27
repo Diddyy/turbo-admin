@@ -1,30 +1,26 @@
-import { useQueryClient } from '@tanstack/react-query';
-
-import { api } from '#/api/client';
-import type { DashboardResponse } from '#/api/types';
+import { fetchThemeLive, type ThemeLive } from '#/api/appearance';
 import { plural } from '#/lib/plural';
 
 import { toast } from './toast';
 
 /**
  * What a saved appearance change does, in one sentence every appearance editor uses: who has it
- * now and who gets it when. A player's client reads windows, styles and texts as it loads, so the
- * players online see it at their next load; one who logs in now has it.
+ * now. The server sends a change to every online player whose look it is part of and their client
+ * draws it with no reload (live reload); a player whose theme it is not part of gets nothing, and
+ * one who logs in now has it.
  */
-export const savedLine = (what: string, online: number | null) => {
-    if (online === null) return `${what}: saved. Players get it at their next load.`;
+export const savedLine = (what: string, live: ThemeLive | null) => {
+    if (live === null) return `${what}: saved. Players get it at their next load.`;
 
-    if (online === 0) return `${what}: saved. No one is online: every player has it from their next load.`;
+    if (live.online === 0) return `${what}: saved. No one is online: every player has it from their next load.`;
 
-    return `${what}: saved. ${plural(online, 'player')} online ${online === 1 ? 'gets' : 'get'} it at their next load; anyone logging in now has it.`;
+    const others = live.online - live.players;
+    const rest = (others > 0) ? ` The other ${plural(others, 'player')} online ${others === 1 ? 'draws a theme' : 'draw themes'} it is not part of.` : '';
+
+    return `${what}: saved - live for ${plural(live.players, 'player')} now.${rest}`;
 };
 
-/** Says an appearance change was saved (`savedLine`), with the players online now. */
-export const useSaved = () => {
-    const queryClient = useQueryClient();
-
-    return (what: string) => void queryClient
-        .fetchQuery({ queryKey: [ 'dashboard' ], queryFn: () => api<DashboardResponse>('/dashboard'), staleTime: 10_000 })
-        .then(dashboard => dashboard.playersOnline, () => null)
-        .then(online => toast(savedLine(what, online)));
-};
+/** Says an appearance change was saved (`savedLine`), with the players it reached live. */
+export const useSaved = () => (what: string) => void fetchThemeLive()
+    .then(live => live, () => null)
+    .then(live => toast(savedLine(what, live)));

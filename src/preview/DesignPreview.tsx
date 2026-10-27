@@ -37,6 +37,8 @@ export interface DesignDraft {
 /** The element a press in the preview picked: its key, as a patch's `element` names it. */
 export interface DesignSelection {
     template: string;
+    /** The part template the element belongs to (a grid item, a page layout drawn inside the window); none for the window's own. */
+    part?: string;
     /** Null for an element no key reaches (one the window's code made). */
     key: string | null;
     tag: string;
@@ -55,6 +57,12 @@ export interface DesignElementValues {
     hidden: boolean;
     vars: Record<string, unknown>;
     params: Record<string, unknown>;
+}
+
+/** A named state a window is drawn in (a catalogue page per layout), as the preview host says them. */
+export interface DesignState {
+    id: string;
+    name: string;
 }
 
 /** A box in the preview's own pixels (the frame's CSS pixels, from its top left). */
@@ -92,6 +100,7 @@ type HostMessage = {
     event: 'ready' | 'shown' | 'error' | 'report' | 'select' | 'rect';
     message?: string;
     template?: string;
+    part?: string;
     base?: boolean;
     key?: string | null;
     tag?: string;
@@ -99,6 +108,8 @@ type HostMessage = {
     element?: DesignElementValues;
     rects?: DesignBox[];
     scale?: number;
+    /** On `ready`: the named states of the windows the host draws with sample content, by window. */
+    states?: Record<string, DesignState[]>;
 } & Partial<DesignReport>;
 
 const isHostMessage = (data: unknown): data is HostMessage => (typeof data === 'object') && (data !== null) && ((data as HostMessage).type === MESSAGE_TYPE);
@@ -128,6 +139,10 @@ interface DesignPreviewProps {
     /** The window: a template's id (`<library>/<asset>`), or a frame Nitro draws itself by its frame id. */
     template: string;
     part?: string;
+    /** The window's state to draw (a tab, a page, empty or loading), as the client's window map names it. */
+    state?: string;
+    /** The preview's size against the game's desktop (1 = the size the game is played at). */
+    zoom?: number;
     draft?: DesignDraft;
     /** Whose ops the lines under the preview are about: the editor's owner. */
     owner?: string;
@@ -139,6 +154,8 @@ interface DesignPreviewProps {
     onSelect?: (selection: DesignSelection) => void;
     /** Where the outlined element is drawn, each time it moves. */
     onRects?: (rects: DesignRects) => void;
+    /** The states the client draws windows in, by window, once it is ready. */
+    onStates?: (states: Record<string, DesignState[]>) => void;
     /** Drawn over the window, in its pixels: a visual editor's handles. */
     overlay?: ReactNode;
     controls?: Ref<DesignPreviewControls | null>;
@@ -152,7 +169,7 @@ interface DesignPreviewProps {
  * as the client itself worked it out. The client listens only to the origins its
  * `preview.allowed_origins` names: until the hotel names the panel's there, it stays on its loading screen.
  */
-export const DesignPreview = ({ template, part, draft, owner, highlight, selected, onSelect, onRects, overlay, controls }: DesignPreviewProps) => {
+export const DesignPreview = ({ template, part, state, zoom = 1, draft, owner, highlight, selected, onSelect, onRects, onStates, overlay, controls }: DesignPreviewProps) => {
     const assets = useClientAssets();
     const url = assets?.preview || null;
     const frame = useRef<HTMLIFrameElement>(null);
@@ -163,6 +180,7 @@ export const DesignPreview = ({ template, part, draft, owner, highlight, selecte
     const [ picked, setPicked ] = useState<DesignSelection | null>(null);
     const select = useRef(onSelect);
     const rects = useRef(onRects);
+    const states = useRef(onStates);
     const origin = url ? new URL(url).origin : null;
     const catalog = useCatalogTree().data;
     const items = useMemo(() => designSamples(template, { catalog, catalogIcon: assets?.catalogIcon ?? '' }), [ template, catalog, assets?.catalogIcon ]);
@@ -172,7 +190,8 @@ export const DesignPreview = ({ template, part, draft, owner, highlight, selecte
     useEffect(() => {
         select.current = onSelect;
         rects.current = onRects;
-    }, [ onSelect, onRects ]);
+        states.current = onStates;
+    }, [ onSelect, onRects, onStates ]);
 
     useImperativeHandle(controls, () => ({
         pick: (x: number, y: number) => {
@@ -188,14 +207,16 @@ export const DesignPreview = ({ template, part, draft, owner, highlight, selecte
 
             const data = event.data;
 
-            if (data.event === 'ready') setReady(true);
-            else if (data.event === 'error') setError(data.message ?? 'error');
+            if (data.event === 'ready') {
+                setReady(true);
+                states.current?.(data.states ?? {});
+            } else if (data.event === 'error') setError(data.message ?? 'error');
             else if (data.event === 'shown') setError(null);
             else if (data.event === 'report') setReport({ owners: data.owners ?? [], unmatched: data.unmatched ?? [], ineffective: data.ineffective ?? [], conflicts: data.conflicts ?? [], errors: data.errors ?? [], missingStyles: data.missingStyles ?? [] });
             else if (data.event === 'rect') {
                 if (typeof data.key === 'string') rects.current?.({ key: data.key, rects: data.rects ?? [], scale: data.scale ?? 1 });
             } else if (data.event === 'select') {
-                const selection = { template: data.template ?? '', key: data.key ?? null, tag: data.tag ?? '', name: data.name ?? null, ...(data.element ? { element: data.element } : {}) };
+                const selection = { template: data.template ?? '', ...(data.part ? { part: data.part } : {}), key: data.key ?? null, tag: data.tag ?? '', name: data.name ?? null, ...(data.element ? { element: data.element } : {}) };
 
                 setPicked(selection);
                 select.current?.(selection);
@@ -215,6 +236,7 @@ export const DesignPreview = ({ template, part, draft, owner, highlight, selecte
             window: 'design',
             template,
             part,
+            state,
             frame: designFrameId(template),
             base,
             draft: JSON.parse(draftKey) as DesignDraft,
@@ -222,7 +244,7 @@ export const DesignPreview = ({ template, part, draft, owner, highlight, selecte
         }, origin), SEND_DELAY_MS);
 
         return () => window.clearTimeout(timer);
-    }, [ ready, origin, template, part, base, draftKey, items ]);
+    }, [ ready, origin, template, part, state, base, draftKey, items ]);
 
     // An outline changes nothing else: sent at once, without the draft.
     useEffect(() => {
@@ -244,9 +266,11 @@ export const DesignPreview = ({ template, part, draft, owner, highlight, selecte
                 </span>
             </div>
             <div className="overflow-auto rounded-xl border border-line bg-black">
-                <div className="relative" style={{ width: FRAME_WIDTH, height: FRAME_HEIGHT }}>
-                    <iframe ref={frame} src={url} title="The window in the game" style={{ width: FRAME_WIDTH, height: FRAME_HEIGHT }} className="block border-0" />
-                    {overlay && !base && <div className="pointer-events-none absolute inset-0">{overlay}</div>}
+                <div style={{ width: FRAME_WIDTH * zoom, height: FRAME_HEIGHT * zoom }}>
+                    <div className="relative origin-top-left" style={{ width: FRAME_WIDTH, height: FRAME_HEIGHT, transform: zoom === 1 ? undefined : `scale(${zoom})` }}>
+                        <iframe ref={frame} src={url} title="The window in the game" style={{ width: FRAME_WIDTH, height: FRAME_HEIGHT }} className="block border-0" />
+                        {overlay && !base && <div className="pointer-events-none absolute inset-0">{overlay}</div>}
+                    </div>
                 </div>
             </div>
             {picked && (selected === undefined) && (

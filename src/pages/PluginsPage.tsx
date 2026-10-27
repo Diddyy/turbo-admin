@@ -285,7 +285,7 @@ const PluginDetail = ({ plugin, source, canManage, canRollback, canUninstall }: 
                                     Turn off
                                 </Button>
                             )}
-                    <Link to={`/appearance/styles/${encodeURIComponent(plugin.key)}`} className="inline-flex items-center gap-1 px-2 text-sm text-accent hover:underline">
+                    <Link to={`/appearance/studio?${new URLSearchParams({ tab: 'settings', theme: plugin.key })}`} className="inline-flex items-center gap-1 px-2 text-sm text-accent hover:underline">
                         <Palette className="size-4" />
                         Theme
                     </Link>

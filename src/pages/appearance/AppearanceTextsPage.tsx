@@ -40,7 +40,7 @@ const TextRow = ({ entry, textKey, where }: { entry: TextEntry | undefined; text
                 {where && where.length > 0 && (
                     <span className="flex flex-wrap gap-x-2 text-xs">
                         <span className="text-muted">Shown in</span>
-                        {where.slice(0, 4).map(id => <Link key={id} to={`/appearance/windows/windows?${new URLSearchParams({ id })}`} className="font-mono text-accent hover:underline">{id}</Link>)}
+                        {where.slice(0, 4).map(id => <Link key={id} to={`/appearance/studio?${new URLSearchParams({ window: id })}`} className="font-mono text-accent hover:underline">{id}</Link>)}
                         {where.length > 4 && <span className="text-muted">{`and ${where.length - 4} more`}</span>}
                     </span>
                 )}

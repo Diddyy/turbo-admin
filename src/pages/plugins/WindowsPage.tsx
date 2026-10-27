@@ -23,8 +23,8 @@ import { SkinSetUpload } from './SkinSetUpload';
 import { WindowTree } from './WindowTree';
 
 const TABS = [
-    { value: 'windows', label: 'Windows', to: '/appearance/windows/windows' },
-    { value: 'skins', label: 'Skins', to: '/appearance/windows/skins' },
+    { value: 'windows', label: 'Windows', to: '/appearance/advanced/windows/windows' },
+    { value: 'skins', label: 'Skins', to: '/appearance/advanced/windows/skins' },
 ];
 
 /** How a patch stands in players' clients, by the reports' kinds (as on Template patches). */
@@ -192,7 +192,7 @@ const SkinCard = ({ id, skin, sheet, replacing }: { id: string; skin: SkinEntry;
                 <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
                     <span className="text-muted">Drawn by:</span>
                     {windows.map(([ win, keys ]) => (
-                        <Link key={win} to={`/appearance/windows/windows?${new URLSearchParams({ id: win })}`} className="font-mono text-accent hover:underline">{`${win} ${keys.map(key => `'${key}'`).join(' ')}`}</Link>
+                        <Link key={win} to={`/appearance/advanced/windows/windows?${new URLSearchParams({ id: win })}`} className="font-mono text-accent hover:underline">{`${win} ${keys.map(key => `'${key}'`).join(' ')}`}</Link>
                     ))}
                 </p>
             )}
@@ -266,7 +266,7 @@ const PluginWindowPatches = ({ plugin, id }: { plugin: Plugin; id: string }) => 
                 <span className="font-medium">{plugin.name ?? plugin.key}</span>
                 {patches.map(patch => <span key={patch.name} className="text-xs text-muted">{patch.detail}</span>)}
                 {issues.map(issue => <Badge key={issue.kind} tone={TONES[issue.kind] ?? 'neutral'}>{`${issue.kind.slice('patch.'.length)} - ${issue.clients} client(s)`}</Badge>)}
-                <Link to={`/appearance/styles/${encodeURIComponent(plugin.key)}`} className="ml-auto text-xs text-accent hover:underline">Theme</Link>
+                <Link to={`/appearance/studio?${new URLSearchParams({ tab: 'settings', theme: plugin.key })}`} className="ml-auto text-xs text-accent hover:underline">Theme</Link>
             </div>
             {issues.filter(issue => issue.kind !== 'patch.applied').map(issue => <p key={issue.kind} className="text-xs text-warn">{issue.message}</p>)}
         </li>

@@ -34,11 +34,25 @@ export interface WindowTemplate {
     elements: WindowElement[];
 }
 
-/** `template-index.json`: every template window by id (`<library>/<asset>`), and the frames Nitro draws itself by frame id with their styles. */
+/** A window players open, as the client's window map has it: what they call it, its area, the part templates drawn inside it and its states. */
+export interface StudioWindowEntry {
+    name: string;
+    area: string;
+    parts?: string[];
+    states?: { id: string; name: string }[];
+}
+
+/**
+ * `template-index.json`: every template by id (`<library>/<asset>`), the frames Nitro draws itself
+ * by frame id with their styles, and the window map: which ids are windows players open, and which
+ * windows each part template is drawn inside.
+ */
 export interface TemplateIndex {
     version: 1;
     templates: Record<string, WindowTemplate>;
     frames: Record<string, string[]>;
+    windows?: Record<string, StudioWindowEntry>;
+    parts?: Record<string, { windows: string[] }>;
 }
 
 /** One sprite of the theme sheet a skin draws (nitro-theme `SkinSprite`). */

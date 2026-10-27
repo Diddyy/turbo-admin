@@ -52,8 +52,8 @@ const PAGES = {
     texts: { to: '/gamedata/products', also: [ '/gamedata/texts', '/gamedata/variables' ], label: 'Texts & variables', icon: <Languages />, end: false, key: 'x', needs: 'canViewGamedata', words: 'product data external texts variables' },
     publish: { to: '/gamedata/publish', label: 'Publish', icon: <Send />, end: false, key: 'n', needs: 'canViewGamedata' },
     themes: { to: '/appearance/themes', label: 'Themes', icon: <Palette />, end: false, key: 'z', needs: 'canViewPlugins', words: 'look design styles extends habbo theme.json' },
-    styleProperties: { to: '/appearance/styles', label: 'Style properties', icon: <SwatchBook />, end: false, needs: 'canViewPlugins', words: 'colours colors fonts frame art purse catalogue position loading screen reset' },
-    windows: { to: '/appearance/windows', label: 'Windows & skins', icon: <AppWindow />, end: false, needs: 'canViewPlugins', words: 'templates elements keys sprites overlays nine-slice inspector' },
+    studio: { to: '/appearance/studio', label: 'Theme studio', icon: <SwatchBook />, end: false, needs: 'canViewPlugins', words: 'design windows skins elements style properties colours colors fonts frame art purse catalogue position loading screen inspector changes undo' },
+    windows: { to: '/appearance/advanced/windows', label: 'Windows & skins', icon: <AppWindow />, end: false, needs: 'canViewPlugins', words: 'templates elements keys sprites overlays nine-slice raw list' },
     patches: { to: '/appearance/patches', label: 'Template patches', icon: <Layers />, end: false, needs: 'canViewPlugins', words: 'template modifications ops applied unmatched ineffective' },
     images: { to: '/appearance/images', label: 'Images', icon: <ImageIcon />, end: false, needs: 'canViewPlugins', words: 'upload art icons pictures styles folder' },
     chatBubbles: { to: '/appearance/chat-bubbles', label: 'Chat bubbles', icon: <MessageCircle />, end: false, needs: 'canViewContent', words: 'chat styles speech bubbles chatstyles club staff art reg points' },
@@ -131,17 +131,13 @@ const SECTIONS: NavSection[] = [
         ],
     },
     {
-        // Everything a designer changes, in one place (XenForo's Appearance): themes and their styles, the windows, patches, art and texts.
+        // Everything a designer changes, in one place: the studio first, then the themes, the chat bubbles, and the raw editors under Advanced.
         label: 'Appearance',
         entries: [
-            { label: 'Themes', icon: <Palette />, pages: [ 'themes' ], hint: 'Every theme under the one it extends, on or off' },
-            { label: 'Style properties', icon: <SwatchBook />, pages: [ 'styleProperties' ], hint: 'Colours, art, fonts and places, by theme and area' },
-            { label: 'Windows & skins', icon: <AppWindow />, pages: [ 'windows' ], hint: 'Every window\'s elements and every skin\'s sprites' },
-            { label: 'Template patches', icon: <Layers />, pages: [ 'patches' ], hint: 'Changes to windows by who made them, with what clients report' },
-            { label: 'Images', icon: <ImageIcon />, pages: [ 'images' ], hint: 'Art a theme names: upload, copy its path' },
+            { label: 'Theme studio', icon: <SwatchBook />, pages: [ 'studio' ], hint: 'Pick a window, click what to change, see it as players will' },
+            { label: 'Themes', icon: <Palette />, pages: [ 'themes' ], hint: 'Every theme under the one it extends, and who gets it' },
             { label: 'Chat bubbles', icon: <MessageCircle />, pages: [ 'chatBubbles' ], hint: 'The bubbles players speak in, drawn as the game draws them' },
-            { label: 'Texts', icon: <Type />, pages: [ 'appearanceTexts' ], hint: 'The texts windows show, by window or by what they say' },
-            { label: 'Outdated patches', icon: <TriangleAlert />, pages: [ 'outdated' ], hint: 'Patches a client update broke, with why' },
+            { label: 'Advanced', icon: <Layers />, pages: [ 'patches', 'images', 'appearanceTexts', 'outdated', 'windows' ], hint: 'Template patches, images, texts, outdated patches and the raw list of windows and skins' },
         ],
     },
     {

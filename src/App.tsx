@@ -12,6 +12,7 @@ import { AppearanceTextsPage } from '#/pages/appearance/AppearanceTextsPage';
 import { ChatBubblesPage } from '#/pages/appearance/ChatBubblesPage';
 import { ImagesPage } from '#/pages/appearance/ImagesPage';
 import { OutdatedPage } from '#/pages/appearance/OutdatedPage';
+import { ThemeStudioPage } from '#/pages/appearance/studio/ThemeStudioPage';
 import { ThemesPage } from '#/pages/appearance/ThemesPage';
 import { CampaignsPage } from '#/pages/campaigns/CampaignsPage';
 import { CatalogPage } from '#/pages/catalog/CatalogPage';
@@ -45,7 +46,6 @@ import { PlayerPage as PlayerProfilePage } from '#/pages/players/PlayerPage';
 import { PlayersPage as PlayerListPage } from '#/pages/players/PlayersPage';
 import { PatchesPage } from '#/pages/plugins/PatchesPage';
 import { PluginPage } from '#/pages/plugins/PluginPage';
-import { ThemePage } from '#/pages/plugins/ThemePage';
 import { WindowsPage } from '#/pages/plugins/WindowsPage';
 import { PluginSchedulePage } from '#/pages/PluginSchedulePage';
 import { PluginsPage } from '#/pages/PluginsPage';
@@ -70,13 +70,26 @@ const UsagePage = lazy(() => import('#/pages/telemetry/UsagePage').then(x => ({ 
 const TelemetryRoomPage = lazy(() => import('#/pages/telemetry/TelemetryDrillPages').then(x => ({ default: x.TelemetryRoomPage })));
 const TelemetryPlayerPage = lazy(() => import('#/pages/telemetry/TelemetryDrillPages').then(x => ({ default: x.TelemetryPlayerPage })));
 
-/** Where the theme pages were before Appearance: a link kept anywhere still lands. */
-const OldThemePage = () => <Navigate to={`/appearance/styles/${encodeURIComponent(useParams().key ?? 'hotel')}`} replace />;
+/** Where a theme's style properties were (Plugins, then Appearance > Style properties): its Theme settings in the studio. */
+const OldThemePage = () => {
+    const { key } = useParams();
 
+    return <Navigate to={`/appearance/studio?${new URLSearchParams({ tab: 'settings', ...(key ? { theme: key } : {}) })}`} replace />;
+};
+
+/**
+ * Where Windows & skins was (Plugins, then Appearance): a window opens in the studio, which shows a
+ * part in the window drawing it; the skins are under Advanced.
+ */
 const OldWindowsPage = () => {
     const { tab } = useParams();
+    const params = new URLSearchParams(window.location.search);
 
-    return <Navigate to={`/appearance/windows${tab ? `/${tab}` : ''}${window.location.search}`} replace />;
+    if (tab === 'skins') return <Navigate to={`/appearance/advanced/windows/skins${window.location.search}`} replace />;
+
+    const id = params.get('id');
+
+    return <Navigate to={`/appearance/studio${id ? `?${new URLSearchParams({ window: id })}` : ''}`} replace />;
 };
 
 export const App = () => (
@@ -131,10 +144,12 @@ export const App = () => (
             <Route path="plugins/patches" element={<Navigate to="/appearance/patches" replace />} />
             <Route path="plugins/windows/:tab?" element={<OldWindowsPage />} />
             <Route path="plugins/:key/theme" element={<OldThemePage />} />
-            <Route path="appearance" element={<Navigate to="/appearance/themes" replace />} />
+            <Route path="appearance" element={<Navigate to="/appearance/studio" replace />} />
+            <Route path="appearance/studio" element={<ThemeStudioPage />} />
             <Route path="appearance/themes" element={<ThemesPage />} />
-            <Route path="appearance/styles/:key?" element={<ThemePage />} />
-            <Route path="appearance/windows/:tab?" element={<WindowsPage />} />
+            <Route path="appearance/styles/:key?" element={<OldThemePage />} />
+            <Route path="appearance/windows/:tab?" element={<OldWindowsPage />} />
+            <Route path="appearance/advanced/windows/:tab?" element={<WindowsPage />} />
             <Route path="appearance/patches" element={<PatchesPage />} />
             <Route path="appearance/images/:key?" element={<ImagesPage />} />
             <Route path="appearance/texts/:tab?" element={<AppearanceTextsPage />} />

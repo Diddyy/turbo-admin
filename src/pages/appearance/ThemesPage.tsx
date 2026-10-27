@@ -65,7 +65,7 @@ export const ThemesPage = () => {
                                             )}
                                     <ThemeAudienceControls themeKey={theme.key} />
                                     <span className="ml-auto flex flex-wrap items-center gap-1">
-                                        <Link to={`/appearance/styles/${encodeURIComponent(theme.key)}`} className={link}><Palette className="size-4" />Style properties</Link>
+                                        <Link to={`/appearance/studio?${new URLSearchParams({ tab: 'settings', theme: theme.key })}`} className={link}><Palette className="size-4" />Edit in the studio</Link>
                                         <Link to={`/appearance/images/${encodeURIComponent(theme.key)}`} className={link}><ImageIcon className="size-4" />Images</Link>
                                         <Link to={`/appearance/patches#${encodeURIComponent(theme.key)}`} className={link}><Layers className="size-4" />Patches</Link>
                                         {data.canManage && working.key !== theme.key && <Button variant="ghost" icon={<FolderPen />} title={`Save every appearance edit into ${folderOf(theme.key)}`} onClick={() => working.setKey(theme.key)}>Work on it</Button>}

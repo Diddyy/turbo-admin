@@ -6,12 +6,12 @@ import { useClientAssets } from '#/api/assets';
 import { toast, toastError } from '#/components/toast';
 import { Badge, Button, Checkbox, Input, Select } from '#/components/ui';
 
-const STATUS_LABEL: Record<ThemeStatus, string> = { live: 'Live', development: 'In development', off: 'Off' };
+export const STATUS_LABEL: Record<ThemeStatus, string> = { live: 'Live', development: 'In development', off: 'Off' };
 
 // A theme no one set (one just made or installed) is in development: no player gets it until it is set Live.
 
 /** The client page staff open a theme in for one load: the preview host's page without `?preview`, with `?theme=`. */
-const previewLink = (preview: string | undefined, key: string) => {
+export const previewLink = (preview: string | undefined, key: string) => {
     if (!preview) return null;
 
     try {

@@ -137,7 +137,7 @@ export const PatchEditor = ({ patch, onDone }: { patch: HotelPatch | null; onDon
         >
             <div className="grid gap-3 sm:grid-cols-[1fr_1fr_8rem]">
                 <Labeled label="Name"><Input value={name} onChange={event => setName(event.target.value)} placeholder="Green help button" className="w-full" /></Labeled>
-                <Labeled label="Template" hint={<>{'<library>/<asset>, as '}<Link to="/appearance/windows" className="text-accent hover:underline">Windows &amp; skins</Link>{' lists it.'}</>}><Input value={pasted?.template ?? template} onChange={event => setTemplate(event.target.value)} placeholder="habbo-toolbar-com/purse_xml" className="w-full font-mono" /></Labeled>
+                <Labeled label="Template" hint={<>{'<library>/<asset>, as '}<Link to="/appearance/advanced/windows" className="text-accent hover:underline">Windows &amp; skins</Link>{' lists it.'}</>}><Input value={pasted?.template ?? template} onChange={event => setTemplate(event.target.value)} placeholder="habbo-toolbar-com/purse_xml" className="w-full font-mono" /></Labeled>
                 <Labeled label="Order" hint="Lower first; a theme takes a negative one."><Input type="number" value={order} onChange={event => setOrder(event.target.value)} className="w-full" /></Labeled>
             </div>
             {patched && list && (
@@ -265,7 +265,7 @@ const PluginPatches = ({ plugin, canManage }: { plugin: Plugin; canManage: boole
                 {plugin.state === 'loaded' ? <Badge tone="green">on</Badge> : <Badge>{plugin.state.replace('_', ' ')}</Badge>}
                 <span className="text-xs text-muted">{`${patches.length} patch(es)`}</span>
                 <span className="ml-auto flex gap-1">
-                    <Link to={`/appearance/styles/${encodeURIComponent(plugin.key)}`} className="px-2 text-xs text-accent hover:underline">Style properties</Link>
+                    <Link to={`/appearance/studio?${new URLSearchParams({ tab: 'settings', theme: plugin.key })}`} className="px-2 text-xs text-accent hover:underline">Theme settings</Link>
                     {canManage && (plugin.state === 'loaded'
                         ? <Button variant="ghost" icon={<PowerOff />} disabled={setEnabled.isPending} onClick={() => ask({ title: `Turn ${plugin.name ?? plugin.key} off?`, body: 'Its patches, styles and everything else it adds are taken away; players lose them at their next load.', confirm: 'Turn off' }, () => setEnabled.mutate({ key: plugin.key, enabled: false }, said))}>Turn off</Button>
                         : <Button variant="ghost" icon={<Power />} disabled={setEnabled.isPending} onClick={() => setEnabled.mutate({ key: plugin.key, enabled: true }, said)}>Turn on</Button>)}
@@ -275,7 +275,7 @@ const PluginPatches = ({ plugin, canManage }: { plugin: Plugin; canManage: boole
                 {patches.map((patch, at) => (
                     <li key={`${patch.template}-${at}`} className="flex flex-col gap-1 text-sm">
                         <div className="flex flex-wrap items-center gap-2">
-                            <Link to={`/appearance/windows/windows?${new URLSearchParams({ id: patch.template })}`} className="font-mono hover:text-accent">{patch.template}</Link>
+                            <Link to={`/appearance/studio?${new URLSearchParams({ window: patch.template })}`} className="font-mono hover:text-accent">{patch.template}</Link>
                             <span className="text-xs text-muted">{`${Array.isArray(patch.ops) ? patch.ops.length : 0} op(s)${patch.order === null ? '' : `, order ${patch.order}`}`}</span>
                             <ClientCounts issues={issues} template={patch.template} ops={patch.ops} />
                         </div>
@@ -302,9 +302,9 @@ export const PatchesPage = () => {
     return (
         <>
             <PageHeader title="Template patches" description="Changes to the game's windows, as data, by who made them: this hotel and each plugin. Beside each window: how many players' clients report it applied / unmatched / ineffective, and what a client update took away. Players get a change at their next load.">
-                <Link to="/appearance/windows" className="inline-flex items-center gap-1 rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-subtle">
+                <Link to="/appearance/studio" className="inline-flex items-center gap-1 rounded-lg border border-line px-3 py-1.5 text-sm hover:bg-subtle">
                     <AppWindow className="size-4" />
-                    Windows &amp; skins
+                    Theme studio
                 </Link>
             </PageHeader>
             <PageBody className="flex flex-col gap-4 lg:gap-5">

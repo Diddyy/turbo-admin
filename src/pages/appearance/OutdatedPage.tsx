@@ -61,7 +61,7 @@ export const OutdatedPage = () => {
                                         <span className="font-mono text-xs text-muted">{patch.template}</span>
                                         <span className="text-xs text-muted">{`by ${patch.owner === 'hotel' ? 'this hotel' : patch.owner}`}</span>
                                         <Link to={`/appearance/patches#${encodeURIComponent(patch.owner)}`} className="ml-auto text-xs text-accent hover:underline">Edit</Link>
-                                        {index?.templates[patch.template] && <Link to={`/appearance/windows/windows?${new URLSearchParams({ id: patch.template })}`} className="text-xs text-accent hover:underline">Current elements</Link>}
+                                        {index?.templates[patch.template] && <Link to={`/appearance/studio?${new URLSearchParams({ window: patch.template })}`} className="text-xs text-accent hover:underline">Current elements</Link>}
                                     </div>
                                     {reasons.map(reason => <p key={reason.element ?? ''} className="text-sm text-bad">{reason.text}</p>)}
                                 </li>

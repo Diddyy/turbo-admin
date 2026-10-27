@@ -20,7 +20,7 @@ const DROP_SETTLE_MS = 500;
 type Ops = OpsHistory;
 
 /** Every element of a window a patch can name, by its key, in the tree's order with its depth. */
-const keyedElements = (elements: readonly WindowElement[]) => {
+export const keyedElements = (elements: readonly WindowElement[]) => {
     const found: { element: WindowElement; depth: number }[] = [];
 
     const visit = (list: readonly WindowElement[], depth: number) => {
@@ -60,7 +60,7 @@ const SkinLook = ({ skin, sheet }: { skin: SkinEntry | undefined; sheet: ThemeSh
 );
 
 /** The skins an element of `tag` takes, as a drop-down drawing each. */
-const StylePicker = ({ tag, value, onChange }: { tag: string; value: string | undefined; onChange: (style: string) => void }) => {
+export const StylePicker = ({ tag, value, onChange }: { tag: string; value: string | undefined; onChange: (style: string) => void }) => {
     const { data: skins } = useSkinMap();
     const { data: sheet } = useThemeSheet();
     const [ open, setOpen ] = useState(false);
@@ -107,7 +107,7 @@ const StylePicker = ({ tag, value, onChange }: { tag: string; value: string | un
 };
 
 /** A colour as a picker and an opacity (0-255), with a way back to the element's own. */
-const ColourField = ({ label, value, own, onChange, onReset }: { label: string; value: number | null; own: number | null; onChange: (argb: number) => void; onReset?: () => void }) => {
+export const ColourField = ({ label, value, own, onChange, onReset }: { label: string; value: number | null; own: number | null; onChange: (argb: number) => void; onReset?: () => void }) => {
     const shown = value ?? own ?? 0xffffffff;
     const { hex, alpha } = colourParts(shown);
 
@@ -124,7 +124,7 @@ const ColourField = ({ label, value, own, onChange, onReset }: { label: string; 
 };
 
 /** A number a patch sets, its own shown when none is set; emptied, the element's own comes back. */
-const NumberField = ({ label, value, own, onChange }: { label: string; value: unknown; own: number | undefined; onChange: (value: number | undefined) => void }) => (
+export const NumberField = ({ label, value, own, onChange }: { label: string; value: unknown; own: number | undefined; onChange: (value: number | undefined) => void }) => (
     <Labeled label={label}>
         <Input
             type="number"
@@ -138,7 +138,7 @@ const NumberField = ({ label, value, own, onChange }: { label: string; value: un
 );
 
 /** A text key picked by what it says or by its key: the caption becomes `${key}`. */
-const TextKeyPicker = ({ onPick }: { onPick: (key: string) => void }) => {
+export const TextKeyPicker = ({ onPick }: { onPick: (key: string) => void }) => {
     const [ query, setQuery ] = useState('');
     const { data } = useTextSearch(query, 1);
     const found = query.trim().length >= 2 ? (data?.items ?? []).slice(0, 8) : [];
@@ -199,7 +199,7 @@ interface Picked {
     drawn?: DesignSelection['element'];
 }
 
-type DragKind = 'move' | 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
+export type DragKind = 'move' | 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
 
 const HANDLES: { kind: DragKind; left: string; top: string; cursor: string }[] = [
     { kind: 'nw', left: '0%', top: '0%', cursor: 'nwse-resize' },
@@ -213,7 +213,7 @@ const HANDLES: { kind: DragKind; left: string; top: string; cursor: string }[] =
 ];
 
 /** A drag's change to an element's place and size, in a patch's pixels. */
-const dragged = (kind: DragKind, start: { x: number; y: number; width: number; height: number }, dx: number, dy: number) => {
+export const dragged = (kind: DragKind, start: { x: number; y: number; width: number; height: number }, dx: number, dy: number) => {
     const out: Record<string, number> = {};
     // Only what the drag changed: a move straight down sets y, not x as well.
     const across = dx !== 0;
@@ -238,7 +238,7 @@ const dragged = (kind: DragKind, start: { x: number; y: number; width: number; h
  * The picked element's box over the preview: dragged, it moves the element; a handle dragged
  * resizes it; a click (no drag) picks what is under it, as a press on the window would.
  */
-const Handles = ({ box, onDrag, onClick }: { box: DesignBox; onDrag: (kind: DragKind, dx: number, dy: number, done: boolean) => void; onClick: (x: number, y: number) => void }) => {
+export const Handles = ({ box, onDrag, onClick }: { box: DesignBox; onDrag: (kind: DragKind, dx: number, dy: number, done: boolean) => void; onClick: (x: number, y: number) => void }) => {
     // While dragged, the box is drawn from where it was pressed: the preview moves the element under it as it goes.
     const [ offset, setOffset ] = useState<{ from: DesignBox; kind: DragKind; dx: number; dy: number } | null>(null);
     const drag = useRef<{ kind: DragKind; x: number; y: number; from: DesignBox; moved: boolean } | null>(null);
@@ -317,7 +317,7 @@ const Handles = ({ box, onDrag, onClick }: { box: DesignBox; onDrag: (kind: Drag
 };
 
 /** The box around every drawing of an element (a frame is drawn by more than one container); undefined for none with a size. */
-const unionOf = (boxes: readonly DesignBox[]): DesignBox | undefined => {
+export const unionOf = (boxes: readonly DesignBox[]): DesignBox | undefined => {
     const sized = boxes.filter(box => (box.width > 0) && (box.height > 0));
 
     if (!sized.length) return undefined;

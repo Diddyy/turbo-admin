@@ -76,7 +76,7 @@ export const ThemesPage = () => {
                                                         variant="ghost"
                                                         icon={<PowerOff />}
                                                         onClick={() => ask(
-                                                            { title: `Turn ${themeName(theme)} off?`, body: 'Its styles, patches and images are taken away at each player\'s next load.', confirm: 'Turn off' },
+                                                            { title: `Turn ${themeName(theme)} off?`, body: 'Its styles, patches and images are taken away from the players drawing it as it is turned off.', confirm: 'Turn off' },
                                                             () => setEnabled.mutate({ key: theme.key, enabled: false }, said),
                                                         )}
                                                     >

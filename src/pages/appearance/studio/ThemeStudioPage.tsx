@@ -420,7 +420,7 @@ export const ThemeStudioPage = () => {
 
     return (
         <StudioContext value={studio}>
-            <PageHeader title="Theme studio" description={`Pick a window, click what to change, Save: it is written into ${folderOf(theme)} and players get it at their next load.`} />
+            <PageHeader title="Theme studio" description={`Pick a window, click what to change, Save: it is written into ${folderOf(theme)} and the players drawing it see it as it is saved.`} />
             <div className="flex w-full flex-col gap-3 px-3 py-3 lg:px-4">
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-line bg-surface px-3 py-2">
                     <ThemeBar unsaved={unsaved} onPick={pickTheme} />

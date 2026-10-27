@@ -74,6 +74,16 @@ export interface ThemeAudienceChange {
     groups?: string[];
 }
 
+/** What the last appearance change did (`GET /plugins/themes/live`): the players live reload sent it to, of those online; `at` null for none lately. */
+export interface ThemeLive {
+    players: number;
+    online: number;
+    at: string | null;
+}
+
+/** Asked straight after a save: the server sends the save first, then says who it reached. */
+export const fetchThemeLive = () => api<ThemeLive>('/plugins/themes/live');
+
 export const useThemeAudiences = () => useQuery({
     queryKey: [ 'plugins', 'themes', 'audience' ],
     queryFn: () => api<ThemeAudiencesResponse>('/plugins/themes/audience'),

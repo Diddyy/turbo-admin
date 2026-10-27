@@ -3,9 +3,11 @@ import { useCallback, useState } from 'react';
 import { Link } from 'react-router';
 
 import { usePluginTemplatePatches } from '#/api/appearance';
-import { type HotelPatch, useHotelPatches, useRemoveHotelPatch, useSaveHotelPatch } from '#/api/noCode';
+import { type HotelPatch, usePatches, useRemovePatch, useSavePatch } from '#/api/noCode';
 import { type Plugin, type PluginActionResponse, type PluginClientIssue, usePluginContributions, usePlugins, useSetPluginEnabled } from '#/api/plugins';
 import { useTemplateIndex } from '#/api/windows';
+import { folderOf, useWorkingOn } from '#/appearance/workingOn';
+import { WorkingOnPicker } from '#/appearance/WorkingOnPicker';
 import { ask } from '#/components/confirm';
 import { useSaved } from '#/components/SaveFeedback';
 import { toast, toastError } from '#/components/toast';
@@ -100,17 +102,18 @@ export const PatchEditor = ({ patch, onDone }: { patch: HotelPatch | null; onDon
     const [ template, setTemplate ] = useState(patch?.template ?? '');
     const [ order, setOrder ] = useState(patch?.order === null || patch?.order === undefined ? '' : String(patch.order));
     const [ ops, setOps ] = useState(patch ? JSON.stringify(patch.ops, null, 2) : '[\n  { "element": "help_button", "set": { "color": 4281244476 } }\n]');
-    const save = useSaveHotelPatch();
+    const { key: target } = useWorkingOn();
+    const save = useSavePatch(target);
     const saved = useSaved();
-    const hotel = useHotelPatches().data;
+    const hotel = usePatches(target).data;
     const [ showJson, setShowJson ] = useState(false);
     const pasted = readPasted(ops);
     const problem = pasted === null ? 'The ops are not JSON yet.' : !Array.isArray(pasted.ops) ? 'The ops are a list: [ { "element": ..., "set": { ... } } ].' : null;
-    const target = pasted?.template ?? template;
-    // The hotel's patch file as players would get it with this draft saved: its other patches that are on, and this one.
+    const patched = pasted?.template ?? template;
+    // The working-on theme's patch file as players would get it with this draft saved: its other patches that are on, and this one.
     const others = hotel?.patches.filter(other => !other.disabled && other.id !== patch?.id).map(other => ({ template: other.template, ops: other.ops, order: other.order })) ?? [];
     const draft = (!problem && pasted && hotel)
-        ? { patches: { [hotel.key]: { patches: [ ...others, { template: target, ops: pasted.ops, order: order === '' ? null : Number(order) } ] } } }
+        ? { patches: { [hotel.key]: { patches: [ ...others, { template: patched, ops: pasted.ops, order: order === '' ? null : Number(order) } ] } } }
         : undefined;
     const list = (!problem && pasted) ? (pasted.ops as unknown[]) : null;
     const history = useOpsHistory(list ?? [], useCallback((next: unknown[]) => setOps(JSON.stringify(next, null, 2)), []));
@@ -137,11 +140,11 @@ export const PatchEditor = ({ patch, onDone }: { patch: HotelPatch | null; onDon
                 <Labeled label="Template" hint={<>{'<library>/<asset>, as '}<Link to="/appearance/windows" className="text-accent hover:underline">Windows &amp; skins</Link>{' lists it.'}</>}><Input value={pasted?.template ?? template} onChange={event => setTemplate(event.target.value)} placeholder="habbo-toolbar-com/purse_xml" className="w-full font-mono" /></Labeled>
                 <Labeled label="Order" hint="Lower first; a theme takes a negative one."><Input type="number" value={order} onChange={event => setOrder(event.target.value)} className="w-full" /></Labeled>
             </div>
-            {target && list && (
+            {patched && list && (
                 <div className="flex flex-col gap-1.5">
                     <span className="text-xs font-medium text-muted">The window as players will see it once saved, drawn by the client as you change it: click an element, drag it or its handles, or change it on the right</span>
                     <VisualEditor
-                        template={target}
+                        template={patched}
                         ops={list}
                         history={history}
                         draft={draft}
@@ -154,7 +157,7 @@ export const PatchEditor = ({ patch, onDone }: { patch: HotelPatch | null; onDon
                     />
                 </div>
             )}
-            {target && !list && <DesignPreview template={target} />}
+            {patched && !list && <DesignPreview template={patched} />}
             <div>
                 <Button variant="ghost" icon={<Braces />} aria-expanded={showJson || !!problem} onClick={() => setShowJson(!showJson)}>{showJson || problem ? 'Hide JSON' : 'Show JSON'}</Button>
             </div>
@@ -170,25 +173,29 @@ export const PatchEditor = ({ patch, onDone }: { patch: HotelPatch | null; onDon
                 <Button type="submit" icon={<Save />} disabled={save.isPending || !!problem || !name.trim()}>{save.isPending ? 'Saving...' : 'Save'}</Button>
                 <Button variant="ghost" icon={<X />} onClick={onDone}>Cancel</Button>
                 {/* The hotel's plugin is loaded again to serve the new file, which takes a few seconds: said, so a click is not taken for nothing. */}
-                {save.isPending && <span className="self-center text-xs text-muted">Loading the hotel plugin again with it; this takes a few seconds.</span>}
+                {save.isPending && <span className="self-center text-xs text-muted">{`Writing it into ${folderOf(target)} and loading that plugin again; this takes a few seconds.`}</span>}
             </div>
         </form>
     );
 };
 
-/** The hotel's own patches: made, edited, turned off and removed here; held by its data plugin. */
+/**
+ * The patches of the theme staff work on (the hotel's own by default): made, edited, turned off and
+ * removed here; held in its data plugin's files.
+ */
 const HotelPatches = () => {
-    const { data, error } = useHotelPatches();
-    const issues = usePluginContributions(data?.key ?? 'hotel').data?.clientIssues.filter(issue => issue.kind.startsWith('patch.')) ?? [];
-    const save = useSaveHotelPatch();
-    const remove = useRemoveHotelPatch();
+    const { key: target, name: targetName } = useWorkingOn();
+    const { data, error } = usePatches(target);
+    const issues = usePluginContributions(data?.key ?? target).data?.clientIssues.filter(issue => issue.kind.startsWith('patch.')) ?? [];
+    const save = useSavePatch(target);
+    const remove = useRemovePatch(target);
     const [ open, setOpen ] = useState<string | null>(null);
     const [ packaging, setPackaging ] = useState(false);
 
     return (
         <Panel
-            title="This hotel (hotel)"
-            description="Kept in the hotel's own data plugin (hotel): turning it off on the Plugins page takes them all away at once."
+            title={`${targetName} (${target})`}
+            description={`Kept in ${folderOf(target)}: turning it off takes them all away at once.`}
             actions={data?.canManage && (
                 <div className="flex gap-2">
                     <Button variant="secondary" icon={<Package />} disabled={!data.patches.length} onClick={() => setPackaging(true)}>Make a plugin</Button>
@@ -199,7 +206,7 @@ const HotelPatches = () => {
             {error && <div className="p-4"><ErrorNotice error={error} /></div>}
             {!data && !error && <Loading />}
             {open === 'new' && <div className="border-b border-line p-4"><PatchEditor patch={null} onDone={() => setOpen(null)} /></div>}
-            {data && data.patches.length === 0 && open !== 'new' && <EmptyState>No patches of the hotel&apos;s own yet.</EmptyState>}
+            {data && data.patches.length === 0 && open !== 'new' && <EmptyState>{`No patches in ${targetName} yet.`}</EmptyState>}
             <ul className="divide-y divide-line">
                 {data?.patches.map(patch => (
                     <li key={patch.id} className="flex flex-col gap-2 px-4 py-3">
@@ -231,7 +238,7 @@ const HotelPatches = () => {
                     </li>
                 ))}
             </ul>
-            <PackageDialog pluginKey={data?.key ?? 'hotel'} open={packaging} onClose={() => setPackaging(false)} />
+            <PackageDialog pluginKey={data?.key ?? target} open={packaging} onClose={() => setPackaging(false)} />
         </Panel>
     );
 };
@@ -288,9 +295,9 @@ const PluginPatches = ({ plugin, canManage }: { plugin: Plugin; canManage: boole
  */
 export const PatchesPage = () => {
     const { data, error } = usePlugins();
-    const { data: hotel } = useHotelPatches();
+    const { key: target } = useWorkingOn();
     // Each owner's group: the plugins that are on, then those turned off, whose patches come back with them.
-    const owners = [ ...(data?.plugins ?? []) ].filter(plugin => plugin.key !== (hotel?.key ?? 'hotel')).sort((a, b) => Number(b.state === 'loaded') - Number(a.state === 'loaded'));
+    const owners = [ ...(data?.plugins ?? []) ].filter(plugin => plugin.key !== target).sort((a, b) => Number(b.state === 'loaded') - Number(a.state === 'loaded'));
 
     return (
         <>
@@ -301,6 +308,7 @@ export const PatchesPage = () => {
                 </Link>
             </PageHeader>
             <PageBody className="flex flex-col gap-4 lg:gap-5">
+                <WorkingOnPicker className="rounded-xl border border-line bg-surface px-4 py-2.5" />
                 {error && <ErrorNotice error={error} />}
                 <HotelPatches />
                 <Panel title="Plugins" description="From each plugin's wwwroot/template-patches.json, by plugin.">

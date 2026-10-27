@@ -5,6 +5,8 @@ import { Link, useParams, useSearchParams } from 'react-router';
 import { useClientAssets } from '#/api/assets';
 import { FONT_TYPES, type PluginFont, type PluginStyle, useFontChange, useImageChange, usePluginFonts, usePluginImages, usePluginStyles, useStyleChange } from '#/api/noCode';
 import { type TemplateIndex, useTemplateIndex } from '#/api/windows';
+import { folderOf, useWorkingOn } from '#/appearance/workingOn';
+import { WorkingOnPicker } from '#/appearance/WorkingOnPicker';
 import { ImageInput } from '#/components/ImageInput';
 import { useSaved } from '#/components/SaveFeedback';
 import { toast, toastError } from '#/components/toast';
@@ -101,14 +103,17 @@ const windowOfStyle = (index: TemplateIndex | undefined, style: PluginStyle | un
     return index.frames[name] ? name : designTemplateOfFrame(name);
 };
 
-/** One style: its picker, what the hotel has, and Reset back to the theme's default. */
-const StyleRow = ({ pluginKey, style, canManage, fonts, onDraft }: { pluginKey: string; style: PluginStyle; canManage: boolean; fonts: PluginFont[]; onDraft?: (name: string, value: string) => void }) => {
+/**
+ * One style: its picker, what the hotel has, and Reset back to the theme's default. With
+ * `intoTheme` (staff work on the theme) it is the theme's own default, saved into its theme.json.
+ */
+const StyleRow = ({ pluginKey, style, canManage, fonts, onDraft, intoTheme }: { pluginKey: string; style: PluginStyle; canManage: boolean; fonts: PluginFont[]; onDraft?: (name: string, value: string) => void; intoTheme: boolean }) => {
     const [ value, setOwnValue ] = useState(style.value ?? '');
     const setValue = (next: string) => {
         setOwnValue(next);
         onDraft?.(style.name, next);
     };
-    const change = useStyleChange(pluginKey);
+    const change = useStyleChange(pluginKey, intoTheme);
     const fontChange = useFontChange(pluginKey);
     const saved = useSaved();
     const dirty = value !== (style.value ?? '');
@@ -321,9 +326,17 @@ export const FontsPanel = ({ pluginKey }: { pluginKey: string }) => {
  * player's next load. The hotel's own plugin extends the base theme, Habbo's look.
  */
 export const ThemePage = () => {
-    const { key = 'hotel' } = useParams();
+    const { key: picked = 'hotel' } = useParams();
+    const working = useWorkingOn();
+    // Working on a theme, its own properties are edited, into its files; on the hotel, any theme's hotel values.
+    const key = working.hotel ? picked : working.key;
+    const intoTheme = !working.hotel;
     const [ params, setParams ] = useSearchParams();
-    const { data, error } = usePluginStyles(key);
+    const { data: read, error } = usePluginStyles(key);
+    // A theme's own file: each value is its default, its own where it names one, the parent's otherwise.
+    const data = useMemo(() => (read && intoTheme
+        ? { ...read, styles: read.styles.map(style => ({ ...style, value: style.default, changed: style.origin === key, origin: style.origin === key ? read.extends : style.origin })) }
+        : read), [ read, intoTheme, key ]);
     const ownFonts = usePluginFonts(key).data?.fonts;
     const hotelFonts = usePluginFonts('hotel').data?.fonts;
     // The plugin's fonts and the hotel's: each is given to clients as the hotel's text.fonts entry.
@@ -339,7 +352,8 @@ export const ThemePage = () => {
     const [ values, setValues ] = useState<Record<string, string>>({});
     const [ previewed, setPreviewed ] = useState<string | null>(null);
     const styles = useMemo(() => data?.styles ?? [], [ data ]);
-    const draft = useMemo(() => styleDraft(key, styles, values, fonts), [ key, styles, values, fonts ]);
+    // Working on a theme, the preview draws its chain: its own saved defaults (players have them from its files), then what is typed.
+    const draft = useMemo(() => styleDraft(key, styles, intoTheme ? { ...Object.fromEntries(styles.filter(style => style.changed && style.value !== null).map(style => [ style.name, style.value! ])), ...values } : values, fonts), [ key, styles, values, fonts, intoTheme ]);
     const windows = useMemo(() => [ ...new Set(styles.map(style => windowOfStyle(index, style)).filter(id => id !== undefined)) ], [ index, styles ]);
     const shownWindow = previewed ?? windows[0] ?? null;
     const onDraft = (name: string, value: string) => {
@@ -352,8 +366,8 @@ export const ThemePage = () => {
 
     return (
         <>
-            <PageHeader title="Style properties" description={`The colours, art, fonts and places a theme names, and this hotel's values${data?.extends ? `: ${key} extends ${data.extends} and has its properties unless it names them again` : ''}. Players see a change at their next load.`}>
-                <ThemePicker value={key} to={next => `/appearance/styles/${encodeURIComponent(next)}`} />
+            <PageHeader title="Style properties" description={`The colours, art, fonts and places a theme names, and ${intoTheme ? `${working.name}'s own defaults, saved into ${folderOf(key)}theme.json` : 'this hotel\'s values'}${data?.extends ? `: ${key} extends ${data.extends} and has its properties unless it names them again` : ''}. Players see a change at their next load.`}>
+                {!intoTheme && <ThemePicker value={key} to={next => `/appearance/styles/${encodeURIComponent(next)}`} />}
                 {all.size > 1 && (
                     <label className="inline-flex items-center gap-2 text-sm">
                         <span className="text-muted">Area</span>
@@ -375,6 +389,7 @@ export const ThemePage = () => {
                 )}
             </PageHeader>
             <PageBody className="flex flex-col gap-4 lg:gap-5">
+                <WorkingOnPicker className="rounded-xl border border-line bg-surface px-4 py-2.5" />
                 {error && <ErrorNotice error={error} />}
                 {!data && !error && <Loading />}
                 {data && data.styles.length === 0 && <EmptyState framed>This plugin declares no style properties: it has no theme.json (one with &quot;extends&quot;: &quot;habbo&quot; gets Habbo&apos;s).</EmptyState>}
@@ -394,7 +409,7 @@ export const ThemePage = () => {
                 {groups.map(([ name, inGroup ]) => (
                     <Panel key={name} title={name} description={GROUP_HINTS[name]}>
                         <ul className="divide-y divide-line">
-                            {inGroup.map(style => <StyleRow key={`${style.name}-${style.value}`} pluginKey={key} style={style} canManage={data!.canManage} fonts={fonts} onDraft={onDraft} />)}
+                            {inGroup.map(style => <StyleRow key={`${style.name}-${style.value}`} pluginKey={key} style={style} canManage={data!.canManage} fonts={fonts} onDraft={onDraft} intoTheme={intoTheme} />)}
                         </ul>
                     </Panel>
                 ))}

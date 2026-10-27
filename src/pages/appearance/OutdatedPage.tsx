@@ -4,9 +4,10 @@ import { Link } from 'react-router';
 
 import type { PluginTemplatePatch } from '#/api/appearance';
 import { api } from '#/api/client';
-import { useHotelPatches } from '#/api/noCode';
+import { usePatches } from '#/api/noCode';
 import { usePlugins } from '#/api/plugins';
 import { useTemplateIndex } from '#/api/windows';
+import { useWorkingOn } from '#/appearance/workingOn';
 import { Badge, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, Panel } from '#/components/ui';
 
 import { outdatedReasons } from './outdated';
@@ -26,7 +27,7 @@ interface Checked {
  */
 export const OutdatedPage = () => {
     const { data: index, error } = useTemplateIndex();
-    const { data: hotel } = useHotelPatches();
+    const { data: hotel } = usePatches(useWorkingOn().key);
     const { data: plugins } = usePlugins();
     const others = (plugins?.plugins ?? []).filter(plugin => plugin.key !== (hotel?.key ?? 'hotel') && plugin.state === 'loaded');
     const files = useQueries({

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { postForm } from './bundles';
 import { api, apiBlob, post, put, remove } from './client';
-import type { VariableEntry, VariableSearchResult } from './gamedata';
+import type { VariableSearchResult } from './gamedata';
 
 /** What a theme style holds; staff type each as `theme.json` says (turbo-cloud `docs/plugin-data.md`). */
 export type PluginStyleType = 'color' | 'number' | 'image' | 'font' | 'text' | 'position';
@@ -64,7 +64,7 @@ export interface HotelPatch {
 }
 
 export interface HotelPatchesResponse {
-    /** The key of the hotel's own data plugin, which holds them. */
+    /** The key of the data plugin that holds them: the hotel's own, or the theme staff work on. */
     key: string;
     patches: HotelPatch[];
     canManage: boolean;
@@ -72,17 +72,22 @@ export interface HotelPatchesResponse {
 
 const stylesKey = (key: string) => [ 'plugins', key, 'styles' ];
 
-const PATCHES_KEY = [ 'plugins', 'hotel-patches' ];
+const patchesKey = (key: string) => [ 'plugins', key, 'patches' ];
 
 export const usePluginStyles = (key: string) => useQuery({
     queryKey: stylesKey(key),
     queryFn: () => api<PluginStylesResponse>(`/plugins/${encodeURIComponent(key)}/styles`),
 });
 
-/** A style's change, its reset or an image upload; the theme's styles are read again after. */
-export const useStyleChange = (key: string) => {
+/**
+ * A style's change, its reset or an image upload; the theme's styles are read again after. With
+ * `intoTheme` the change lands in the theme's own files (its `theme.json` default: staff work on the
+ * theme), else it is this hotel's value of it.
+ */
+export const useStyleChange = (key: string, intoTheme = false) => {
     const queryClient = useQueryClient();
     const base = `/plugins/${encodeURIComponent(key)}/styles`;
+    const target = intoTheme && key !== 'hotel' ? `?${new URLSearchParams({ target: key })}` : '';
 
     return useMutation({
         mutationFn: ({ name, value, file }: { name: string; value?: string | null; file?: File }) => {
@@ -93,10 +98,10 @@ export const useStyleChange = (key: string) => {
 
                 form.append('file', file);
 
-                return postForm<PluginStyle>(`${path}/image`, form);
+                return postForm<PluginStyle>(`${path}/image${target}`, form);
             }
 
-            return value === null || value === undefined ? remove<PluginStyle>(path) : put<PluginStyle>(path, { value });
+            return value === null || value === undefined ? remove<PluginStyle>(`${path}${target}`) : put<PluginStyle>(`${path}${target}`, { value });
         },
         onSettled: () => void queryClient.invalidateQueries({ queryKey: stylesKey(key) }),
     });
@@ -153,47 +158,56 @@ const readOverlays = async (): Promise<Record<string, string>> => {
 export const useHotelOverlays = () => useQuery({ queryKey: OVERLAYS_KEY, queryFn: readOverlays });
 
 /**
- * Replaces one library bitmap for the hotel (`url`), or gives it back (null), keeping the hotel's
- * other `asset.overlays` entries; with none left the variable goes.
+ * Replaces one library bitmap (`url`), or gives it back (null), for the hotel or in the theme `key`
+ * staff work on (its own files), keeping its other entries.
  */
-export const useOverlayChange = () => {
-    const queryClient = useQueryClient();
+export const useOverlayChange = (key: string) => {
+    const change = useOverlaysChange(key);
 
     return useMutation({
-        mutationFn: async ({ overlay, url }: { overlay: string; url: string | null }) => {
-            const entries = await readOverlays();
-
-            if (url === null && !(overlay in entries)) return;
-
-            if (url === null) delete entries[overlay];
-            else entries[overlay] = url;
-
-            if (Object.keys(entries).length) await put<VariableEntry>('/gamedata/variables', { key: OVERLAYS, value: JSON.stringify(entries) });
-            else await remove<undefined>(`/gamedata/variables?${new URLSearchParams({ key: OVERLAYS })}`);
-        },
-        onSettled: () => void queryClient.invalidateQueries({ queryKey: [ 'gamedata', 'variables' ] }),
+        mutationFn: ({ overlay, url }: { overlay: string; url: string | null }) => change.mutateAsync({ [overlay]: url }),
     });
 };
 
-export const useHotelPatches = () => useQuery({
-    queryKey: PATCHES_KEY,
-    queryFn: () => api<HotelPatchesResponse>('/plugins/hotel-patches'),
+/** The patches staff made in `key`: the hotel's own data plugin, or the theme they work on. */
+export const usePatches = (key: string) => useQuery({
+    queryKey: patchesKey(key),
+    queryFn: () => api<HotelPatchesResponse>(`/plugins/${encodeURIComponent(key)}/patches`),
 });
 
-export const useSaveHotelPatch = () => {
+export const useSavePatch = (key: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (patch: HotelPatch) => post<HotelPatch>('/plugins/hotel-patches', patch),
+        mutationFn: (patch: HotelPatch) => post<HotelPatch>(`/plugins/${encodeURIComponent(key)}/patches`, patch),
         onSettled: () => void queryClient.invalidateQueries({ queryKey: [ 'plugins' ] }),
     });
 };
 
-export const useRemoveHotelPatch = () => {
+export const useRemovePatch = (key: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (id: string) => remove<void>(`/plugins/hotel-patches/${encodeURIComponent(id)}`),
+        mutationFn: (id: string) => remove<void>(`/plugins/${encodeURIComponent(key)}/patches/${encodeURIComponent(id)}`),
+        onSettled: () => void queryClient.invalidateQueries({ queryKey: [ 'plugins' ] }),
+    });
+};
+
+/** A theme staff make: one that extends `extends` (Habbo's own by default), or a copy of `copyOf`. */
+export interface ThemeCreateRequest {
+    key: string;
+    name: string;
+    extends: string | null;
+    copyOf: string | null;
+    author: string | null;
+}
+
+/** Makes a theme (a data plugin of its own in the plugin folder) and loads it; the theme list is read again. */
+export const useCreateTheme = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (request: ThemeCreateRequest) => post<{ key: string; extends: string | null }>('/plugins/themes', request),
         onSettled: () => void queryClient.invalidateQueries({ queryKey: [ 'plugins' ] }),
     });
 };
@@ -220,18 +234,19 @@ export const downloadPluginPackage = async (key: string, request: PluginPackageR
 };
 
 /**
- * A skin set: many library bitmaps replaced (a url each) or given back (null) for the hotel in one
- * change, each checked before any is written; a bitmap the base theme declares as an image style goes
- * through that style. Answers the hotel's `asset.overlays` entries after.
+ * A skin set: many library bitmaps replaced (a url each) or given back (null) in one change, for the
+ * hotel or in the theme `key` staff work on (its own files), each checked before any is written; a
+ * bitmap the base theme declares as an image style goes through that style. Answers its
+ * `asset.overlays` entries after.
  */
-export const useOverlaysChange = () => {
+export const useOverlaysChange = (key: string) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (overlays: Record<string, string | null>) => put<{ overlays: Record<string, string> }>('/plugins/hotel-overlays', { overlays }),
+        mutationFn: (overlays: Record<string, string | null>) => put<{ overlays: Record<string, string> }>(`/plugins/${encodeURIComponent(key)}/overlays`, { overlays }),
         onSettled: () => Promise.all([
             queryClient.invalidateQueries({ queryKey: [ 'gamedata', 'variables' ] }),
-            queryClient.invalidateQueries({ queryKey: stylesKey('hotel') }),
+            queryClient.invalidateQueries({ queryKey: stylesKey(key) }),
         ]),
     });
 };

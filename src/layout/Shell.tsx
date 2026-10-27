@@ -3,6 +3,7 @@ import { Keyboard, LogOut, Monitor, Moon, Sun } from 'lucide-react';
 import { type ReactNode, type RefObject, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 
+import { useApprovalCount } from '#/api/approvals';
 import { post } from '#/api/client';
 import { useLiveUpdates } from '#/api/live';
 import { useSession } from '#/auth/session';
@@ -124,8 +125,18 @@ const RailLink = ({ entry, active, onPick }: { entry: ShownEntry; active: boolea
     >
         {entry.icon}
         <span className="min-w-0 flex-1 truncate">{entry.label}</span>
+        {entry.counter === 'approvals' && <ApprovalCount />}
     </Link>
 );
+
+/** How many approvals wait for a decision, by the menu's Approvals; nothing when none do. */
+const ApprovalCount = () => {
+    const pending = useApprovalCount().data?.pending ?? 0;
+
+    return pending > 0
+        ? <span className="grid h-4 min-w-4 place-items-center rounded-full bg-accent px-1 font-mono text-[10px] leading-none font-semibold text-white" aria-label={`${pending} waiting`}>{pending > 99 ? '99+' : pending}</span>
+        : null;
+};
 
 /**
  * What the sidebar holds, at a laptop's left and in a phone's menu alike: the logo, the search and

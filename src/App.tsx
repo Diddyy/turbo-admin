@@ -14,6 +14,8 @@ import { ImagesPage } from '#/pages/appearance/ImagesPage';
 import { OutdatedPage } from '#/pages/appearance/OutdatedPage';
 import { ThemeStudioPage } from '#/pages/appearance/studio/ThemeStudioPage';
 import { ThemesPage } from '#/pages/appearance/ThemesPage';
+import { ApprovalPage } from '#/pages/approvals/ApprovalPage';
+import { ApprovalsPage } from '#/pages/approvals/ApprovalsPage';
 import { CampaignsPage } from '#/pages/campaigns/CampaignsPage';
 import { CatalogPage } from '#/pages/catalog/CatalogPage';
 import { DiscountsPage } from '#/pages/catalog/DiscountsPage';
@@ -114,6 +116,8 @@ export const App = () => (
             <Route path="players/:id/:tab?" element={<PlayerProfilePage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="reports/:id" element={<ReportPage />} />
+            <Route path="approvals" element={<ApprovalsPage />} />
+            <Route path="approvals/:id" element={<ApprovalPage />} />
             <Route path="word-filter" element={<WordFilterPage />} />
             <Route path="groups" element={<GuildsPage />} />
             <Route path="groups/badge-parts" element={<BadgePartsPage />} />

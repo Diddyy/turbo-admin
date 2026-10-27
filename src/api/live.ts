@@ -22,6 +22,8 @@ interface LiveChanges {
     notifications: boolean;
     /** Calls for help changed: one sent, picked, let go or closed. Only for moderators. */
     reports: boolean;
+    /** Approvals changed: one asked for, decided, expired or carried out. Only with `admin.approvals.view`. */
+    approvals?: boolean;
 }
 
 /** Whether the live stream is up, so pages can ask less often while it is. */
@@ -49,6 +51,11 @@ const apply = (queryClient: QueryClient, changes: LiveChanges) => {
         void queryClient.invalidateQueries({ queryKey: [ 'report' ] });
     }
 
+    if (changes.approvals) {
+        void queryClient.invalidateQueries({ queryKey: [ 'approvals' ] });
+        void queryClient.invalidateQueries({ queryKey: [ 'approval' ] });
+    }
+
     const rooms = new Set(changes.rooms);
     const players = new Set(changes.players);
 
@@ -73,7 +80,7 @@ const apply = (queryClient: QueryClient, changes: LiveChanges) => {
 
 /** Everything a page may be showing that changes on its own, asked again after time away. */
 const catchUp = (queryClient: QueryClient) => {
-    for (const key of [ 'dashboard', 'room', 'rooms', 'player', 'players', 'permissions', 'notifications', 'reports', 'report' ])
+    for (const key of [ 'dashboard', 'room', 'rooms', 'player', 'players', 'permissions', 'notifications', 'reports', 'report', 'approvals', 'approval' ])
         void queryClient.invalidateQueries({ queryKey: [ key ] });
 };
 

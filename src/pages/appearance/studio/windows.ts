@@ -30,6 +30,26 @@ const UNFRAMED_WINDOWS: Record<string, string> = {
     'habbo-toolbar-com/toolbar_view_xml': 'Toolbar',
 };
 
+/** The room screen: every piece of the HUD where players see it, drawn by the client's preview host (`hud`), each piece its own window. */
+export const HUD_WINDOW = 'hud';
+
+/** The windows the room screen draws, which its element picker lists: what a press there names. */
+const HUD_PARTS = [
+    'habbo-toolbar-com/bottom_bar_left_xml',
+    'habbo-toolbar-com/bottom_background_border_xml',
+    'habbo-friend-bar-com/new_bar_xml',
+    'habbo-toolbar-com/purse_xml',
+    'habbo-room-ui-com/chatinput_window_new',
+    'habbo-room-ui-com/room_tools_toolbar_xml',
+    'habbo-room-ui-com/room_tools_info_xml',
+    'habbo-notifications-com/layout_notification_friendonline_xml',
+    'habbo-room-ui-com/furni_view',
+    'habbo-room-ui-com/user_view',
+    'habbo-friend-bar-com/new_friend_entity_xml',
+    'habbo-toolbar-com/me_menu_new_view_xml',
+    'habbo-navigator-com/iro_room_details_framed_xml',
+];
+
 /** A window of the studio's list: what players call it, its area, the parts drawn inside it and the states it is shown in. */
 export interface StudioWindow {
     id: string;
@@ -48,13 +68,10 @@ const wordsOf = (id: string) => {
     return asset.charAt(0).toUpperCase() + asset.slice(1);
 };
 
-/**
- * The windows players see, from the client's window map (`windows` in its template index: names,
- * areas, parts and states found in its code) - or, for a client built before it, the templates
- * drawn in a frame and the frames Nitro draws itself, named after their file. Parts (list rows,
- * grid items, page layouts) are never entries: they are reached inside their window.
- */
-export const studioWindows = (index: TemplateIndex): StudioWindow[] => {
+/** The room screen as a window of the list: its parts are the HUD's windows the client has. */
+const hudWindow = (index: TemplateIndex): StudioWindow => ({ id: HUD_WINDOW, name: 'Room screen (HUD)', area: 'Room', parts: HUD_PARTS.filter(part => part in index.templates), states: [], template: undefined });
+
+const listedWindows = (index: TemplateIndex): StudioWindow[] => {
     if (index.windows && Object.keys(index.windows).length) {
         const entries = Object.entries(index.windows);
         // Two windows players call the same (the catalogue and the Builders Club's) are told apart by their file.
@@ -77,6 +94,14 @@ export const studioWindows = (index: TemplateIndex): StudioWindow[] => {
 
     return [ ...framed, ...drawn ];
 };
+
+/**
+ * The windows players see - the room screen first, then from the client's window map (`windows` in its template index: names,
+ * areas, parts and states found in its code) - or, for a client built before it, the templates
+ * drawn in a frame and the frames Nitro draws itself, named after their file. Parts (list rows,
+ * grid items, page layouts) are never entries: they are reached inside their window.
+ */
+export const studioWindows = (index: TemplateIndex): StudioWindow[] => [ hudWindow(index), ...listedWindows(index) ];
 
 /** Every element of a tree, depth first. */
 export const flatElements = (elements: readonly WindowElement[]): WindowElement[] => elements.flatMap(element => [ element, ...flatElements(element.children ?? []) ]);

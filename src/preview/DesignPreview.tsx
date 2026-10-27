@@ -180,6 +180,8 @@ interface DesignPreviewProps {
     highlight?: string | null;
     /** An editor's own pick, outlined in place of the last press's (null: none). */
     selected?: string | null;
+    /** The template `selected` is a key of, when it is not the window's own: a part drawn inside it, a window of the room screen. */
+    selectedIn?: string;
     /** A press in the preview: the element it picked. */
     onSelect?: (selection: DesignSelection) => void;
     /** Where the outlined element is drawn, each time it moves. */
@@ -201,7 +203,7 @@ interface DesignPreviewProps {
  * as the client itself worked it out. The client listens only to the origins its
  * `preview.allowed_origins` names: until the hotel names the panel's there, it stays on its loading screen.
  */
-export const DesignPreview = ({ template, part, state, zoom = 1, draft, owner, highlight, selected, onSelect, onRects, onStates, onBoxes, overlay, controls }: DesignPreviewProps) => {
+export const DesignPreview = ({ template, part, state, zoom = 1, draft, owner, highlight, selected, selectedIn, onSelect, onRects, onStates, onBoxes, overlay, controls }: DesignPreviewProps) => {
     const assets = useClientAssets();
     const url = assets?.preview || null;
     const frame = useRef<HTMLIFrameElement>(null);
@@ -286,8 +288,11 @@ export const DesignPreview = ({ template, part, state, zoom = 1, draft, owner, h
     useEffect(() => {
         if (!ready || !origin) return;
 
-        frame.current?.contentWindow?.postMessage({ type: MESSAGE_TYPE, window: 'design', highlight: highlight ?? ((selected !== undefined) ? selected : picked?.key) ?? null }, origin);
-    }, [ ready, origin, highlight, selected, picked ]);
+        // A pick names its own template: the client outlines the key there (a part, a window of the room screen).
+        const of = (typeof highlight === 'string') ? undefined : (selected !== undefined) ? selectedIn : (picked?.part ?? undefined);
+
+        frame.current?.contentWindow?.postMessage({ type: MESSAGE_TYPE, window: 'design', highlight: highlight ?? ((selected !== undefined) ? selected : picked?.key) ?? null, ...(of ? { in: of } : {}) }, origin);
+    }, [ ready, origin, highlight, selected, selectedIn, picked ]);
 
     // Every element's boxes, only while an editor asks: measuring them costs the client a walk of the window.
     useEffect(() => {

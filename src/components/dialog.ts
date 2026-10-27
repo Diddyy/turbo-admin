@@ -31,7 +31,11 @@ export const useModalDialog = (open: boolean, onClose: () => void, leave?: Quest
 
     return {
         ref,
-        onClose: () => {
+        onClose: (event: SyntheticEvent<HTMLDialogElement>) => {
+            // React hands a dialog's close to the dialogs around it too: a picker closed inside a form's dialog is not the form's.
+            if (event.target !== ref.current)
+                return;
+
             // A browser closes a dialog on Escape without a cancel it lets be held when nothing was
             // clicked since the last: shown again, it is asked about as any other close.
             if (open && leave && ref.current && !ref.current.open) {
@@ -44,7 +48,7 @@ export const useModalDialog = (open: boolean, onClose: () => void, leave?: Quest
             onClose();
         },
         onCancel: (event: SyntheticEvent<HTMLDialogElement>) => {
-            if (!leave)
+            if (!leave || event.target !== ref.current)
                 return;
 
             event.preventDefault();

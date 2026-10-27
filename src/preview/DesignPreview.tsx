@@ -34,6 +34,8 @@ export interface DesignDraft {
     variables?: { path: string[]; value: unknown }[];
     /** Texts over the hotel's, by key. */
     texts?: Record<string, string>;
+    /** Windows defined as data over the saved ones, by `<plugin key>/<name>`: a window drawn as `<plugin key>/windows/<name>`. */
+    windows?: Record<string, unknown>;
 }
 
 /** The element a press in the preview picked: its key, as a patch's `element` names it. */
@@ -108,6 +110,8 @@ export interface DesignBoxes {
 export interface DesignPreviewControls {
     /** Picks the element at a point of the preview (its own pixels), as a press there would. */
     pick: (x: number, y: number) => void;
+    /** A window's template as the client draws it with the draft's patches (null: none, or no client): what a copy of it starts as. */
+    source: (template: string) => Promise<unknown>;
 }
 
 interface DesignReport {
@@ -121,7 +125,9 @@ interface DesignReport {
 
 type HostMessage = {
     type: typeof MESSAGE_TYPE;
-    event: 'ready' | 'shown' | 'error' | 'report' | 'select' | 'rect' | 'boxes';
+    event: 'ready' | 'shown' | 'error' | 'report' | 'select' | 'rect' | 'boxes' | 'source';
+    /** On `source`: the template asked for. */
+    source?: unknown;
     message?: string;
     template?: string;
     part?: string;
@@ -215,6 +221,8 @@ export const DesignPreview = ({ template, part, state, zoom = 1, draft, owner, h
     const states = useRef(onStates);
     const boxes = useRef(onBoxes);
     const wantsBoxes = !!onBoxes;
+    // The `source` asks waiting for the host's answer, by template.
+    const sources = useRef(new Map<string, ((source: unknown) => void)[]>());
     const origin = url ? new URL(url).origin : null;
     const catalog = useCatalogTree().data;
     const items = useMemo(() => designSamples(template, { catalog, catalogIcon: assets?.catalogIcon ?? '' }), [ template, catalog, assets?.catalogIcon ]);
@@ -232,6 +240,14 @@ export const DesignPreview = ({ template, part, state, zoom = 1, draft, owner, h
         pick: (x: number, y: number) => {
             if (origin) frame.current?.contentWindow?.postMessage({ type: MESSAGE_TYPE, window: 'design', pick: { x, y } }, origin);
         },
+        source: (template: string) => new Promise<unknown>((resolve) => {
+            const target = frame.current?.contentWindow;
+
+            if (!origin || !target) return resolve(null);
+
+            sources.current.set(template, [ ...(sources.current.get(template) ?? []), resolve ]);
+            target.postMessage({ type: MESSAGE_TYPE, window: 'design', source: template }, origin);
+        }),
     }), [ origin ]);
 
     useEffect(() => {
@@ -247,7 +263,12 @@ export const DesignPreview = ({ template, part, state, zoom = 1, draft, owner, h
                 states.current?.(data.states ?? {});
             } else if (data.event === 'error') setError(data.message ?? 'error');
             else if (data.event === 'shown') setError(null);
-            else if (data.event === 'report') setReport({ owners: data.owners ?? [], unmatched: data.unmatched ?? [], ineffective: data.ineffective ?? [], conflicts: data.conflicts ?? [], errors: data.errors ?? [], missingStyles: data.missingStyles ?? [] });
+            else if (data.event === 'source') {
+                const waiting = sources.current.get(data.template ?? '') ?? [];
+
+                sources.current.delete(data.template ?? '');
+                waiting.forEach(resolve => resolve(data.source ?? null));
+            } else if (data.event === 'report') setReport({ owners: data.owners ?? [], unmatched: data.unmatched ?? [], ineffective: data.ineffective ?? [], conflicts: data.conflicts ?? [], errors: data.errors ?? [], missingStyles: data.missingStyles ?? [] });
             else if (data.event === 'boxes') boxes.current?.({ template: data.template ?? '', elements: data.elements ?? [], scale: data.scale ?? 1 });
             else if (data.event === 'rect') {
                 if (typeof data.key === 'string') rects.current?.({ key: data.key, rects: data.rects ?? [], scale: data.scale ?? 1 });

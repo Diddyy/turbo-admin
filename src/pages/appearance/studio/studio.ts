@@ -1,5 +1,6 @@
 import { createContext, useContext, useRef, useState } from 'react';
 
+import type { DataWindowFile } from '#/api/dataWindows';
 import type { PluginStyle } from '#/api/noCode';
 import type { DesignElementValues, DesignPathStep, DesignRects } from '#/preview/DesignPreview';
 
@@ -16,12 +17,14 @@ export interface StudioDraft {
     texts: Record<string, string>;
     /** Per library bitmap (`asset.overlays` key), the address of the art uploaded into the theme for it; null gives the library's own back. */
     overlays: Record<string, string | null>;
+    /** Per window of the theme's own (defined as data, by its name), its file in place of the saved one; null deletes it on Save. */
+    windows: Record<string, DataWindowFile | null>;
 }
 
-export const EMPTY_DRAFT: StudioDraft = { patches: {}, styles: {}, texts: {}, overlays: {} };
+export const EMPTY_DRAFT: StudioDraft = { patches: {}, styles: {}, texts: {}, overlays: {}, windows: {} };
 
-/** How many things a draft changes: a template's patch, a style, a text, a bitmap each count once. */
-export const draftCount = (draft: StudioDraft) => Object.keys(draft.patches).length + Object.keys(draft.styles).length + Object.keys(draft.texts).length + Object.keys(draft.overlays).length;
+/** How many things a draft changes: a template's patch, a style, a text, a bitmap, a window each count once. */
+export const draftCount = (draft: StudioDraft) => Object.keys(draft.patches).length + Object.keys(draft.styles).length + Object.keys(draft.texts).length + Object.keys(draft.overlays).length + Object.keys(draft.windows).length;
 
 /** Consecutive changes of one group (a colour dragged in the picker, a number typed digit by digit, a drag) within this are one step back. */
 const GROUP_MS = 1500;

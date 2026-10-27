@@ -1,7 +1,9 @@
 import type { StudioWindowEntry, TemplateIndex, WindowElement, WindowTemplate } from '#/api/windows';
 
-/** The areas of the game the studio lists windows by, as players know them, in this order. */
-export const AREAS = [ 'Catalogue', 'Navigator', 'Inventory', 'Toolbar & purse', 'Room', 'Chat', 'Friends & messenger', 'Groups', 'Wired', 'Help & moderation', 'Games', 'Hotel view', 'Loading screen', 'Other' ];
+import { OWN_WINDOWS_AREA } from './dataWindows';
+
+/** The areas of the game the studio lists windows by, as players know them, in this order: the theme's own windows first. */
+export const AREAS = [ OWN_WINDOWS_AREA, 'Catalogue', 'Navigator', 'Inventory', 'Toolbar & purse', 'Room', 'Chat', 'Friends & messenger', 'Groups', 'Wired', 'Help & moderation', 'Games', 'Hotel view', 'Loading screen', 'Other' ];
 
 /** The area of a window by its library, for a client whose index has no window map yet. */
 const LIBRARY_AREAS: Record<string, string> = {

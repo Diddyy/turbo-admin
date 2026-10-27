@@ -10,6 +10,7 @@ import { Badge, Button, EmptyState, ErrorNotice, Loading, PageBody, PageHeader, 
 import { plural } from '#/lib/plural';
 
 import { NewThemeDialog } from './NewThemeDialog';
+import { ThemeAudienceControls } from './ThemeAudience';
 import { themeName, themeTree } from './themes';
 
 /** A plugin action's answer as a toast: what it did, or why not. */
@@ -33,7 +34,7 @@ export const ThemesPage = () => {
 
     return (
         <>
-            <PageHeader title="Themes" description="Every theme the hotel runs, under the one it extends. Every theme that is on applies; a later one in the tree changes what its parent set. The one you work on is where every appearance editor saves.">
+            <PageHeader title="Themes" description="Every theme the hotel runs, under the one it extends. Players draw the default theme, or one they chose; a theme in development (a new one too) reaches only the players and groups you give it. The one you work on is where every appearance editor saves.">
                 {data?.canManage && <Button icon={<Plus />} onClick={() => setParams({ new: '1' }, { replace: true })}>New theme</Button>}
             </PageHeader>
             <PageBody className="flex flex-col gap-4 lg:gap-5">
@@ -62,6 +63,7 @@ export const ThemesPage = () => {
                                                     {`${theme.extends ? `extends ${theme.extends}, ` : ''}${plural(theme.styles, 'style property', 'style properties')} (${theme.own} its own), ${theme.changed} changed by this hotel`}
                                                 </span>
                                             )}
+                                    <ThemeAudienceControls themeKey={theme.key} />
                                     <span className="ml-auto flex flex-wrap items-center gap-1">
                                         <Link to={`/appearance/styles/${encodeURIComponent(theme.key)}`} className={link}><Palette className="size-4" />Style properties</Link>
                                         <Link to={`/appearance/images/${encodeURIComponent(theme.key)}`} className={link}><ImageIcon className="size-4" />Images</Link>

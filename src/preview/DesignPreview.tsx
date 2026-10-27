@@ -20,6 +20,8 @@ const FRAME_HEIGHT = 640;
 /** A patch file as the client reads it: what an editor's draft stands in for, per owner. */
 export interface DesignPatchFile {
     patches: { template: string; ops: unknown; order?: number | null }[];
+    /** Where the owner's files are, for a relative picture its ops bind (a theme no player is given yet has no entry in the hotel's list). */
+    base?: string;
 }
 
 /** An appearance editor's unsaved changes, as the client draws them. */
@@ -95,6 +97,13 @@ export interface DesignRects {
     scale: number;
 }
 
+/** Every element a key reaches drawn in the window, as the client says them while an editor asks (`boxes`). */
+export interface DesignBoxes {
+    template: string;
+    elements: { template: string; key: string; tag: string; name: string | null; tags: string[]; rects: DesignBox[] }[];
+    scale: number;
+}
+
 /** What an editor drawing over the preview can ask of it. */
 export interface DesignPreviewControls {
     /** Picks the element at a point of the preview (its own pixels), as a press there would. */
@@ -112,7 +121,7 @@ interface DesignReport {
 
 type HostMessage = {
     type: typeof MESSAGE_TYPE;
-    event: 'ready' | 'shown' | 'error' | 'report' | 'select' | 'rect';
+    event: 'ready' | 'shown' | 'error' | 'report' | 'select' | 'rect' | 'boxes';
     message?: string;
     template?: string;
     part?: string;
@@ -127,6 +136,8 @@ type HostMessage = {
     texts?: Record<string, string>;
     rects?: DesignBox[];
     scale?: number;
+    /** On `boxes`: every element drawn. */
+    elements?: DesignBoxes['elements'];
     /** On `ready`: the named states of the windows the host draws with sample content, by window. */
     states?: Record<string, DesignState[]>;
 } & Partial<DesignReport>;
@@ -175,6 +186,8 @@ interface DesignPreviewProps {
     onRects?: (rects: DesignRects) => void;
     /** The states the client draws windows in, by window, once it is ready. */
     onStates?: (states: Record<string, DesignState[]>) => void;
+    /** Every element's boxes, said each time one moves (a window editor's outlines, marquee and guides). */
+    onBoxes?: (boxes: DesignBoxes) => void;
     /** Drawn over the window, in its pixels: a visual editor's handles. */
     overlay?: ReactNode;
     controls?: Ref<DesignPreviewControls | null>;
@@ -188,7 +201,7 @@ interface DesignPreviewProps {
  * as the client itself worked it out. The client listens only to the origins its
  * `preview.allowed_origins` names: until the hotel names the panel's there, it stays on its loading screen.
  */
-export const DesignPreview = ({ template, part, state, zoom = 1, draft, owner, highlight, selected, onSelect, onRects, onStates, overlay, controls }: DesignPreviewProps) => {
+export const DesignPreview = ({ template, part, state, zoom = 1, draft, owner, highlight, selected, onSelect, onRects, onStates, onBoxes, overlay, controls }: DesignPreviewProps) => {
     const assets = useClientAssets();
     const url = assets?.preview || null;
     const frame = useRef<HTMLIFrameElement>(null);
@@ -200,6 +213,8 @@ export const DesignPreview = ({ template, part, state, zoom = 1, draft, owner, h
     const select = useRef(onSelect);
     const rects = useRef(onRects);
     const states = useRef(onStates);
+    const boxes = useRef(onBoxes);
+    const wantsBoxes = !!onBoxes;
     const origin = url ? new URL(url).origin : null;
     const catalog = useCatalogTree().data;
     const items = useMemo(() => designSamples(template, { catalog, catalogIcon: assets?.catalogIcon ?? '' }), [ template, catalog, assets?.catalogIcon ]);
@@ -210,7 +225,8 @@ export const DesignPreview = ({ template, part, state, zoom = 1, draft, owner, h
         select.current = onSelect;
         rects.current = onRects;
         states.current = onStates;
-    }, [ onSelect, onRects, onStates ]);
+        boxes.current = onBoxes;
+    }, [ onSelect, onRects, onStates, onBoxes ]);
 
     useImperativeHandle(controls, () => ({
         pick: (x: number, y: number) => {
@@ -232,6 +248,7 @@ export const DesignPreview = ({ template, part, state, zoom = 1, draft, owner, h
             } else if (data.event === 'error') setError(data.message ?? 'error');
             else if (data.event === 'shown') setError(null);
             else if (data.event === 'report') setReport({ owners: data.owners ?? [], unmatched: data.unmatched ?? [], ineffective: data.ineffective ?? [], conflicts: data.conflicts ?? [], errors: data.errors ?? [], missingStyles: data.missingStyles ?? [] });
+            else if (data.event === 'boxes') boxes.current?.({ template: data.template ?? '', elements: data.elements ?? [], scale: data.scale ?? 1 });
             else if (data.event === 'rect') {
                 if (typeof data.key === 'string') rects.current?.({ key: data.key, rects: data.rects ?? [], scale: data.scale ?? 1 });
             } else if (data.event === 'select') {
@@ -271,6 +288,13 @@ export const DesignPreview = ({ template, part, state, zoom = 1, draft, owner, h
 
         frame.current?.contentWindow?.postMessage({ type: MESSAGE_TYPE, window: 'design', highlight: highlight ?? ((selected !== undefined) ? selected : picked?.key) ?? null }, origin);
     }, [ ready, origin, highlight, selected, picked ]);
+
+    // Every element's boxes, only while an editor asks: measuring them costs the client a walk of the window.
+    useEffect(() => {
+        if (!ready || !origin) return;
+
+        frame.current?.contentWindow?.postMessage({ type: MESSAGE_TYPE, window: 'design', boxes: wantsBoxes }, origin);
+    }, [ ready, origin, wantsBoxes ]);
 
     if (!url) return <p className="text-xs text-muted">No preview: the server knows no client to draw it with (Turbo:Admin:ClientPreviewUrl, else Turbo:Admin:ClientConfigUrl).</p>;
 

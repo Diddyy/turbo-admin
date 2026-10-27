@@ -107,7 +107,7 @@ export const useStyleChange = (key: string, intoTheme = false) => {
     });
 };
 
-const imagesKey = (key: string) => [ 'plugins', key, 'images' ];
+export const imagesKey = (key: string) => [ 'plugins', key, 'images' ];
 
 export const usePluginImages = (key: string) => useQuery({
     queryKey: imagesKey(key),

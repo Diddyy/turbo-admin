@@ -1,4 +1,5 @@
 import { useTextSearch } from '#/api/gamedata';
+import { useThemeTexts } from '#/api/noCode';
 import { Input, Labeled } from '#/components/ui';
 
 import { useStudio } from '../studio';
@@ -8,8 +9,11 @@ const TextField = ({ textKey, shown }: { textKey: string; shown: string | undefi
     const studio = useStudio();
     const { data } = useTextSearch(textKey, 0);
     const entry = data?.items.find(item => item.key === textKey);
-    // What players read now: the hotel's text, else what the client shows (a hotel whose texts aren't taken in yet).
-    const saved = entry?.value ?? shown;
+    const theme = useThemeTexts(studio.theme, studio.intoTheme).data?.texts;
+    // Staff changed the hotel's text (it isn't Habbo's): the hotel's wins over any theme's.
+    const staffs = !!entry && (entry.value !== entry.habbo);
+    // What players read now: the theme's own text (working on one), else the hotel's, else what the client shows.
+    const saved = (studio.intoTheme ? theme?.[textKey] : undefined) ?? entry?.value ?? shown;
     const draft = studio.text(textKey);
 
     return (
@@ -21,6 +25,7 @@ const TextField = ({ textKey, shown }: { textKey: string; shown: string | undefi
                 disabled={!studio.canManage}
                 onChange={event => studio.setText(textKey, event.target.value === saved ? undefined : event.target.value, `text:${textKey}`)}
             />
+            {studio.intoTheme && staffs && <span className="text-xs text-warn">Staff changed this text on Gamedata &gt; Texts: players see the hotel's, not the theme's.</span>}
         </Labeled>
     );
 };

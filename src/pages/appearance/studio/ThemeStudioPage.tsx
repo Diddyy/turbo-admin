@@ -5,7 +5,7 @@ import { Link, useSearchParams } from 'react-router';
 import { useThemeAudiences, useThemes } from '#/api/appearance';
 import { useClientAssets } from '#/api/assets';
 import { useSaveText } from '#/api/gamedata';
-import { type HotelPatch, type PluginStyle, useOverlaysChange, usePatches, usePluginFonts, usePluginStyles, useRemovePatch, useSavePatch, useStyleChange } from '#/api/noCode';
+import { type HotelPatch, type PluginStyle, useOverlaysChange, usePatches, usePluginFonts, usePluginStyles, useRemovePatch, useSavePatch, useStyleChange, useThemeTexts, useThemeTextsChange } from '#/api/noCode';
 import { useTemplateIndex, windowOf } from '#/api/windows';
 import { styleDraft, windowOfStyle } from '#/appearance/styleValues';
 import { folderOf, useWorkingOn } from '#/appearance/workingOn';
@@ -166,6 +166,9 @@ export const ThemeStudioPage = () => {
     const styleChange = useStyleChange(theme, intoTheme);
     const saveText = useSaveText();
     const overlaysChange = useOverlaysChange(theme);
+    // A theme's texts are its own file's (drawn for its players over the hotel's); the hotel's are Gamedata > Texts'.
+    const themeTexts = useThemeTexts(theme, intoTheme).data?.texts;
+    const themeTextsChange = useThemeTextsChange(theme);
     const saved = useSaved();
     const [ saving, setSaving ] = useState(false);
     const patches = useMemo(() => patchData?.patches ?? [], [ patchData ]);
@@ -256,8 +259,8 @@ export const ThemeStudioPage = () => {
         // New art is drawn at once: each bitmap's uploaded image in the asset manager (the library's own for one given back).
         const art = Object.entries(draft.overlays).filter(([ , url ]) => url !== null).map(([ key, url ]) => ({ path: [ 'asset.overlays', key ], value: url }));
 
-        return { patches: { [theme]: { patches: files } }, styles: drawn.styles, variables: [ ...(drawn.variables ?? []), ...art ], texts: draft.texts };
-    }, [ patches, draft, styles, fonts, theme, intoTheme ]);
+        return { patches: { [theme]: { patches: files } }, styles: drawn.styles, variables: [ ...(drawn.variables ?? []), ...art ], texts: intoTheme ? { ...themeTexts, ...draft.texts } : draft.texts };
+    }, [ patches, draft, styles, fonts, theme, intoTheme, themeTexts ]);
 
     const save = async () => {
         setSaving(true);
@@ -277,7 +280,8 @@ export const ThemeStudioPage = () => {
 
             for (const [ name, value ] of Object.entries(draft.styles)) await styleChange.mutateAsync({ name, value });
 
-            for (const [ key, value ] of Object.entries(draft.texts)) await saveText.mutateAsync({ key, value });
+            if (!intoTheme) for (const [ key, value ] of Object.entries(draft.texts)) await saveText.mutateAsync({ key, value });
+            else if (Object.keys(draft.texts).length) await themeTextsChange.mutateAsync(draft.texts);
 
             // Every bitmap in one change: each is checked before any is written.
             if (Object.keys(draft.overlays).length) await overlaysChange.mutateAsync(draft.overlays);

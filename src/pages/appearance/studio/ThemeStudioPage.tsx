@@ -259,7 +259,9 @@ export const ThemeStudioPage = () => {
         pick: (x, y) => controls.current?.pick(x, y),
     };
 
-    const editor = useWindowEditor(studio, studio.index ?? index, shownWindow?.parts ?? [], template => windows.find(window => window.id === template)?.name ?? index?.parts?.[template]?.name ?? partName(template));
+    // `index` here is the merged one `studio.index` carries (the theme's own windows in it): read directly, as the compiler
+    // refuses reading `studio` (it holds the preview's controls ref) during render.
+    const editor = useWindowEditor(studio, index, shownWindow?.parts ?? [], template => windows.find(window => window.id === template)?.name ?? index?.parts?.[template]?.name ?? partName(template));
     const editorRef = useRef(editor);
 
     useEffect(() => {

@@ -52,7 +52,8 @@ export interface TemplateIndex {
     templates: Record<string, WindowTemplate>;
     frames: Record<string, string[]>;
     windows?: Record<string, StudioWindowEntry>;
-    parts?: Record<string, { windows: string[] }>;
+    /** Each part template: what staff call it (the map's name for it, from the client's code) and the windows drawing it. */
+    parts?: Record<string, { name?: string; windows: string[] }>;
 }
 
 /** One sprite of the theme sheet a skin draws (nitro-theme `SkinSprite`). */

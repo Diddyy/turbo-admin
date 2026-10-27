@@ -1,7 +1,7 @@
 import { createContext, useContext, useRef, useState } from 'react';
 
 import type { PluginStyle } from '#/api/noCode';
-import type { DesignElementValues, DesignRects } from '#/preview/DesignPreview';
+import type { DesignElementValues, DesignPathStep, DesignRects } from '#/preview/DesignPreview';
 
 /**
  * A theme's unsaved changes in the studio, by what they change: nothing is written until Save, and
@@ -14,12 +14,14 @@ export interface StudioDraft {
     styles: Record<string, string | null>;
     /** Per text key, the text windows show. */
     texts: Record<string, string>;
+    /** Per library bitmap (`asset.overlays` key), the address of the art uploaded into the theme for it; null gives the library's own back. */
+    overlays: Record<string, string | null>;
 }
 
-export const EMPTY_DRAFT: StudioDraft = { patches: {}, styles: {}, texts: {} };
+export const EMPTY_DRAFT: StudioDraft = { patches: {}, styles: {}, texts: {}, overlays: {} };
 
-/** How many things a draft changes: a template's patch, a style, a text each count once. */
-export const draftCount = (draft: StudioDraft) => Object.keys(draft.patches).length + Object.keys(draft.styles).length + Object.keys(draft.texts).length;
+/** How many things a draft changes: a template's patch, a style, a text, a bitmap each count once. */
+export const draftCount = (draft: StudioDraft) => Object.keys(draft.patches).length + Object.keys(draft.styles).length + Object.keys(draft.texts).length + Object.keys(draft.overlays).length;
 
 /** Consecutive changes of one group (a colour dragged in the picker, a number typed digit by digit, a drag) within this are one step back. */
 const GROUP_MS = 1500;
@@ -78,6 +80,12 @@ export interface StudioSelection {
     name: string | null;
     /** What it is drawn with, its patches applied (the client's own element). */
     element?: DesignElementValues;
+    /** From the window's root down to it, each step's template and key. */
+    path?: DesignPathStep[];
+    /** Its style and caption as the client draws it, and the text it shows for each `${key}` of the caption. */
+    style?: string | null;
+    caption?: string | null;
+    texts?: Record<string, string>;
 }
 
 /**
@@ -109,6 +117,9 @@ export interface Studio {
     /** A text's draft value; undefined when the draft leaves it. */
     text: (key: string) => string | undefined;
     setText: (key: string, value: string | undefined, group?: string) => void;
+    /** A library bitmap's draft art (its `asset.overlays` address, null: the library's own again); undefined when the draft leaves it. */
+    overlay: (key: string) => string | null | undefined;
+    setOverlay: (key: string, url: string | null | undefined, group?: string) => void;
     /** Where the picked element is drawn in the preview, each time it moves. */
     rects: DesignRects | null;
     /** Picks the element at a point of the preview (its own pixels), as a press there would. */

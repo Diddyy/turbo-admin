@@ -108,5 +108,12 @@ export const colourValue = (value: unknown): number | null => {
     return (text.length <= 6) ? (0xff * 0x1000000) + parsed : parsed;
 };
 
+/** A layout's `scale` per axis: how an element follows its parent's resize. */
+export const SCALES = [ 'fixed', 'move', 'stretch', 'center' ];
+
+/** A layout's `align`: the edge an element keeps when resized, across and down. */
+export const ALIGN_H = [ 'left', 'center', 'right' ];
+export const ALIGN_V = [ 'top', 'middle', 'bottom' ];
+
 /** The skin component a template element's tag draws (`tab_button` -> `tabButton`). */
 export const skinComponentOf = (tag: string) => tag.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());

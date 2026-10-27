@@ -5,11 +5,12 @@ import { Link, useSearchParams } from 'react-router';
 import { useThemeAudiences, useThemes } from '#/api/appearance';
 import { useClientAssets } from '#/api/assets';
 import { useSaveText } from '#/api/gamedata';
-import { type HotelPatch, type PluginStyle, useOverlaysChange, usePatches, usePluginFonts, usePluginStyles, useRemovePatch, useSavePatch, useStyleChange, useThemeTexts, useThemeTextsChange } from '#/api/noCode';
-import { useTemplateIndex, windowOf } from '#/api/windows';
+import { type HotelPatch, type PluginStyle, useOverlaysChange, usePatches, usePluginFonts, usePluginImages, usePluginStyles, useRemovePatch, useSavePatch, useStyleChange, useThemeTexts, useThemeTextsChange } from '#/api/noCode';
+import { useTemplateIndex } from '#/api/windows';
 import { styleDraft, windowOfStyle } from '#/appearance/styleValues';
 import { folderOf, useWorkingOn } from '#/appearance/workingOn';
 import { ask } from '#/components/confirm';
+import { ImagePicker } from '#/components/ImagePicker';
 import { useSaved } from '#/components/SaveFeedback';
 import { Tabs } from '#/components/Tabs';
 import { toastError } from '#/components/toast';
@@ -18,11 +19,15 @@ import { previewLink, STATUS_LABEL } from '#/pages/appearance/ThemeAudience';
 import { themeName, themeTree } from '#/pages/appearance/themes';
 import { PackageDialog } from '#/pages/plugins/PackageDialog';
 import { type DesignDraft, DesignPreview, type DesignPreviewControls, type DesignRects, type DesignState } from '#/preview/DesignPreview';
-import { setOf, withSets } from '#/preview/patchOps';
-import { dragged, type DragKind, Handles, keyedElements, unionOf } from '#/preview/VisualEditor';
 
 import { ChangesTab } from './ChangesTab';
+import { EditorOverlay } from './editor/EditorOverlay';
+import { EditorToolbar, type EditorView } from './editor/EditorToolbar';
+import { Hierarchy } from './editor/Hierarchy';
+import { MoreProperties } from './editor/MoreProperties';
+import { useWindowEditor } from './editor/useWindowEditor';
 import { Inspector } from './Inspector';
+import { partName } from './inspector/model';
 import { draftCount, type Studio, StudioContext, type StudioDraft, type StudioSelection, useDraftHistory } from './studio';
 import { ThemeSettings } from './ThemeSettings';
 import { WindowList } from './WindowList';
@@ -145,6 +150,9 @@ export const ThemeStudioPage = () => {
     const { data: patchData, error: patchError } = usePatches(theme);
     const { data: read } = usePluginStyles(theme);
     const ownFonts = usePluginFonts(theme).data?.fonts;
+    // Where the theme's files are as clients load them, from one of its pictures: what a relative picture in a draft is read beside.
+    const ownImage = usePluginImages(theme).data?.images.find(image => image.url?.includes(image.path));
+    const filesBase = ownImage?.url ? ownImage.url.slice(0, ownImage.url.indexOf(ownImage.path)) : undefined;
     const hotelFonts = usePluginFonts('hotel').data?.fonts;
     const fonts = useMemo(() => [ ...(ownFonts ?? []), ...(theme === 'hotel' ? [] : hotelFonts ?? []) ], [ ownFonts, hotelFonts, theme ]);
     // A theme's own file: each value is its default, its own where it names one (as Style properties had it).
@@ -160,7 +168,9 @@ export const ThemeStudioPage = () => {
     const [ centreWidth, centreRef ] = useWidth();
     const [ packaging, setPackaging ] = useState(false);
     const controls = useRef<DesignPreviewControls | null>(null);
-    const dragStart = useRef<{ x: number; y: number; width: number; height: number; group: string } | null>(null);
+    // A click on the editor's overlay asks the client what is there: whether it adds to the picked ones.
+    const additivePick = useRef(false);
+    const [ view, setView ] = useState<EditorView>({ rects: false, names: false, tags: false, snapToOthers: true });
     const savePatch = useSavePatch(theme);
     const removePatch = useRemovePatch(theme);
     const styleChange = useStyleChange(theme, intoTheme);
@@ -224,6 +234,7 @@ export const ThemeStudioPage = () => {
         select: setSelection,
         ops: template => draft.patches[template] ?? opsOf(patchOn(patches, template)),
         changeOps: (template, next, group) => change({ ...draft, patches: next === undefined ? without(draft.patches, template) : { ...draft.patches, [template]: next } }, group),
+        changeManyOps: (next, group) => change({ ...draft, patches: { ...draft.patches, ...next } }, group),
         styles,
         style: name => (name in draft.styles ? draft.styles[name]! : styles.find(style => style.name === name)?.value ?? null),
         setStyle: (name, value, group) => change({ ...draft, styles: value === undefined ? without(draft.styles, name) : { ...draft.styles, [name]: value } }, group),
@@ -234,6 +245,13 @@ export const ThemeStudioPage = () => {
         rects,
         pick: (x, y) => controls.current?.pick(x, y),
     };
+
+    const editor = useWindowEditor(studio, index, shownWindow?.parts ?? [], template => windows.find(window => window.id === template)?.name ?? index?.parts?.[template]?.name ?? partName(template));
+    const editorRef = useRef(editor);
+
+    useEffect(() => {
+        editorRef.current = editor;
+    });
 
     // The theme as players would get it with the draft saved: its patches with the draft's in their place, its style values, the texts.
     const previewDraft = useMemo<DesignDraft>(() => {
@@ -259,8 +277,8 @@ export const ThemeStudioPage = () => {
         // New art is drawn at once: each bitmap's uploaded image in the asset manager (the library's own for one given back).
         const art = Object.entries(draft.overlays).filter(([ , url ]) => url !== null).map(([ key, url ]) => ({ path: [ 'asset.overlays', key ], value: url }));
 
-        return { patches: { [theme]: { patches: files } }, styles: drawn.styles, variables: [ ...(drawn.variables ?? []), ...art ], texts: intoTheme ? { ...themeTexts, ...draft.texts } : draft.texts };
-    }, [ patches, draft, styles, fonts, theme, intoTheme, themeTexts ]);
+        return { patches: { [theme]: { patches: files, ...(filesBase ? { base: filesBase } : {}) } }, styles: drawn.styles, variables: [ ...(drawn.variables ?? []), ...art ], texts: intoTheme ? { ...themeTexts, ...draft.texts } : draft.texts };
+    }, [ patches, draft, styles, fonts, theme, intoTheme, themeTexts, filesBase ]);
 
     const save = async () => {
         setSaving(true);
@@ -301,8 +319,29 @@ export const ThemeStudioPage = () => {
         const onKey = (event: KeyboardEvent) => {
             if ((event.target as HTMLElement | null)?.closest('input, textarea, select, [contenteditable]')) return;
 
+            const tools = editorRef.current;
+
             if (event.key === 'Escape') {
-                setSelection(null);
+                tools.clear();
+
+                return;
+            }
+
+            // Arrow keys nudge the picked elements a pixel, ten with shift; Delete takes them out.
+            const step = event.shiftKey ? 10 : 1;
+            const arrows: Record<string, [ number, number ]> = { ArrowLeft: [ -step, 0 ], ArrowRight: [ step, 0 ], ArrowUp: [ 0, -step ], ArrowDown: [ 0, step ] };
+            const arrow = arrows[event.key];
+
+            if (arrow && tools.selected.length) {
+                event.preventDefault();
+                tools.nudge(arrow[0], arrow[1]);
+
+                return;
+            }
+
+            if ((event.key === 'Delete') && tools.selected.length) {
+                event.preventDefault();
+                tools.remove();
 
                 return;
             }
@@ -313,6 +352,9 @@ export const ThemeStudioPage = () => {
 
             if ((key === 'z') && !event.shiftKey) undo();
             else if ((key === 'y') || ((key === 'z') && event.shiftKey)) redo();
+            else if (key === 'd') tools.duplicate();
+            else if ((key === 'c') && tools.selected.length) tools.copy();
+            else if (key === 'v') tools.paste();
             else return;
 
             event.preventDefault();
@@ -322,32 +364,6 @@ export const ThemeStudioPage = () => {
 
         return () => window.removeEventListener('keydown', onKey);
     }, [ undo, redo ]);
-
-    // The picked element's box over the preview: dragged to move it, its handles to resize it.
-    const box = (selection?.key && rects && (rects.key === selection.key)) ? unionOf(rects.rects) : undefined;
-    const onDrag = (kind: DragKind, dx: number, dy: number, done: boolean) => {
-        if (!selection?.key || !index) return;
-
-        const template = selection.template;
-        const ops = studio.ops(template);
-        const values = setOf(ops, selection.key);
-        const indexed = keyedElements(windowOf(index, template)?.elements ?? []).find(entry => entry.element.key === selection.key)?.element;
-        const own = indexed ? { x: indexed.rect[0], y: indexed.rect[1], width: indexed.rect[2], height: indexed.rect[3] } : selection.element;
-
-        if (!own) return;
-
-        if (!dragStart.current) {
-            const number = (value: unknown, fallback: number) => (typeof value === 'number' ? value : fallback);
-
-            dragStart.current = { x: number(values.x, own.x), y: number(values.y, own.y), width: number(values.width, own.width), height: number(values.height, own.height), group: `${selection.key}:drag:${Date.now()}` };
-        }
-
-        const scale = (rects?.scale ?? 1) / zoom;
-
-        studio.changeOps(template, withSets(ops, selection.key, dragged(kind, dragStart.current, Math.round(dx * scale), Math.round(dy * scale))), dragStart.current.group);
-
-        if (done) dragStart.current = null;
-    };
 
     // A style's control used: the window it restyles is shown.
     const showWindowOf = (style: PluginStyle) => {
@@ -406,6 +422,7 @@ export const ThemeStudioPage = () => {
                                     <Segmented label="Zoom" value={zoomChoice} onChange={setZoomChoice} options={ZOOMS} />
                                 </span>
                             </div>
+                            {windowId && <EditorToolbar editor={editor} view={view} onView={setView} canEdit={canManage} />}
                             <div ref={centreRef} className="min-w-0">
                                 {windowId
                                     ? (
@@ -419,20 +436,64 @@ export const ThemeStudioPage = () => {
                                                 controls={controls}
                                                 onRects={setRects}
                                                 onStates={setHostStates}
-                                                onSelect={picked => setSelection({ window: windowId, template: picked.part ?? windowId, key: picked.key, tag: picked.tag, name: picked.name, ...(picked.element ? { element: picked.element } : {}), ...(picked.path ? { path: picked.path } : {}), style: picked.style ?? null, caption: picked.caption ?? null, ...(picked.texts ? { texts: picked.texts } : {}) })}
-                                                overlay={box && canManage && <Handles box={box} onDrag={(kind, dx, dy, done) => onDrag(kind, dx, dy, done)} onClick={(x, y) => controls.current?.pick(x, y)} />}
+                                                onBoxes={editor.onBoxes}
+                                                onSelect={(picked) => {
+                                                    const additive = additivePick.current;
+                                                    const template = picked.part ?? windowId;
+
+                                                    additivePick.current = false;
+
+                                                    // Shift- or ctrl-clicked when picked already: it leaves the picked ones, the studio's pick stays.
+                                                    if ((picked.key !== null) && !editor.pressed({ template, key: picked.key }, additive)) return;
+
+                                                    setSelection({ window: windowId, template, key: picked.key, tag: picked.tag, name: picked.name, ...(picked.element ? { element: picked.element } : {}), ...(picked.path ? { path: picked.path } : {}), style: picked.style ?? null, caption: picked.caption ?? null, ...(picked.texts ? { texts: picked.texts } : {}) });
+                                                }}
+                                                overlay={(
+                                                    <EditorOverlay
+                                                        elements={editor.elements}
+                                                        selected={editor.selected}
+                                                        show={view}
+                                                        snapToOthers={view.snapToOthers}
+                                                        canEdit={canManage}
+                                                        onPick={(x, y, additive) => {
+                                                            additivePick.current = additive;
+                                                            controls.current?.pick(x, y);
+                                                        }}
+                                                        onMarquee={editor.pickMany}
+                                                        onMove={editor.move}
+                                                        onResize={editor.resize}
+                                                        onDrop={editor.drop}
+                                                    />
+                                                )}
                                             />
                                         )
                                     : <p className="p-6 text-center text-sm text-muted">Pick a window on the left: the catalogue, the purse, the navigator...</p>}
                             </div>
                         </section>
                         <section aria-label="Inspector" className="min-h-[16rem] overflow-y-auto rounded-xl border border-line bg-surface">
+                            {windowId && editor.trees.length > 0 && (
+                                <details open className="border-b border-line">
+                                    <summary className="cursor-pointer px-3 py-2 text-xs font-medium">Hierarchy</summary>
+                                    <div className="max-h-80 overflow-y-auto px-2 pb-2">
+                                        <Hierarchy trees={editor.trees} selected={editor.selected} canEdit={canManage} onSelect={editor.pick} onHidden={editor.hide} onMove={editor.reorder} />
+                                    </div>
+                                </details>
+                            )}
                             <Inspector />
+                            <MoreProperties editor={editor} />
                         </section>
                     </div>
                 )}
             </div>
             <PackageDialog pluginKey={theme} open={packaging} onClose={() => setPackaging(false)} />
+            <ImagePicker
+                open={!!editor.picturing}
+                title="The new image's picture"
+                accept={{ shapes: [ 'plugin' ], plugin: theme, usedIn: 'theme.patch' }}
+                value=""
+                onPick={editor.setPicture}
+                onClose={() => editor.setPicture(null)}
+            />
         </StudioContext>
     );
 };

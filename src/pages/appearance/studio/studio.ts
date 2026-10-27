@@ -108,6 +108,8 @@ export interface Studio {
     ops: (template: string) => readonly unknown[];
     /** Undefined drops the draft's ops (the saved ones again); an empty list takes the theme's patch on the template away on Save. */
     changeOps: (template: string, next: unknown[] | undefined, group?: string) => void;
+    /** Several templates' ops changed at once (an edit of a window and a part drawn in it): one step back. */
+    changeManyOps: (next: Record<string, unknown[]>, group?: string) => void;
     /** The theme's style properties, as saved. */
     styles: readonly PluginStyle[];
     /** A style's value: the draft's (null: back to its default) or the saved one. */

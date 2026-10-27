@@ -92,7 +92,7 @@ export const NewWindowDialog = ({ open, onClose, theme, taken, windows, source, 
                         <Input value={start.heading} onChange={event => set({ heading: event.target.value })} placeholder="Welcome to the hotel!" />
                     </Labeled>
                 )}
-                {(start.starter === 'card' || start.starter === 'dialog') && (
+                {(start.starter === 'card' || start.starter === 'dialog' || start.starter === 'tabs') && (
                     <Labeled label="Text">
                         <Textarea rows={3} value={start.text} onChange={event => set({ text: event.target.value })} />
                     </Labeled>

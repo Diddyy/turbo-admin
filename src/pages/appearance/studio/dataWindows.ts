@@ -6,12 +6,13 @@ import type { TemplateIndex, WindowElement } from '#/api/windows';
 export const OWN_WINDOWS_AREA = 'This theme\'s windows';
 
 /** How a new window starts. */
-export type WindowStarter = 'blank' | 'dialog' | 'card' | 'list' | 'copy';
+export type WindowStarter = 'blank' | 'dialog' | 'card' | 'list' | 'tabs' | 'copy';
 
 export const STARTERS: { value: WindowStarter; label: string; hint: string }[] = [
     { value: 'card', label: 'Info card', hint: 'A picture, a heading, a text and a Close button' },
     { value: 'dialog', label: 'Dialog', hint: 'A text and an OK button' },
     { value: 'list', label: 'List', hint: 'Rows of text and a Close button' },
+    { value: 'tabs', label: 'Tabs', hint: 'Three tabs, each showing its own page of text' },
     { value: 'blank', label: 'Blank', hint: 'An empty frame of the size you pick' },
     { value: 'copy', label: 'Copy of a window', hint: 'A window of the game, as the theme draws it, to change' },
 ];
@@ -98,6 +99,17 @@ export const newWindowFile = (start: WindowStart, copy?: DataWindowTemplate): Da
             button('ok_button', 'OK', 100, inner, 90),
         ];
         buttons = { ok_button: { close: true } };
+    } else if (start.starter === 'tabs') {
+        // Habbo's tab row (`group_management_window`'s): each tab shows its page, the others hidden.
+        height = 220;
+        const tabWidth = Math.floor((inner - 20) / 3);
+
+        children = [
+            element('tab_context', 'tabs', 10, 8, inner - 20, 22, { style: undefined, children: [ 0, 1, 2 ].map(tab => element('tab_button', `tab_${tab + 1}`, tab * tabWidth, 0, tabWidth, 22, { style: undefined, caption: `Tab ${tab + 1}`, params: { events: [ 'input' ] } })) }),
+            ...[ 0, 1, 2 ].map(page => element('container', `page_${page + 1}`, 10, 38, inner - 20, 100, { ...(page > 0 && { hidden: true }), children: [ element('text', `page_${page + 1}_text`, 0, 0, inner - 20, 100, { caption: page === 0 ? (start.text || 'Page 1') : `Page ${page + 1}`, vars: { multiline: true, word_wrap: true } }) ] })),
+            button('close_button', 'Close', 126, inner, 148),
+        ];
+        buttons = { tab_1: { show: 'page_1' }, tab_2: { show: 'page_2' }, tab_3: { show: 'page_3' }, close_button: { close: true } };
     } else if (start.starter === 'list') {
         height = 200;
         children = [
@@ -191,6 +203,20 @@ export const ownWindowFiles = (theme: string, saved: readonly PluginWindow[] | u
     }
 
     return files;
+};
+
+/** The named containers of a window below its frame: the pages a tab button may show. */
+export const containerNames = (template: DataWindowTemplate) => {
+    const found: string[] = [];
+    const walk = (elements: readonly DataWindowElement[]) => elements.forEach((each) => {
+        if (each.name && each.tag === 'container') found.push(each.name);
+
+        walk(each.children ?? []);
+    });
+
+    walk(template.elements);
+
+    return found;
 };
 
 /** The elements of a window a player clicks: buttons and links, by name. */

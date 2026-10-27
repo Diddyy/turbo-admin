@@ -4,12 +4,13 @@ import type { DataWindowButton, DataWindowEntry, DataWindowFile } from '#/api/da
 import { ImageInput } from '#/components/ImageInput';
 import { Button, Checkbox, Input, Labeled, Select } from '#/components/ui';
 
-import { clickableElements } from './dataWindows';
+import { clickableElements, containerNames } from './dataWindows';
 
 /** A button's action as the form picks it: `window:<name>` opens another of the theme's windows. */
 const actionOf = (button: DataWindowButton | undefined, theme: string) => {
     if (!button) return '';
     if ('close' in button) return 'close';
+    if ('show' in button) return `show:${button.show}`;
 
     const own = new RegExp(`^(?:event:)?window/${theme.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/([a-z0-9_-]+)$`).exec(button.link);
 
@@ -33,6 +34,8 @@ export const DataWindowCard = ({ theme, name, file, others, canManage, onChange,
     onDelete: () => void;
 }) => {
     const entries = file.entries ?? [];
+    // The pages a button may show: the containers the window has by name.
+    const pages = containerNames(file.template);
     const meMenu = entries.find(entry => entry.where === 'memenu');
     const toolbar = entries.find(entry => entry.where === 'toolbar');
     const setEntry = (where: DataWindowEntry['where'], entry: DataWindowEntry | null, group?: string) => onChange({ ...file, entries: [ ...entries.filter(each => each.where !== where), ...(entry ? [ entry ] : []) ] }, group);
@@ -77,11 +80,12 @@ export const DataWindowCard = ({ theme, name, file, others, canManage, onChange,
                                 onChange={(event) => {
                                     const value = event.target.value;
 
-                                    setButton(element.name!, value === 'close' ? { close: true } : value.startsWith('window:') ? { link: `window/${theme}/${value.slice(7)}` } : value === 'link' ? { link: 'habbopages/' } : null);
+                                    setButton(element.name!, value === 'close' ? { close: true } : value.startsWith('show:') ? { show: value.slice(5) } : value.startsWith('window:') ? { link: `window/${theme}/${value.slice(7)}` } : value === 'link' ? { link: 'habbopages/' } : null);
                                 }}
                             >
                                 <option value="">Does nothing</option>
                                 <option value="close">Closes the window</option>
+                                {pages.map(page => <option key={page} value={`show:${page}`}>{`Shows ${page.replace(/[_-]+/g, ' ')}`}</option>)}
                                 {others.map(other => <option key={other.name} value={`window:${other.name}`}>{`Opens "${other.title}"`}</option>)}
                                 <option value="link">Opens a link</option>
                             </Select>

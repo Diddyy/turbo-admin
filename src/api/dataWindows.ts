@@ -2,8 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api, put, remove } from './client';
 
-/** What a named element of a window does when clicked (turbo-cloud `docs/plugin-data.md`, "Windows as data"). */
-export type DataWindowButton = { close: true } | { link: string };
+/** What a named element of a window does when clicked (turbo-cloud `docs/plugin-data.md`, "Windows of its own"): `show` shows that page and hides the other buttons' pages (tabs). */
+export type DataWindowButton = { close: true } | { link: string } | { show: string };
 
 /** Where players open a window from: a me menu entry, or a toolbar icon. */
 export type DataWindowEntry = { where: 'memenu'; caption: string } | { where: 'toolbar'; icon: string; tooltip?: string };

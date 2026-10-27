@@ -242,6 +242,7 @@ export const ThemeStudioPage = () => {
         intoTheme,
         canManage,
         window: windowId,
+        index,
         selection,
         select: setSelection,
         ops: template => draft.patches[template] ?? opsOf(patchOn(patches, template)),

@@ -2,6 +2,7 @@ import { createContext, useContext, useRef, useState } from 'react';
 
 import type { DataWindowFile } from '#/api/dataWindows';
 import type { PluginStyle } from '#/api/noCode';
+import type { TemplateIndex } from '#/api/windows';
 import type { DesignElementValues, DesignPathStep, DesignRects } from '#/preview/DesignPreview';
 
 /**
@@ -105,6 +106,11 @@ export interface Studio {
     canManage: boolean;
     /** The window shown; null before one is picked. */
     window: string | null;
+    /**
+     * The client's template index with the theme's own windows (defined as data, the draft's included) in it:
+     * what an editor reads a window's element tree from, rather than the index query, which has only the game's.
+     */
+    index: TemplateIndex | undefined;
     selection: StudioSelection | null;
     select: (selection: StudioSelection | null) => void;
     /** The theme's ops on a template, the draft's when it changed them. */

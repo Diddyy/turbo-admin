@@ -140,6 +140,7 @@ const keyed = (elements: readonly DataWindowElement[], names: Map<string, number
         ...(each.style ? { style: each.style } : {}),
         rect: [ each.x, each.y, each.width, each.height ],
         ...(typeof each.caption === 'string' ? { caption: each.caption } : {}),
+        ...(each.hidden === true ? { hidden: true } : {}),
         children: keyed(each.children ?? [], names, key),
     };
 });

@@ -49,6 +49,8 @@ export interface MeResponse {
     canViewTelemetry: boolean;
     /** Holds `admin.campaigns.manage`: may see and change the campaign calendars. */
     canManageCampaigns: boolean;
+    /** Holds `admin.approvals.view`: may see the approvals inbox; deciding needs each request's node. */
+    canViewApprovals: boolean;
 }
 
 export interface DashboardRoom {

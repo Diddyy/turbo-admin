@@ -62,6 +62,10 @@ It has:
 - **Console**: the operator commands you may run (`online`, `whois`, `ban`, `hotelalert`,
   `reload`, ...), run as you, with your permissions. Every use is logged like typing it in the
   hotel, and commands that need confirming ask first.
+- **Approvals**: what AI assistants, agents and plugins asked to do and wait for a person's yes,
+  pending first, with the count by its name in the menu: what it will do, who asked and for whom,
+  its arguments as text, and approve (carried out at once, once) or deny with a note. Offered only on
+  others' requests whose node you hold. Only shown if you have `admin.approvals.view`.
 - **Staff**: setup and reset links for other staff's passkeys. Only shown if you have
   `admin.passkeys.reset`.
 - **Account**: your passkeys.

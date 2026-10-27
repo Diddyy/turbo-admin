@@ -1,4 +1,4 @@
-import { Activity, AppWindow, Armchair, BellRing, Bug, CalendarClock, CalendarDays, ChartColumn, CloudDownload, Coins, Disc3, DoorOpen, Flag, FunnelX, Gauge, History, House, ImageIcon, Images, KeyRound, Landmark, Languages, Layers, Mail, MessageCircle, MessagesSquare, Milestone, MonitorSmartphone, PackagePlus, Palette, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Store, SwatchBook, Ticket, Timer, TriangleAlert, Type, UserRound, Users } from 'lucide-react';
+import { Activity, AppWindow, Armchair, BellRing, Bug, CalendarClock, CalendarDays, ChartColumn, CloudDownload, Coins, Disc3, DoorOpen, Flag, FunnelX, Gauge, History, House, ImageIcon, Images, KeyRound, Landmark, Languages, Layers, Mail, MessageCircle, MessagesSquare, Milestone, MonitorSmartphone, PackagePlus, Palette, Plug, Puzzle, ScrollText, Send, Shield, ShieldCheck, SlidersHorizontal, SquareTerminal, Stamp, Store, SwatchBook, Ticket, Timer, TriangleAlert, Type, UserRound, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router';
 
@@ -7,7 +7,7 @@ import { useMe } from '#/api/queries';
 import type { MeResponse } from '#/api/types';
 import type { TabItem } from '#/components/Tabs';
 
-type Need = keyof Pick<MeResponse, 'canViewRooms' | 'canViewPlayers' | 'canViewPermissions' | 'canViewCommandLog' | 'canViewChatlog' | 'canViewCatalog' | 'canViewGamedata' | 'canViewSettings' | 'canViewContent' | 'canViewPlugins' | 'canResetPasskeys' | 'canManageRewardTracks' | 'canManageCampaigns' | 'canHandleReports' | 'canViewMessages' | 'canViewTelemetry'>;
+type Need = keyof Pick<MeResponse, 'canViewRooms' | 'canViewPlayers' | 'canViewPermissions' | 'canViewCommandLog' | 'canViewChatlog' | 'canViewCatalog' | 'canViewGamedata' | 'canViewSettings' | 'canViewContent' | 'canViewPlugins' | 'canResetPasskeys' | 'canManageRewardTracks' | 'canManageCampaigns' | 'canHandleReports' | 'canViewMessages' | 'canViewTelemetry' | 'canViewApprovals'>;
 
 /** One page of the panel: where `g` and its letter go, and what the search offers by name. */
 export interface NavItem {
@@ -32,6 +32,7 @@ const PAGES = {
     usage: { to: '/usage', label: 'Usage', icon: <ChartColumn />, end: false, key: 'j', needs: 'canViewTelemetry' },
     players: { to: '/players', label: 'Players', icon: <Users />, end: false, key: 'p', needs: 'canViewPlayers' },
     reports: { to: '/reports', label: 'Reports', icon: <Flag />, end: false, key: 'q', needs: 'canHandleReports' },
+    approvals: { to: '/approvals', label: 'Approvals', icon: <Stamp />, end: false, needs: 'canViewApprovals', words: 'approve deny pending assistant agent mcp ai refund' },
     wordFilter: { to: '/word-filter', label: 'Word filter', icon: <FunnelX />, end: false, needs: 'canHandleReports' },
     rooms: { to: '/rooms', label: 'Rooms', icon: <House />, end: false, key: 'r', needs: 'canViewRooms' },
     groups: { to: '/groups', label: 'Groups', icon: <Shield />, end: false, key: 'b', needs: 'canViewContent', words: 'guilds forums' },
@@ -89,6 +90,8 @@ export interface NavEntry {
     hint: string;
     /** A plugin's page: where it is, which holds no page of the panel's own. */
     path?: string;
+    /** A count shown by its name: what waits for the viewer. */
+    counter?: 'approvals';
 }
 
 export interface NavSection {
@@ -150,7 +153,14 @@ const SECTIONS: NavSection[] = [
             { label: 'Publish', icon: <Send />, pages: [ 'publish' ], hint: 'Publish targets, client files and checks' },
         ],
     },
-    { label: 'Staff', entries: [ ACCESS, LOGS ] },
+    {
+        label: 'Staff',
+        entries: [
+            ACCESS,
+            { label: 'Approvals', icon: <Stamp />, pages: [ 'approvals' ], hint: 'What assistants, agents and plugins asked to do, waiting for a yes', counter: 'approvals' },
+            LOGS,
+        ],
+    },
     {
         label: 'Server',
         entries: [

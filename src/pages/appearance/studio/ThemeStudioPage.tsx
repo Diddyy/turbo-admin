@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router';
 
 import { useThemeAudiences, useThemes } from '#/api/appearance';
 import { useClientAssets } from '#/api/assets';
+import { type DataWindowFile, dataWindowNameOf, type DataWindowTemplate, dataWindowTemplateId, usePluginWindows, useRemoveWindow, useSaveWindow } from '#/api/dataWindows';
 import { useSaveText } from '#/api/gamedata';
 import { type HotelPatch, type PluginStyle, useOverlaysChange, usePatches, usePluginFonts, usePluginImages, usePluginStyles, useRemovePatch, useSavePatch, useStyleChange, useThemeTexts, useThemeTextsChange } from '#/api/noCode';
 import { useTemplateIndex } from '#/api/windows';
@@ -21,6 +22,8 @@ import { PackageDialog } from '#/pages/plugins/PackageDialog';
 import { type DesignDraft, DesignPreview, type DesignPreviewControls, type DesignRects, type DesignState } from '#/preview/DesignPreview';
 
 import { ChangesTab } from './ChangesTab';
+import { DataWindowCard } from './DataWindowCard';
+import { ownWindowFiles, windowNameOf, withOwnWindows } from './dataWindows';
 import { EditorOverlay } from './editor/EditorOverlay';
 import { EditorToolbar, type EditorView } from './editor/EditorToolbar';
 import { Hierarchy } from './editor/Hierarchy';
@@ -28,6 +31,7 @@ import { MoreProperties } from './editor/MoreProperties';
 import { useWindowEditor } from './editor/useWindowEditor';
 import { Inspector } from './Inspector';
 import { partName } from './inspector/model';
+import { NewWindowDialog } from './NewWindowDialog';
 import { draftCount, type Studio, StudioContext, type StudioDraft, type StudioSelection, useDraftHistory } from './studio';
 import { ThemeSettings } from './ThemeSettings';
 import { WindowList } from './WindowList';
@@ -137,7 +141,12 @@ export const ThemeStudioPage = () => {
     const tab = TABS.some(each => each.value === params.get('tab')) ? params.get('tab')! : 'windows';
     const asked = params.get('window');
     const state = params.get('state') ?? undefined;
-    const { data: index, error } = useTemplateIndex();
+    const { data: gameIndex, error } = useTemplateIndex();
+    const history = useDraftHistory();
+    const draft = history.draft;
+    // The theme's own windows (defined as data) are listed, drawn and edited as the game's are.
+    const ownWindows = usePluginWindows(theme).data?.windows;
+    const index = useMemo(() => (gameIndex ? withOwnWindows(gameIndex, theme, ownWindows, draft.windows) : undefined), [ gameIndex, theme, ownWindows, draft.windows ]);
     const windows = useMemo(() => (index ? studioWindows(index) : []), [ index ]);
     // A part asked for (an old link to badgeGridItem) is shown in the window it is drawn inside.
     const windowId = asked && index && !windows.some(window => window.id === asked)
@@ -159,14 +168,17 @@ export const ThemeStudioPage = () => {
     const styles = useMemo<PluginStyle[]>(() => (read && intoTheme
         ? read.styles.map(style => ({ ...style, value: style.default, changed: style.origin === theme, origin: style.origin === theme ? read.extends : style.origin }))
         : read?.styles ?? []), [ read, intoTheme, theme ]);
-    const history = useDraftHistory();
-    const draft = history.draft;
     const unsaved = draftCount(draft);
     const [ selection, setSelection ] = useState<StudioSelection | null>(null);
     const [ rects, setRects ] = useState<DesignRects | null>(null);
     const [ zoomChoice, setZoomChoice ] = useState('fit');
     const [ centreWidth, centreRef ] = useWidth();
     const [ packaging, setPackaging ] = useState(false);
+    const [ creating, setCreating ] = useState(false);
+    const saveWindow = useSaveWindow(theme);
+    const removeWindow = useRemoveWindow(theme);
+    const ownFiles = useMemo(() => ownWindowFiles(theme, ownWindows, draft.windows), [ theme, ownWindows, draft.windows ]);
+    const shownOwn = dataWindowNameOf(theme, windowId);
     const controls = useRef<DesignPreviewControls | null>(null);
     // A click on the editor's overlay asks the client what is there: whether it adds to the picked ones.
     const additivePick = useRef(false);
@@ -230,6 +242,7 @@ export const ThemeStudioPage = () => {
         intoTheme,
         canManage,
         window: windowId,
+        index,
         selection,
         select: setSelection,
         ops: template => draft.patches[template] ?? opsOf(patchOn(patches, template)),
@@ -246,6 +259,8 @@ export const ThemeStudioPage = () => {
         pick: (x, y) => controls.current?.pick(x, y),
     };
 
+    // `index` here is the merged one `studio.index` carries (the theme's own windows in it): read directly, as the compiler
+    // refuses reading `studio` (it holds the preview's controls ref) during render.
     const editor = useWindowEditor(studio, index, shownWindow?.parts ?? [], template => windows.find(window => window.id === template)?.name ?? index?.parts?.[template]?.name ?? partName(template));
     const editorRef = useRef(editor);
 
@@ -277,8 +292,16 @@ export const ThemeStudioPage = () => {
         // New art is drawn at once: each bitmap's uploaded image in the asset manager (the library's own for one given back).
         const art = Object.entries(draft.overlays).filter(([ , url ]) => url !== null).map(([ key, url ]) => ({ path: [ 'asset.overlays', key ], value: url }));
 
-        return { patches: { [theme]: { patches: files, ...(filesBase ? { base: filesBase } : {}) } }, styles: drawn.styles, variables: [ ...(drawn.variables ?? []), ...art ], texts: intoTheme ? { ...themeTexts, ...draft.texts } : draft.texts };
-    }, [ patches, draft, styles, fonts, theme, intoTheme, themeTexts, filesBase ]);
+        return { patches: { [theme]: { patches: files, ...(filesBase ? { base: filesBase } : {}) } }, styles: drawn.styles, variables: [ ...(drawn.variables ?? []), ...art ], texts: intoTheme ? { ...themeTexts, ...draft.texts } : draft.texts, windows: ownFiles };
+    }, [ patches, draft, styles, fonts, theme, intoTheme, themeTexts, filesBase, ownFiles ]);
+
+    const changeWindow = (name: string, file: DataWindowFile | null, group?: string) => change({ ...draft, windows: { ...draft.windows, [name]: file } }, group);
+
+    const createWindow = (name: string, file: DataWindowFile) => {
+        changeWindow(name, file);
+        setSelection(null);
+        setParam({ window: dataWindowTemplateId(theme, name), state: null, tab: null });
+    };
 
     const save = async () => {
         setSaving(true);
@@ -300,6 +323,12 @@ export const ThemeStudioPage = () => {
 
             if (!intoTheme) for (const [ key, value ] of Object.entries(draft.texts)) await saveText.mutateAsync({ key, value });
             else if (Object.keys(draft.texts).length) await themeTextsChange.mutateAsync(draft.texts);
+
+            // The theme's own windows: each written whole, or deleted.
+            for (const [ name, file ] of Object.entries(draft.windows)) {
+                if (file) await saveWindow.mutateAsync({ name, file });
+                else if (ownWindows?.some(window => window.name === name)) await removeWindow.mutateAsync(name);
+            }
 
             // Every bitmap in one change: each is checked before any is written.
             if (Object.keys(draft.overlays).length) await overlaysChange.mutateAsync(draft.overlays);
@@ -379,7 +408,12 @@ export const ThemeStudioPage = () => {
     };
 
     const left: Record<string, ReactNode> = {
-        windows: index && <WindowList index={index} windows={windows} value={windowId} onPick={pickWindow} />,
+        windows: index && (
+            <>
+                {canManage && <div className="shrink-0 px-2 pt-2"><Button variant="secondary" icon={<Plus />} className="w-full" onClick={() => setCreating(true)} data-testid="studio-new-window">New window</Button></div>}
+                <WindowList index={index} windows={windows} value={windowId} onPick={pickWindow} />
+            </>
+        ),
         settings: <div className="min-h-0 flex-1 overflow-y-auto"><ThemeSettings fonts={fonts} onWindow={showWindowOf} /></div>,
         changes: index && <div className="min-h-0 flex-1 overflow-y-auto"><ChangesTab index={index} windows={windows} patches={patches} draft={draft} onJump={pickWindow} /></div>,
     };
@@ -422,6 +456,21 @@ export const ThemeStudioPage = () => {
                                     <Segmented label="Zoom" value={zoomChoice} onChange={setZoomChoice} options={ZOOMS} />
                                 </span>
                             </div>
+                            {shownOwn && ownFiles[`${theme}/${shownOwn}`] && (
+                                <DataWindowCard
+                                    theme={theme}
+                                    name={shownOwn}
+                                    file={ownFiles[`${theme}/${shownOwn}`]!}
+                                    others={Object.entries(ownFiles).map(([ id, file ]) => ({ name: id.slice(theme.length + 1), title: file.title })).filter(other => other.name !== shownOwn)}
+                                    canManage={canManage}
+                                    onChange={(file, group) => changeWindow(shownOwn, file, group)}
+                                    onDuplicate={() => createWindow(windowNameOf(`${ownFiles[`${theme}/${shownOwn}`]!.title} copy`, Object.keys(ownFiles).map(id => id.slice(theme.length + 1))), { ...ownFiles[`${theme}/${shownOwn}`]!, title: `${ownFiles[`${theme}/${shownOwn}`]!.title} (copy)` })}
+                                    onDelete={() => ask({ title: `Delete the window "${ownFiles[`${theme}/${shownOwn}`]!.title}"?`, confirm: 'Delete', danger: true }, () => {
+                                        changeWindow(shownOwn, null);
+                                        setParam({ window: null });
+                                    })}
+                                />
+                            )}
                             {windowId && <EditorToolbar editor={editor} view={view} onView={setView} canEdit={canManage} />}
                             <div ref={centreRef} className="min-w-0">
                                 {windowId
@@ -493,6 +542,15 @@ export const ThemeStudioPage = () => {
                 value=""
                 onPick={editor.setPicture}
                 onClose={() => editor.setPicture(null)}
+            />
+            <NewWindowDialog
+                open={creating}
+                onClose={() => setCreating(false)}
+                theme={theme}
+                taken={Object.keys(ownFiles).map(id => id.slice(theme.length + 1))}
+                windows={windows.filter(window => !dataWindowNameOf(theme, window.id))}
+                source={async template => (await controls.current?.source(template) ?? null) as DataWindowTemplate | null}
+                onCreate={createWindow}
             />
         </StudioContext>
     );

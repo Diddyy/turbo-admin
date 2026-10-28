@@ -574,7 +574,7 @@ export interface ChatStyleImportResult {
     kept: number;
 }
 
-const CHAT_STYLES = [ 'content', 'chat-styles' ];
+export const CHAT_STYLES = [ 'content', 'chat-styles' ];
 
 export const useChatStyles = () => useQuery({
     queryKey: CHAT_STYLES,

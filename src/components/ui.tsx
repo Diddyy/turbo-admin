@@ -237,7 +237,8 @@ export const Loading = () => (
  */
 export const FIELD_CLASS = 'h-10 sm:h-8 rounded-lg border border-line bg-canvas px-2.5 text-[15px] sm:text-[13px] text-ink placeholder:text-muted/70 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25 disabled:opacity-60';
 
-export const Input = ({ className, ...input }: InputHTMLAttributes<HTMLInputElement>) => (
+/** A ref, given, is the input's: React 19 passes it on as a prop. */
+export const Input = ({ className, ...input }: InputHTMLAttributes<HTMLInputElement> & { ref?: Ref<HTMLInputElement> }) => (
     <input {...input} className={cx(FIELD_CLASS, className ?? 'w-full')} />
 );
 

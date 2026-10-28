@@ -43,12 +43,14 @@ interface StageProps {
     onBackdrop: (backdrop: Backdrop) => void;
     /** The preview's own controls, before the zoom and backdrop. */
     tools?: ReactNode;
+    /** Controls in the stage's top right corner, over the backdrop: they stay put as a wide preview scrolls. */
+    corner?: ReactNode;
     empty?: ReactNode;
     maxZoom?: number;
     className?: string;
 }
 
-export const Stage = ({ paint, zoom, onZoom, backdrop, onBackdrop, tools, empty, maxZoom = 4, className }: StageProps) => {
+export const Stage = ({ paint, zoom, onZoom, backdrop, onBackdrop, tools, corner, empty, maxZoom = 4, className }: StageProps) => {
     const canvas = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
@@ -63,7 +65,8 @@ export const Stage = ({ paint, zoom, onZoom, backdrop, onBackdrop, tools, empty,
     }, [ paint ]);
 
     return (
-        <div className={cx('overflow-hidden rounded-xl border border-line bg-surface', className)}>
+        <div className={cx('relative overflow-hidden rounded-xl border border-line bg-surface', className)}>
+            {corner && <div className="absolute top-3 right-3 z-10">{corner}</div>}
             <div className="flex min-h-72 overflow-auto p-3" style={BACKDROPS.find(x => x.value === backdrop)?.style}>
                 {paint
                     // Auto margins, not centring: a preview wider than the stage scrolls from its left edge rather than losing it.

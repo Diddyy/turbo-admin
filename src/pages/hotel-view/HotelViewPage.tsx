@@ -1,33 +1,29 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { Clock, CloudDownload, Eye, RotateCcw, Save, Zap } from 'lucide-react';
+import { Clock, CloudDownload, RotateCcw, Save, Zap } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 
 import type { VariableEntry } from '#/api/gamedata';
 import { useHotelView, useSaveHotelView } from '#/api/hotelView';
 import { ask } from '#/components/confirm';
-import { Badge, Button, ErrorNotice, Input, Loading, PageBody, PageHeader, Panel, Segmented, SuccessNotice } from '#/components/ui';
+import { Button, ErrorNotice, Input, Loading, PageBody, PageHeader, Segmented, SuccessNotice } from '#/components/ui';
 
 import { AllTab } from './AllTab';
 import { ArticlesTab } from './ArticlesTab';
-import { BackgroundsTab } from './BackgroundsTab';
 import { BonusRareTab } from './BonusRareTab';
 import { useHotelViewDraft } from './draft';
 import { ExpiringPagesTab } from './ExpiringPagesTab';
 import { GoalsTab } from './GoalsTab';
 import { HabboPull } from './HabboPull';
-import { slotShows } from './hooks';
-import { LookTab } from './LookTab';
-import { backgroundCodes, BG_TIMING, BOTTOM_SLOT, currentCode, fromLocalInput, nowAt, parseSchedule, parseTime, promoCodes, slotKey, SLOTS, toLocalInput, widgetLabel } from './model';
-import { ReceptionPreview } from './Preview';
+import { backgroundCodes, BG_TIMING, fromLocalInput, nowAt, parsePart, parseSchedule, parseTime, promoCodes, type ReceptionPart, slotKey, SLOTS, toLocalInput } from './model';
 import { PromosTab } from './PromosTab';
-import { SlotsTab } from './SlotsTab';
+import { ReceptionTab } from './ReceptionTab';
 
 /**
  * How a view's edits reach the server: kept with the page's other changes until Save (`draft`),
- * each sent as it is made (`now`), or some of each (`both`). The preview edits nothing (`shows`).
+ * each sent as it is made (`now`), or some of each (`both`).
  */
-type SaveModel = 'draft' | 'now' | 'both' | 'shows';
+type SaveModel = 'draft' | 'now' | 'both';
 
 interface View {
     value: string;
@@ -39,16 +35,7 @@ interface View {
 
 /** The page's tabs, each a group of views: at `/hotel-view/<group>/<view>`, or `/hotel-view/<group>` for a group of one. */
 const GROUPS: { value: string; label: string; views: View[] }[] = [
-    { value: 'preview', label: 'Preview', views: [ { value: 'preview', label: 'Preview', saves: 'shows', timed: true } ] },
-    {
-        value: 'layout',
-        label: 'Layout',
-        views: [
-            { value: 'slots', label: 'Slots', saves: 'draft', timed: true },
-            { value: 'backgrounds', label: 'Backgrounds', saves: 'draft', timed: true },
-            { value: 'look', label: 'Look and widgets', saves: 'draft', timed: false },
-        ],
-    },
+    { value: 'reception', label: 'Reception', views: [ { value: 'reception', label: 'Reception', saves: 'draft', timed: true } ] },
     {
         value: 'news',
         label: 'Promos and news',
@@ -85,9 +72,8 @@ const pathOf = (view: string) => {
 
 const SAVE_MODELS: Record<SaveModel, { icon: ReactNode; text: string }> = {
     draft: { icon: <Save />, text: 'Saved when you press Save, with every other change on this page' },
-    now: { icon: <Zap />, text: 'Saves as you go: each item goes live when you save it' },
-    both: { icon: <Zap />, text: 'Campaigns save as you go; the widget picture waits for Save' },
-    shows: { icon: <Eye />, text: 'Shows your changes before they are saved' },
+    now: { icon: <Zap />, text: 'Saves as you go: each item goes live when you save it. Putting its widget in a slot waits for Save' },
+    both: { icon: <Zap />, text: 'Campaigns save as you go; the widget picture and its slot wait for Save' },
 };
 
 /** A line saying how the view's edits are saved. */
@@ -133,44 +119,14 @@ const TimePicker = ({ now, chosen, setChosen }: ReturnType<typeof usePreviewTime
     </div>
 );
 
-/** What the reception shows at the time: the backgrounds set, and each slot's widget or promo. */
-const ShowingNow = ({ draft, now, onSlot }: { draft: ReturnType<typeof useHotelViewDraft>; now: number; onSlot: (slot: number) => void }) => {
-    const background = currentCode(parseSchedule(draft.text(BG_TIMING)), now).code;
-
-    return (
-        <ul className="divide-y divide-line text-sm">
-            <li className="flex items-center justify-between gap-4 px-4 py-2.5">
-                <span className="text-muted">Backgrounds</span>
-                <span className="font-mono text-xs">{background || 'default'}</span>
-            </li>
-            {[ ...SLOTS, BOTTOM_SLOT ].map((slot) => {
-                const shows = slotShows(draft, slot, now);
-                const container = draft.text(slotKey(slot, 'widget')) === 'widgetcontainer';
-
-                return (
-                    <li key={slot}>
-                        <button type="button" onClick={() => onSlot(slot)} className="flex w-full items-center justify-between gap-4 px-4 py-2.5 text-left hover:bg-subtle">
-                            <span className="text-muted">Slot {slot}</span>
-                            <span className="flex min-w-0 items-center gap-2">
-                                {container && shows.code && <span className="truncate font-mono text-xs">{shows.code}</span>}
-                                {shows.type ? <Badge>{widgetLabel(shows.type)}</Badge> : <span className="text-xs text-muted">{container ? 'nothing scheduled' : 'empty'}</span>}
-                            </span>
-                        </button>
-                    </li>
-                );
-            })}
-        </ul>
-    );
-};
-
 /** The editor, once the variables are in. */
 const HotelViewEditor = ({ variables, canManage }: { variables: VariableEntry[]; canManage: boolean }) => {
     const [ params ] = useSearchParams();
+    const { search } = useLocation();
     const navigate = useNavigate();
     const path = useParams();
     const { group, view } = resolveView(path.group, path.view);
-    const slotParam = Number(params.get('slot'));
-    const focus = SLOTS.includes(slotParam as 1) || slotParam === BOTTOM_SLOT ? slotParam : null;
+    const part = parsePart(params.get('edit'));
     const promo = params.get('promo');
     const draft = useHotelViewDraft(variables);
     const save = useSaveHotelView();
@@ -178,20 +134,26 @@ const HotelViewEditor = ({ variables, canManage }: { variables: VariableEntry[];
     const time = usePreviewTime();
     const { now } = time;
     const disabled = !canManage;
-    // The view each group was last left on, so going back to a group returns to it.
-    const lastViews = useRef<Record<string, string>>({});
+    // Where each group was last left - its view, and what was open there - so going back returns to it.
+    const lastViews = useRef<Record<string, { view: string; search: string }>>({});
     const [ pulling, setPulling ] = useState(false);
 
     useEffect(() => {
-        lastViews.current[group.value] = view.value;
-    }, [ group.value, view.value ]);
+        lastViews.current[group.value] = { view: view.value, search };
+    }, [ group.value, view.value, search ]);
 
     const scheduledPromos = SLOTS.flatMap(slot => parseSchedule(draft.text(slotKey(slot, 'conf'))).map(x => x.code));
     const promos = promoCodes(draft.keys, scheduledPromos);
     const backgrounds = backgroundCodes(draft.keys, parseSchedule(draft.text(BG_TIMING)).map(x => x.code));
 
     const goView = (target: string, extra: Record<string, string> = {}) => void navigate({ pathname: pathOf(target), search: new URLSearchParams(extra).toString() }, { replace: true });
-    const openSlot = (slot: number) => goView('slots', { slot: String(slot) });
+    const openPart = (target: ReceptionPart) => goView('reception', { edit: String(target) });
+    const openSlot = (slot: number) => openPart(slot);
+    const openGroup = (value: string) => {
+        const last = lastViews.current[value];
+
+        void navigate({ pathname: pathOf(last?.view ?? resolveView(value, undefined).view.value), search: last?.search ?? '' }, { replace: true });
+    };
 
     // Unsaved changes are lost with the page: say so before it closes. The draft lives here, above
     // every view, so this covers the changes made on any of them.
@@ -213,7 +175,7 @@ const HotelViewEditor = ({ variables, canManage }: { variables: VariableEntry[];
                 tabs={{
                     items: GROUPS.map(x => ({ value: x.value, label: x.label })),
                     value: group.value,
-                    onChange: value => goView(lastViews.current[value] ?? resolveView(value, undefined).view.value),
+                    onChange: openGroup,
                 }}
             >
                 {canManage && <Button variant="secondary" icon={<CloudDownload />} onClick={() => setPulling(true)}>Pull from Habbo</Button>}
@@ -236,30 +198,18 @@ const HotelViewEditor = ({ variables, canManage }: { variables: VariableEntry[];
                         {save.data.changeSet ? <>Saved: {save.data.changeSet.summary}. Players see it when they next load the client. It can be rolled back from <Link to="/gamedata/updates/history" className="underline">the gamedata history</Link>.</> : 'Nothing had changed.'}
                     </SuccessNotice>
                 )}
-                {view.value === 'preview' && (
-                    <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
-                        <Panel title="As a player sees it" description="On a 1600 by 900 window, scaled to fit. Click a slot to edit it. The avatar and the toolbar are left out.">
-                            <div className="p-3">
-                                <ReceptionPreview draft={draft} now={now} onSlot={openSlot} />
-                            </div>
-                        </Panel>
-                        <Panel title="Showing">
-                            <ShowingNow draft={draft} now={now} onSlot={openSlot} />
-                        </Panel>
-                    </div>
-                )}
-                {view.value === 'slots' && (
-                    <>
-                        <div className="sm:max-w-md">
-                            <Segmented
-                                label="Slot"
-                                value={focus === null ? 'all' : String(focus)}
-                                onChange={value => (value === 'all' ? goView('slots') : openSlot(Number(value)))}
-                                options={[ { value: 'all', label: 'All' }, ...[ ...SLOTS, BOTTOM_SLOT ].map(x => ({ value: String(x), label: String(x) })) ]}
-                            />
-                        </div>
-                        <SlotsTab draft={draft} codes={promos} now={now} focus={focus} onOpenPromo={code => goView('promos', { promo: code })} disabled={disabled} />
-                    </>
+                {view.value === 'reception' && (
+                    <ReceptionTab
+                        draft={draft}
+                        part={part}
+                        onPart={openPart}
+                        promoCodes={promos}
+                        backgroundCodes={backgrounds}
+                        now={now}
+                        onOpenPromo={code => goView('promos', { promo: code })}
+                        onOpenView={target => goView(target)}
+                        disabled={disabled}
+                    />
                 )}
                 {view.value === 'promos' && (
                     <PromosTab
@@ -272,12 +222,10 @@ const HotelViewEditor = ({ variables, canManage }: { variables: VariableEntry[];
                         disabled={disabled}
                     />
                 )}
-                {view.value === 'articles' && <ArticlesTab now={now} disabled={disabled} />}
-                {view.value === 'goals' && <GoalsTab now={now} disabled={disabled} />}
-                {view.value === 'bonus' && <BonusRareTab draft={draft} now={now} disabled={disabled} />}
-                {view.value === 'expiring' && <ExpiringPagesTab now={now} disabled={disabled} />}
-                {view.value === 'backgrounds' && <BackgroundsTab draft={draft} codes={backgrounds} now={now} disabled={disabled} />}
-                {view.value === 'look' && <LookTab draft={draft} disabled={disabled} />}
+                {view.value === 'articles' && <ArticlesTab draft={draft} now={now} onOpenSlot={openSlot} disabled={disabled} />}
+                {view.value === 'goals' && <GoalsTab draft={draft} now={now} onOpenSlot={openSlot} disabled={disabled} />}
+                {view.value === 'bonus' && <BonusRareTab draft={draft} now={now} onOpenSlot={openSlot} disabled={disabled} />}
+                {view.value === 'expiring' && <ExpiringPagesTab draft={draft} now={now} onOpenSlot={openSlot} disabled={disabled} />}
                 {view.value === 'all' && <AllTab draft={draft} disabled={disabled} />}
                 {/* Changes wait here on every view, those that save at once included, so none is forgotten. */}
                 {canManage && (draft.count > 0 || save.isError) && (

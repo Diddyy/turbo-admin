@@ -57,6 +57,29 @@ export const isDrawn = (type: string) => WIDGET_TYPES.some(x => x.value === type
 export const BOTTOM_SLOT = 6;
 export const BOTTOM_SLOT_WIDGETS = [ 'expiringcatalogpage', 'expiringcatalogpagesmall', 'communitygoal', 'nextlimitedrarecountdown' ] as const;
 
+/** Every slot, the bottom one last. */
+export const ALL_SLOTS = [ ...SLOTS, BOTTOM_SLOT ] as const;
+
+/** Where each slot is on the reception. */
+export const SLOT_PLACES: Record<number, string> = {
+    1: 'across the top',
+    2: 'left column, top',
+    3: 'right column, top',
+    4: 'left column, bottom',
+    5: 'right column, bottom',
+    [BOTTOM_SLOT]: 'at the bottom, beside the avatar',
+};
+
+/** What the reception view has open to edit: its backgrounds, its look, or a slot by its number. */
+export type ReceptionPart = 'backgrounds' | 'look' | number;
+
+/** The part a `?edit=` names; null for none, or one not known. */
+export const parsePart = (value: string | null): ReceptionPart | null => {
+    if (value === 'backgrounds' || value === 'look') return value;
+
+    return value && (ALL_SLOTS as readonly number[]).includes(Number(value)) ? Number(value) : null;
+};
+
 /** Slots 3 and 5 are the right pane; the rest are as wide as the left. */
 export const isWideSlot = (slot: number) => slot !== 3 && slot !== 5;
 
@@ -239,6 +262,41 @@ export const currentCode = (entries: ScheduleEntry[], now: number) => {
     });
 
     return { code, index };
+};
+
+/**
+ * When each entry shows: from its time until the next entry starts (null: for good). An entry
+ * hidden by a later one at the same time has `until` equal to `from`; one with no time, both null.
+ */
+export const scheduleWindows = (entries: ScheduleEntry[]) => entries.map((entry, index) => {
+    const from = parseTime(entry.at);
+    let until: number | null = null;
+
+    if (from !== null) {
+        entries.forEach((other, i) => {
+            const at = parseTime(other.at);
+
+            if (i !== index && at !== null && (at > from || (at === from && i > index)) && (until === null || at < until)) until = at;
+        });
+    }
+
+    return { entry, index, from, until };
+});
+
+/**
+ * The schedule with `code` added from `from` on, in time order. Given `until`, the slot goes back
+ * then to what it would have shown without it. Later entries still take over when they start.
+ */
+export const scheduleBetween = (entries: ScheduleEntry[], code: string, from: string, until: string | null) => {
+    const untilTime = until ? parseTime(until) : null;
+    const added = [ ...entries, { at: from, code } ];
+
+    if (until && untilTime !== null) added.push({ at: until, code: currentCode(entries, untilTime).code });
+
+    // Stable: entries at the same time keep their order, so the one added still wins.
+    const time = (entry: ScheduleEntry) => parseTime(entry.at) ?? Number.MAX_SAFE_INTEGER;
+
+    return added.sort((a, b) => time(a) - time(b));
 };
 
 /** A schedule time for a `datetime-local` input, and back. */

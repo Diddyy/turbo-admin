@@ -9,18 +9,23 @@ import { useResolveImage } from './hooks';
 import { BACKGROUND_LAYERS, BG_TIMING, bgObjectKey, codeProblem, formatSchedule, layerKey, MAX_MOVING_OBJECTS, parseSchedule } from './model';
 import { MovingObjects } from './MovingObjects';
 import { ImageField, ScheduleEditor } from './parts';
-import { ReceptionPreview } from './Preview';
 
 /**
  * The reception's backgrounds: the default set, and sets under a code that a schedule
  * (`landing.view.bgtiming`) switches to from a time on - a season, an event. A set's layer left
- * empty keeps the picture the client had.
+ * empty keeps the picture the client had. The set being edited is the reception preview's, above.
  */
-export const BackgroundsTab = ({ draft, codes, now, disabled }: { draft: HotelViewDraft; codes: string[]; now: number; disabled?: boolean }) => {
+export const BackgroundsTab = ({ draft, codes, now, set: chosen, onSet: setSet, disabled }: {
+    draft: HotelViewDraft;
+    codes: string[];
+    now: number;
+    /** The set being edited: a code, or empty for the default set. */
+    set: string;
+    onSet: (code: string) => void;
+    disabled?: boolean;
+}) => {
     const resolve = useResolveImage(draft);
-    const [ set, setSet ] = useState('');
     const [ making, setMaking ] = useState<string | null>(null);
-    const chosen = set === '' || codes.includes(set) ? set : '';
     const problem = making === null ? null : codeProblem(making.trim(), codes);
 
     const remove = (code: string) => ask(
@@ -101,11 +106,6 @@ export const BackgroundsTab = ({ draft, codes, now, disabled }: { draft: HotelVi
                 </ul>
             </Panel>
             <MovingObjects code={chosen} draft={draft} disabled={disabled} />
-            <Panel title="Preview" description={chosen ? `With the set ${chosen}.` : 'With the default set.'}>
-                <div className="p-3">
-                    <ReceptionPreview draft={draft} now={now} backgroundCode={chosen} />
-                </div>
-            </Panel>
         </div>
     );
 };

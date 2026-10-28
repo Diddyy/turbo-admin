@@ -142,81 +142,84 @@ export const GenericEditor = ({ confKey, layoutKey, draft, wide: initialWide, te
         </Labeled>
     );
 
+    // Side by side only where the editor itself has the room: a slot's is the page's width, a promo's beside the list of promos.
     return (
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto]">
-            <div className="flex min-w-0 flex-col gap-5">
-                <section className="flex flex-col gap-3">
-                    <h3 className="flex items-center gap-2 text-sm font-semibold">Picture and placement <Changed on={draft.changed(layoutKey)} /></h3>
-                    <ImageField label="Picture" hint="Usually under the client's image library: ${image.library.url}web_promo_small/name.png." value={layout['bitmap.uri']} onChange={value => setLayout('bitmap.uri', value)} resolve={resolve} disabled={disabled} />
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                        {number('bitmap.x', 'Picture x', '10')}
-                        {number('bitmap.y', 'Picture y', '10')}
-                        {number('bitmap.width', 'Picture width', 'its own')}
-                        {number('bitmap.height', 'Picture height', 'its own')}
-                        {number('content.x', 'Column x', wide ? '230' : '0')}
-                        {number('content.y', 'Column y', '0')}
-                        {number('content.width', 'Column width', '250')}
-                        {number('container.height', 'Least height', '30')}
-                    </div>
-                </section>
-                <section className="flex flex-col gap-3">
-                    <h3 className="flex items-center gap-2 text-sm font-semibold">Column <Changed on={draft.changed(confKey)} /></h3>
-                    {elements.length === 0 && <p className="text-sm text-muted">Nothing in the column yet.</p>}
-                    <ol className="flex flex-col gap-3">
-                        {elements.map((element, index) => (
-                            <li key={index} className="flex flex-col gap-3 rounded-lg border border-line p-3">
-                                <div className="flex items-center gap-2">
-                                    <span className="w-5 text-right font-mono text-xs text-muted">{index + 1}</span>
-                                    <Select
-                                        value={element.type}
-                                        onChange={event => setElements(elements.map((x, i) => (i === index ? { type: event.target.value, args: event.target.value === 'customtimer' ? [ 'false', '0', '0' ] : [] } : x)))}
-                                        className="min-w-0 flex-1 sm:max-w-64"
-                                        disabled={disabled}
-                                        aria-label="Element"
-                                    >
-                                        {ELEMENT_TYPES.map(x => <option key={x.value} value={x.value}>{x.label}</option>)}
-                                        {!ELEMENT_TYPES.some(x => x.value === element.type) && <option value={element.type}>{element.type}</option>}
-                                    </Select>
-                                    {!disabled && (
-                                        <span className="ml-auto flex">
-                                            <IconButton label="Up" icon={<ArrowUp />} disabled={index === 0} onClick={() => move(index, index - 1)} />
-                                            <IconButton label="Down" icon={<ArrowDown />} disabled={index === elements.length - 1} onClick={() => move(index, index + 1)} />
-                                            <IconButton label="Remove" icon={<Trash2 />} tone="bad" onClick={() => setElements(elements.filter((_, i) => i !== index))} />
-                                        </span>
-                                    )}
-                                </div>
-                                <ElementEditor element={element} onChange={next => setElements(elements.map((x, i) => (i === index ? next : x)))} draft={draft} suggestKey={suggestKey} disabled={disabled} />
-                            </li>
-                        ))}
-                    </ol>
-                    {!disabled && (
-                        <div className="flex flex-wrap items-center gap-2">
-                            <Select value={adding} onChange={event => setAdding(event.target.value)} aria-label="Element to add" className="sm:max-w-64">
-                                {ELEMENT_TYPES.map(x => <option key={x.value} value={x.value}>{x.label}</option>)}
-                            </Select>
-                            <Button
-                                variant="secondary"
-                                icon={<Plus />}
-                                onClick={() => setElements([ ...elements, { type: adding, args: adding === 'customtimer' ? [ 'false', '0', '0', suggestKey('timer'), suggestKey('timer.expired') ] : adding === 'spacing' ? [ '10' ] : [ suggestKey(adding) ] } ])}
-                            >
-                                Add
-                            </Button>
+        <div className="@container">
+            <div className="grid gap-5 @5xl:grid-cols-[minmax(0,1fr)_auto]">
+                <div className="flex min-w-0 flex-col gap-5">
+                    <section className="flex flex-col gap-3">
+                        <h3 className="flex items-center gap-2 text-sm font-semibold">Picture and placement <Changed on={draft.changed(layoutKey)} /></h3>
+                        <ImageField label="Picture" hint="Usually under the client's image library: ${image.library.url}web_promo_small/name.png." value={layout['bitmap.uri']} onChange={value => setLayout('bitmap.uri', value)} resolve={resolve} disabled={disabled} />
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                            {number('bitmap.x', 'Picture x', '10')}
+                            {number('bitmap.y', 'Picture y', '10')}
+                            {number('bitmap.width', 'Picture width', 'its own')}
+                            {number('bitmap.height', 'Picture height', 'its own')}
+                            {number('content.x', 'Column x', wide ? '230' : '0')}
+                            {number('content.y', 'Column y', '0')}
+                            {number('content.width', 'Column width', '250')}
+                            {number('container.height', 'Least height', '30')}
                         </div>
-                    )}
-                </section>
+                    </section>
+                    <section className="flex flex-col gap-3">
+                        <h3 className="flex items-center gap-2 text-sm font-semibold">Column <Changed on={draft.changed(confKey)} /></h3>
+                        {elements.length === 0 && <p className="text-sm text-muted">Nothing in the column yet.</p>}
+                        <ol className="flex flex-col gap-3">
+                            {elements.map((element, index) => (
+                                <li key={index} className="flex flex-col gap-3 rounded-lg border border-line p-3">
+                                    <div className="flex items-center gap-2">
+                                        <span className="w-5 text-right font-mono text-xs text-muted">{index + 1}</span>
+                                        <Select
+                                            value={element.type}
+                                            onChange={event => setElements(elements.map((x, i) => (i === index ? { type: event.target.value, args: event.target.value === 'customtimer' ? [ 'false', '0', '0' ] : [] } : x)))}
+                                            className="min-w-0 flex-1 sm:max-w-64"
+                                            disabled={disabled}
+                                            aria-label="Element"
+                                        >
+                                            {ELEMENT_TYPES.map(x => <option key={x.value} value={x.value}>{x.label}</option>)}
+                                            {!ELEMENT_TYPES.some(x => x.value === element.type) && <option value={element.type}>{element.type}</option>}
+                                        </Select>
+                                        {!disabled && (
+                                            <span className="ml-auto flex">
+                                                <IconButton label="Up" icon={<ArrowUp />} disabled={index === 0} onClick={() => move(index, index - 1)} />
+                                                <IconButton label="Down" icon={<ArrowDown />} disabled={index === elements.length - 1} onClick={() => move(index, index + 1)} />
+                                                <IconButton label="Remove" icon={<Trash2 />} tone="bad" onClick={() => setElements(elements.filter((_, i) => i !== index))} />
+                                            </span>
+                                        )}
+                                    </div>
+                                    <ElementEditor element={element} onChange={next => setElements(elements.map((x, i) => (i === index ? next : x)))} draft={draft} suggestKey={suggestKey} disabled={disabled} />
+                                </li>
+                            ))}
+                        </ol>
+                        {!disabled && (
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Select value={adding} onChange={event => setAdding(event.target.value)} aria-label="Element to add" className="sm:max-w-64">
+                                    {ELEMENT_TYPES.map(x => <option key={x.value} value={x.value}>{x.label}</option>)}
+                                </Select>
+                                <Button
+                                    variant="secondary"
+                                    icon={<Plus />}
+                                    onClick={() => setElements([ ...elements, { type: adding, args: adding === 'customtimer' ? [ 'false', '0', '0', suggestKey('timer'), suggestKey('timer.expired') ] : adding === 'spacing' ? [ '10' ] : [ suggestKey(adding) ] } ])}
+                                >
+                                    Add
+                                </Button>
+                            </div>
+                        )}
+                    </section>
+                </div>
+                <aside className="flex min-w-0 flex-col gap-2">
+                    <div className="flex items-center justify-between gap-3">
+                        <span className="text-xs font-medium text-muted">As the client draws it</span>
+                        <Select value={wide ? 'wide' : 'narrow'} onChange={event => setWide(event.target.value === 'wide')} aria-label="Slot width" className="h-8 text-xs sm:h-8">
+                            <option value="wide">In a wide slot (1, 2, 4)</option>
+                            <option value="narrow">In a narrow slot (3, 5)</option>
+                        </Select>
+                    </div>
+                    <div className="max-w-full overflow-auto rounded-lg border border-line bg-[#aae0f0] p-3">
+                        <GenericPreview conf={draft.text(confKey)} layout={draft.text(layoutKey)} wide={wide} draft={draft} />
+                    </div>
+                </aside>
             </div>
-            <aside className="flex min-w-0 flex-col gap-2">
-                <div className="flex items-center justify-between gap-3">
-                    <span className="text-xs font-medium text-muted">As the client draws it</span>
-                    <Select value={wide ? 'wide' : 'narrow'} onChange={event => setWide(event.target.value === 'wide')} aria-label="Slot width" className="h-8 text-xs sm:h-8">
-                        <option value="wide">In a wide slot (1, 2, 4)</option>
-                        <option value="narrow">In a narrow slot (3, 5)</option>
-                    </Select>
-                </div>
-                <div className="max-w-full overflow-auto rounded-lg border border-line bg-[#aae0f0] p-3">
-                    <GenericPreview conf={draft.text(confKey)} layout={draft.text(layoutKey)} wide={wide} draft={draft} />
-                </div>
-            </aside>
         </div>
     );
 };

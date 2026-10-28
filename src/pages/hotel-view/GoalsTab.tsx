@@ -5,13 +5,19 @@ import { Link } from 'react-router';
 import { promoImageUrl, useClientAssets } from '#/api/assets';
 import { type CommunityGoal, GOAL_MODES, useCommunityGoals, useDeleteCommunityGoal, useGoalStanding, useHotelViewTexts, useSaveCommunityGoal, useSaveHotelView } from '#/api/hotelView';
 import { ask } from '#/components/confirm';
-import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, Panel, Select, SuccessNotice } from '#/components/ui';
+import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, Panel, Select, SuccessNotice, WarningNotice } from '#/components/ui';
 import { cx } from '#/lib/cx';
 
-import { inputToIso, isoTime, isoToInput } from './model';
+import type { HotelViewDraft } from './draft';
+import { slotsHolding } from './hooks';
+import { BOTTOM_SLOT, BOTTOM_SLOT_WIDGETS, inputToIso, isoTime, isoToInput, slotKey, widgetLabel } from './model';
 import { PageField } from './parts';
+import { Placement } from './Placement';
 
 type GoalDraft = Omit<CommunityGoal, 'id'>;
+
+/** The widget each way of playing is shown with, by mode. */
+const GOAL_WIDGETS = [ 'communitygoal', 'communitygoalvsmode', 'communitygoalvsmodevote' ];
 
 const isVersus = (mode: number) => mode === 1 || mode === 2;
 
@@ -226,38 +232,59 @@ const GoalEditor = ({ goal, now, onDone, disabled }: { goal: CommunityGoal | nul
 /**
  * The hotel's community goals: one plays at a time (the last started), shown by a slot holding a
  * community goal widget. Players give to it by buying from its catalogue pages, and in a voting
- * goal by voting once. Saved at once.
+ * goal by voting once. Saved at once. Above them, which slot shows the goal, and whether its
+ * widget is the one the goal playing is played with.
  */
-export const GoalsTab = ({ now, disabled }: { now: number; disabled?: boolean }) => {
+export const GoalsTab = ({ draft, now, onOpenSlot, disabled }: { draft: HotelViewDraft; now: number; onOpenSlot: (slot: number) => void; disabled?: boolean }) => {
     const { data, error } = useCommunityGoals();
     const [ open, setOpen ] = useState<number | 'new' | null>(null);
     const goals = data?.goals ?? [];
     const shown = goals.filter(x => (isoTime(x.startsAt) ?? 0) <= now).sort((a, b) => (isoTime(b.startsAt) ?? 0) - (isoTime(a.startsAt) ?? 0))[0];
+    const needed = GOAL_WIDGETS[shown?.mode ?? 0] ?? 'communitygoal';
+    // Slots showing the goal with another way of playing's widget; the bottom slot takes only the one-meter kind.
+    const mismatched = shown ? slotsHolding(draft, GOAL_WIDGETS).filter(slot => draft.text(slotKey(slot, 'widget')) !== needed) : [];
 
     return (
-        <Panel
-            title="Community goals"
-            description="The hotel plays the last one started; put a community goal widget in a slot to show it. Saved at once."
-            actions={!disabled && <Button variant="secondary" icon={<Plus />} onClick={() => setOpen('new')} disabled={open === 'new'}>New goal</Button>}
-            className="overflow-clip"
-        >
-            {error && <div className="p-4"><ErrorNotice error={error} /></div>}
-            {!data && !error && <Loading />}
-            {open === 'new' && <div className="border-b border-line bg-subtle/40 p-4"><GoalEditor goal={null} now={now} onDone={() => setOpen(null)} disabled={disabled} /></div>}
-            {data && goals.length === 0 && open !== 'new' && <EmptyState>No goals yet.</EmptyState>}
-            <ul className="divide-y divide-line">
-                {goals.map(goal => (
-                    <li key={goal.id}>
-                        <button type="button" onClick={() => setOpen(open === goal.id ? null : goal.id)} className={cx('flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-subtle', open === goal.id && 'bg-subtle/60')}>
-                            <span className="truncate font-mono text-sm">{goal.code}</span>
-                            <Badge>{GOAL_MODES[goal.mode] ?? goal.mode}</Badge>
-                            {goal.id === shown?.id && <Badge tone="green">Shown</Badge>}
-                            <span className="ml-auto text-xs text-muted">{phase(goal, now)}</span>
-                        </button>
-                        {open === goal.id && <div className="border-t border-line bg-subtle/40 p-4"><GoalEditor key={goal.id} goal={goal} now={now} onDone={() => setOpen(null)} disabled={disabled} /></div>}
-                    </li>
-                ))}
-            </ul>
-        </Panel>
+        <div className="flex flex-col gap-4">
+            <Placement draft={draft} widget={needed} types={GOAL_WIDGETS} what="the community goal" onOpenSlot={onOpenSlot} disabled={disabled} />
+            {shown && mismatched.map((slot) => {
+                const switchable = slot !== BOTTOM_SLOT || (BOTTOM_SLOT_WIDGETS as readonly string[]).includes(needed);
+
+                return (
+                    <WarningNotice key={slot}>
+                        <span className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                            <span className="min-w-0 flex-1">
+                                Slot {slot} holds the {widgetLabel(draft.text(slotKey(slot, 'widget')))} widget, but {shown.code} is played as {(GOAL_MODES[shown.mode] ?? '').toLowerCase()}: it shows with {widgetLabel(needed)}.
+                            </span>
+                            {!disabled && switchable && <Button variant="secondary" onClick={() => draft.setText(slotKey(slot, 'widget'), needed)}>Switch slot {slot}</Button>}
+                        </span>
+                    </WarningNotice>
+                );
+            })}
+            <Panel
+                title="Community goals"
+                description="The hotel plays the last one started. Saved at once."
+                actions={!disabled && <Button variant="secondary" icon={<Plus />} onClick={() => setOpen('new')} disabled={open === 'new'}>New goal</Button>}
+                className="overflow-clip"
+            >
+                {error && <div className="p-4"><ErrorNotice error={error} /></div>}
+                {!data && !error && <Loading />}
+                {open === 'new' && <div className="border-b border-line bg-subtle/40 p-4"><GoalEditor goal={null} now={now} onDone={() => setOpen(null)} disabled={disabled} /></div>}
+                {data && goals.length === 0 && open !== 'new' && <EmptyState>No goals yet.</EmptyState>}
+                <ul className="divide-y divide-line">
+                    {goals.map(goal => (
+                        <li key={goal.id}>
+                            <button type="button" onClick={() => setOpen(open === goal.id ? null : goal.id)} className={cx('flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-subtle', open === goal.id && 'bg-subtle/60')}>
+                                <span className="truncate font-mono text-sm">{goal.code}</span>
+                                <Badge>{GOAL_MODES[goal.mode] ?? goal.mode}</Badge>
+                                {goal.id === shown?.id && <Badge tone="green">Shown</Badge>}
+                                <span className="ml-auto text-xs text-muted">{phase(goal, now)}</span>
+                            </button>
+                            {open === goal.id && <div className="border-t border-line bg-subtle/40 p-4"><GoalEditor key={goal.id} goal={goal} now={now} onDone={() => setOpen(null)} disabled={disabled} /></div>}
+                        </li>
+                    ))}
+                </ul>
+            </Panel>
+        </div>
     );
 };

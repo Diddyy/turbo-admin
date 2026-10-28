@@ -6,8 +6,10 @@ import { type ExpiringPage, useDeleteExpiringPage, useExpiringPages, useHotelVie
 import { ask } from '#/components/confirm';
 import { Badge, Button, EmptyState, ErrorNotice, Input, Labeled, Loading, Panel } from '#/components/ui';
 
+import type { HotelViewDraft } from './draft';
 import { inputToIso, isoTime, isoToInput, pageExpiryTextKey } from './model';
 import { PageField } from './parts';
+import { Placement } from './Placement';
 
 /** What the widget says of a page, and its teaser picture: both found by the page's name. */
 const PageWords = ({ page, disabled }: { page: ExpiringPage; disabled?: boolean }) => {
@@ -85,9 +87,9 @@ const ExpiryRow = ({ page, now, disabled }: { page: ExpiringPage; now: number; d
 /**
  * The catalogue pages the expiring page widget counts down to: it shows the one that runs out
  * first among those still to come, with its own heading, text and teaser picture, and opens it.
- * Put the Expiring catalogue page widget in a slot to show it. Saved at once.
+ * Above them, which slot shows it. Saved at once.
  */
-export const ExpiringPagesTab = ({ now, disabled }: { now: number; disabled?: boolean }) => {
+export const ExpiringPagesTab = ({ draft, now, onOpenSlot, disabled }: { draft: HotelViewDraft; now: number; onOpenSlot: (slot: number) => void; disabled?: boolean }) => {
     const { data, error } = useExpiringPages();
     const save = useSaveExpiringPage();
     const [ pageId, setPageId ] = useState<number | null>(null);
@@ -96,32 +98,35 @@ export const ExpiringPagesTab = ({ now, disabled }: { now: number; disabled?: bo
     const shown = pages.filter(x => (isoTime(x.expiresAt) ?? 0) > now)[0];
 
     return (
-        <Panel
-            title="Expiring pages"
-            description={shown ? `Counting down to ${shown.pageName} now. The page stays in the catalogue: the widget only promotes it.` : 'No page counts down now: the widget hides itself.'}
-            className="overflow-clip"
-        >
-            {error && <div className="p-4"><ErrorNotice error={error} /></div>}
-            {!data && !error && <Loading />}
-            {data && pages.length === 0 && <EmptyState>No page counts down.</EmptyState>}
-            <ul className="divide-y divide-line">
-                {pages.map(page => <ExpiryRow key={`${page.pageId}|${page.expiresAt}`} page={page} now={now} disabled={disabled} />)}
-            </ul>
-            {!disabled && (
-                <form
-                    className="flex flex-wrap items-end gap-3 border-t border-line p-4"
-                    onSubmit={(event) => {
-                        event.preventDefault();
+        <div className="flex flex-col gap-4">
+            <Placement draft={draft} widget="expiringcatalogpage" narrowWidget="expiringcatalogpagesmall" what="the expiring page countdown" onOpenSlot={onOpenSlot} disabled={disabled} />
+            <Panel
+                title="Expiring pages"
+                description={shown ? `Counting down to ${shown.pageName} now. The page stays in the catalogue: the widget only promotes it.` : 'No page counts down now: the widget hides itself.'}
+                className="overflow-clip"
+            >
+                {error && <div className="p-4"><ErrorNotice error={error} /></div>}
+                {!data && !error && <Loading />}
+                {data && pages.length === 0 && <EmptyState>No page counts down.</EmptyState>}
+                <ul className="divide-y divide-line">
+                    {pages.map(page => <ExpiryRow key={`${page.pageId}|${page.expiresAt}`} page={page} now={now} disabled={disabled} />)}
+                </ul>
+                {!disabled && (
+                    <form
+                        className="flex flex-wrap items-end gap-3 border-t border-line p-4"
+                        onSubmit={(event) => {
+                            event.preventDefault();
 
-                        if (pageId !== null && at) save.mutate({ pageId, expiresAt: inputToIso(at)!, image: '' }, { onSuccess: () => setAt('') });
-                    }}
-                >
-                    <div className="min-w-60 flex-1"><PageField label="Page" hint="It needs a name: the client opens it, and finds its words and teaser, by it." value={pageId} onChange={setPageId} /></div>
-                    <Labeled label="Runs out (UTC)"><Input type="datetime-local" value={at} onChange={event => setAt(event.target.value)} /></Labeled>
-                    <Button type="submit" variant="secondary" icon={<Plus />} disabled={pageId === null || !at || save.isPending}>Count down to it</Button>
-                </form>
-            )}
-            {save.error && <div className="px-4 pb-4"><ErrorNotice error={save.error} /></div>}
-        </Panel>
+                            if (pageId !== null && at) save.mutate({ pageId, expiresAt: inputToIso(at)!, image: '' }, { onSuccess: () => setAt('') });
+                        }}
+                    >
+                        <div className="min-w-60 flex-1"><PageField label="Page" hint="It needs a name: the client opens it, and finds its words and teaser, by it." value={pageId} onChange={setPageId} /></div>
+                        <Labeled label="Runs out (UTC)"><Input type="datetime-local" value={at} onChange={event => setAt(event.target.value)} /></Labeled>
+                        <Button type="submit" variant="secondary" icon={<Plus />} disabled={pageId === null || !at || save.isPending}>Count down to it</Button>
+                    </form>
+                )}
+                {save.error && <div className="px-4 pb-4"><ErrorNotice error={save.error} /></div>}
+            </Panel>
+        </div>
     );
 };

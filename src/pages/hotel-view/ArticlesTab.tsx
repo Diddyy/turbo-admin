@@ -6,8 +6,10 @@ import { ARTICLE_LINK_TYPES, type PromoArticle, type PromoArticleDraft, useDelet
 import { ask } from '#/components/confirm';
 import { Badge, Button, EmptyState, ErrorNotice, IconButton, Input, Labeled, Loading, Panel, Select, Switch, Textarea } from '#/components/ui';
 
+import type { HotelViewDraft } from './draft';
 import { inputToIso, isoTime, isoToInput } from './model';
 import { ImageField } from './parts';
+import { Placement } from './Placement';
 
 const EMPTY: PromoArticleDraft = { title: '', bodyText: '', buttonText: '', linkType: 1, linkContent: '', imageUrl: '', visible: true, startsAt: null, endsAt: null };
 
@@ -113,9 +115,10 @@ const ArticleEditor = ({ article, onDone, disabled }: { article: PromoArticle | 
 
 /**
  * The reception's promo articles: the carousel a slot holding the "Promo articles" widget shows,
- * the live ones in order, ten at most. Each is saved on its own, at once.
+ * the live ones in order, ten at most. Each is saved on its own, at once. Above them, which slot
+ * shows them.
  */
-export const ArticlesTab = ({ now, disabled }: { now: number; disabled?: boolean }) => {
+export const ArticlesTab = ({ draft, now, onOpenSlot, disabled }: { draft: HotelViewDraft; now: number; onOpenSlot: (slot: number) => void; disabled?: boolean }) => {
     const { data, error } = usePromoArticles();
     const reorder = useReorderPromoArticles();
     const [ open, setOpen ] = useState<number | 'new' | null>(null);
@@ -131,39 +134,42 @@ export const ArticlesTab = ({ now, disabled }: { now: number; disabled?: boolean
     };
 
     return (
-        <Panel
-            title="Promo articles"
-            description="Shown by a slot holding the Promo articles widget: the live ones, in this order, ten at most. Saved at once, each on its own."
-            actions={!disabled && <Button variant="secondary" icon={<Plus />} onClick={() => setOpen('new')} disabled={open === 'new'}>New article</Button>}
-            className="overflow-clip"
-        >
-            {error && <div className="p-4"><ErrorNotice error={error} /></div>}
-            {!data && !error && <Loading />}
-            {open === 'new' && <div className="border-b border-line bg-subtle/40 p-4"><ArticleEditor article={null} onDone={() => setOpen(null)} disabled={disabled} /></div>}
-            {data && articles.length === 0 && open !== 'new' && <EmptyState>No articles yet.</EmptyState>}
-            <ul className="divide-y divide-line">
-                {articles.map((article, index) => (
-                    <li key={article.id}>
-                        <div className="flex items-center gap-3 px-4 py-2.5">
-                            <button type="button" onClick={() => setOpen(open === article.id ? null : article.id)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-                                <span className="w-5 text-right font-mono text-xs text-muted">{index + 1}</span>
-                                <span className="truncate text-sm font-medium">{article.title}</span>
-                                {isLive(article, now)
-                                    ? <Badge tone="green">Live</Badge>
-                                    : <Badge tone="neutral">{!article.visible ? 'Hidden' : (isoTime(article.startsAt) ?? 0) > now ? 'Not yet' : 'Over'}</Badge>}
-                            </button>
-                            {!disabled && (
-                                <span className="flex">
-                                    <IconButton label="Up" icon={<ArrowUp />} disabled={index === 0 || reorder.isPending} onClick={() => move(index, index - 1)} />
-                                    <IconButton label="Down" icon={<ArrowDown />} disabled={index === articles.length - 1 || reorder.isPending} onClick={() => move(index, index + 1)} />
-                                </span>
-                            )}
-                        </div>
-                        {open === article.id && <div className="border-t border-line bg-subtle/40 p-4"><ArticleEditor key={JSON.stringify(article)} article={article} onDone={() => setOpen(null)} disabled={disabled} /></div>}
-                    </li>
-                ))}
-            </ul>
-            {reorder.error && <div className="p-4"><ErrorNotice error={reorder.error} /></div>}
-        </Panel>
+        <div className="flex flex-col gap-4">
+            <Placement draft={draft} widget="promoarticle" what="the promo articles" onOpenSlot={onOpenSlot} disabled={disabled} />
+            <Panel
+                title="Promo articles"
+                description="The live ones, in this order, ten at most, as a carousel. Saved at once, each on its own."
+                actions={!disabled && <Button variant="secondary" icon={<Plus />} onClick={() => setOpen('new')} disabled={open === 'new'}>New article</Button>}
+                className="overflow-clip"
+            >
+                {error && <div className="p-4"><ErrorNotice error={error} /></div>}
+                {!data && !error && <Loading />}
+                {open === 'new' && <div className="border-b border-line bg-subtle/40 p-4"><ArticleEditor article={null} onDone={() => setOpen(null)} disabled={disabled} /></div>}
+                {data && articles.length === 0 && open !== 'new' && <EmptyState>No articles yet.</EmptyState>}
+                <ul className="divide-y divide-line">
+                    {articles.map((article, index) => (
+                        <li key={article.id}>
+                            <div className="flex items-center gap-3 px-4 py-2.5">
+                                <button type="button" onClick={() => setOpen(open === article.id ? null : article.id)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                                    <span className="w-5 text-right font-mono text-xs text-muted">{index + 1}</span>
+                                    <span className="truncate text-sm font-medium">{article.title}</span>
+                                    {isLive(article, now)
+                                        ? <Badge tone="green">Live</Badge>
+                                        : <Badge tone="neutral">{!article.visible ? 'Hidden' : (isoTime(article.startsAt) ?? 0) > now ? 'Not yet' : 'Over'}</Badge>}
+                                </button>
+                                {!disabled && (
+                                    <span className="flex">
+                                        <IconButton label="Up" icon={<ArrowUp />} disabled={index === 0 || reorder.isPending} onClick={() => move(index, index - 1)} />
+                                        <IconButton label="Down" icon={<ArrowDown />} disabled={index === articles.length - 1 || reorder.isPending} onClick={() => move(index, index + 1)} />
+                                    </span>
+                                )}
+                            </div>
+                            {open === article.id && <div className="border-t border-line bg-subtle/40 p-4"><ArticleEditor key={JSON.stringify(article)} article={article} onDone={() => setOpen(null)} disabled={disabled} /></div>}
+                        </li>
+                    ))}
+                </ul>
+                {reorder.error && <div className="p-4"><ErrorNotice error={reorder.error} /></div>}
+            </Panel>
+        </div>
     );
 };

@@ -3,7 +3,7 @@ import { type CSSProperties, useCallback } from 'react';
 import { useClientAssets } from '#/api/assets';
 
 import type { HotelViewDraft } from './draft';
-import { codeKey, COMMON, currentCode, interpolate, parseSchedule, slotKey } from './model';
+import { ALL_SLOTS, codeKey, COMMON, currentCode, interpolate, parseSchedule, SLOT_PLACES, slotKey, widgetLabel } from './model';
 
 /**
  * An address as the client loads it: `${key}` filled in (`image.library.url` is the client's own),
@@ -62,3 +62,20 @@ export const slotShows = (draft: HotelViewDraft, slot: number, now: number) => {
 
     return { type: code ? draft.text(codeKey(code, 'widget')) : '', code, conf: code ? draft.text(codeKey(code, 'conf')) : '', layout: code ? draft.text(codeKey(code, 'layout')) : '' };
 };
+
+/** The slots holding one of the widgets given. */
+export const slotsHolding = (draft: HotelViewDraft, types: readonly string[]) => ALL_SLOTS.filter(slot => types.includes(draft.text(slotKey(slot, 'widget'))));
+
+/** The first of the slots given that holds nothing, or the first of them when all are taken. */
+export const firstEmptySlot = (draft: HotelViewDraft, slots: readonly number[]) => slots.find(slot => !draft.text(slotKey(slot, 'widget'))) ?? slots[0]!;
+
+/** A slot in a drop-down: its number, its place, and what it holds now. */
+export const slotOption = (draft: HotelViewDraft, slot: number) => {
+    const type = draft.text(slotKey(slot, 'widget'));
+
+    // "Scheduled promos", not "Scheduled promos (container)": a drop-down's line has little room.
+    return `Slot ${slot} · ${SLOT_PLACES[slot]} · ${type ? `now ${widgetLabel(type).replace(/ \(.*\)$/, '')}` : 'empty'}`;
+};
+
+/** Slots as a sentence says them: "slot 2", "slots 2 and 4". */
+export const slotNames = (slots: readonly number[]) => (slots.length === 1 ? `slot ${slots[0]}` : `slots ${slots.slice(0, -1).join(', ')} and ${slots[slots.length - 1]}`);

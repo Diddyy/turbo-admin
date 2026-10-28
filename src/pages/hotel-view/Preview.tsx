@@ -93,7 +93,7 @@ const Placeholder = ({ width, children, faint }: { width: number; children: Reac
 );
 
 /** A slot's widget, as the preview draws it at the time given. */
-export const SlotPreview = ({ draft, slot, now }: { draft: HotelViewDraft; slot: number; now: number }) => {
+const SlotPreview = ({ draft, slot, now }: { draft: HotelViewDraft; slot: number; now: number }) => {
     const resolve = useResolveImage(draft);
     const panes = usePaneWidths(draft);
     const wide = isWideSlot(slot);
@@ -163,9 +163,17 @@ const useWidth = () => {
 
 /**
  * The reception as a player sees it on a laptop at the time given: its backgrounds, the widget
- * slots and what each shows, drawn with the client's layout. A slot can be clicked to edit it.
+ * slots and what each shows, drawn with the client's layout. A slot can be clicked to edit it, and
+ * so can the backgrounds around them; the slot being edited is outlined.
  */
-export const ReceptionPreview = ({ draft, now, backgroundCode, onSlot }: { draft: HotelViewDraft; now: number; backgroundCode?: string; onSlot?: (slot: number) => void }) => {
+export const ReceptionPreview = ({ draft, now, backgroundCode, selected, onSlot, onBackground }: {
+    draft: HotelViewDraft;
+    now: number;
+    backgroundCode?: string;
+    selected?: number | null;
+    onSlot?: (slot: number) => void;
+    onBackground?: () => void;
+}) => {
     const { ref, width } = useWidth();
     const assets = useClientAssets();
     const layers = useBackgrounds(draft, now, backgroundCode);
@@ -177,8 +185,12 @@ export const ReceptionPreview = ({ draft, now, backgroundCode, onSlot }: { draft
             type="button"
             onClick={() => onSlot?.(n)}
             disabled={!onSlot}
-            className="relative block rounded text-left outline-offset-4 hover:outline-4 hover:outline-[#1e7cf2]/70 focus-visible:outline-4 focus-visible:outline-[#1e7cf2]"
+            className={cx(
+                'pointer-events-auto relative block rounded text-left outline-offset-4 hover:outline-4 hover:outline-[#1e7cf2]/70 focus-visible:outline-4 focus-visible:outline-[#1e7cf2]',
+                selected === n && 'outline-4 outline-[#1e7cf2]',
+            )}
             title={onSlot ? `Edit slot ${n}` : undefined}
+            aria-current={selected === n || undefined}
         >
             <SlotPreview draft={draft} slot={n} now={now} />
         </button>
@@ -190,7 +202,9 @@ export const ReceptionPreview = ({ draft, now, backgroundCode, onSlot }: { draft
                 {layer('background_gradient') && <div className="absolute left-0 bg-repeat-x" style={{ bottom: 38, width: VIEW_WIDTH, height: 1150, backgroundImage: `url("${layer('background_gradient')}")`, backgroundPosition: 'left bottom' }} />}
                 {layer('background_right') && <img src={layer('background_right')} alt="" className="absolute max-w-none" style={{ right: 1, bottom: 38 }} />}
                 {layer('background_horizon') && <img src={layer('background_horizon')} alt="" className="absolute max-w-none" style={{ left: 0, bottom: 38 }} />}
-                <div className="absolute flex flex-col" style={{ left: GRID_X, top: GRID_Y, gap: TOP_GAP }}>
+                {/* Under the slots, and under the layers in front of them, which let clicks through. */}
+                {onBackground && <button type="button" onClick={onBackground} title="Edit the backgrounds" aria-label="Edit the backgrounds" className="absolute inset-0 focus-visible:outline-8 focus-visible:-outline-offset-8 focus-visible:outline-[#1e7cf2]" />}
+                <div className="pointer-events-none absolute flex flex-col" style={{ left: GRID_X, top: GRID_Y, gap: TOP_GAP }}>
                     {draft.text(slotKey(1, 'widget')) ? slot(1) : null}
                     <div className="flex items-start" style={{ gap: COLUMN_GAP }}>
                         <div className="flex flex-col" style={{ width: panes.left, gap: ROW_GAP }}>
@@ -203,15 +217,15 @@ export const ReceptionPreview = ({ draft, now, backgroundCode, onSlot }: { draft
                         </div>
                     </div>
                 </div>
-                {layer('background_hotel_top') && <div className="absolute top-0 left-0 bg-repeat-y" style={{ width: 123, height: Math.max(0, VIEW_HEIGHT - 821), backgroundImage: `url("${layer('background_hotel_top')}")`, backgroundPosition: 'left bottom' }} />}
-                {layer('background_left') && <img src={layer('background_left')} alt="" className="absolute max-w-none" style={{ left: 0, bottom: 38 }} />}
+                {layer('background_hotel_top') && <div className="pointer-events-none absolute top-0 left-0 bg-repeat-y" style={{ width: 123, height: Math.max(0, VIEW_HEIGHT - 821), backgroundImage: `url("${layer('background_hotel_top')}")`, backgroundPosition: 'left bottom' }} />}
+                {layer('background_left') && <img src={layer('background_left')} alt="" className="pointer-events-none absolute max-w-none" style={{ left: 0, bottom: 38 }} />}
                 {draft.text(slotKey(BOTTOM_SLOT, 'widget')) && (
-                    <div className="absolute" style={{ left: BOTTOM_SLOT_X, top: Math.max(0, VIEW_HEIGHT - BOTTOM_SLOT_FROM_BOTTOM) }}>
+                    <div className="pointer-events-none absolute" style={{ left: BOTTOM_SLOT_X, top: Math.max(0, VIEW_HEIGHT - BOTTOM_SLOT_FROM_BOTTOM) }}>
                         {slot(BOTTOM_SLOT)}
                     </div>
                 )}
-                {assets?.imageLibrary && <img src={`${assets.imageLibrary}reception/reception_logo_drape.png`} alt="" className="absolute max-w-none" style={{ left: 100, top: 0 }} />}
-                <div className="absolute bottom-0 left-0 bg-[#333333]" style={{ width: VIEW_WIDTH, height: 50 }} />
+                {assets?.imageLibrary && <img src={`${assets.imageLibrary}reception/reception_logo_drape.png`} alt="" className="pointer-events-none absolute max-w-none" style={{ left: 100, top: 0 }} />}
+                <div className="pointer-events-none absolute bottom-0 left-0 bg-[#333333]" style={{ width: VIEW_WIDTH, height: 50 }} />
             </div>
         </div>
     );

@@ -13,6 +13,7 @@ import type { HotelViewDraft } from './draft';
 import { useResolveImage } from './hooks';
 import { COMMON, inputToIso, isoTime, isoToInput, LIBRARY_ADDRESS } from './model';
 import { ImageField } from './parts';
+import { Placement } from './Placement';
 
 const BONUS_RARE_IMAGE: ImageAccept = { ...LIBRARY_ADDRESS, usedIn: 'hotelView.bonusRare' };
 
@@ -178,9 +179,9 @@ const RecordPurchase = () => {
 /**
  * The bonus rare: a furniture given for every so many credits a player brings in, counted as the
  * running campaign says. The campaigns are saved at once; the widget's picture is a variable, kept
- * with the page's other changes until they are saved together.
+ * with the page's other changes until they are saved together. Above them, which slot shows it.
  */
-export const BonusRareTab = ({ draft, now, disabled }: { draft: HotelViewDraft; now: number; disabled?: boolean }) => {
+export const BonusRareTab = ({ draft, now, onOpenSlot, disabled }: { draft: HotelViewDraft; now: number; onOpenSlot: (slot: number) => void; disabled?: boolean }) => {
     const resolve = useResolveImage(draft);
     const { data, error } = useBonusRareCampaigns();
     const [ open, setOpen ] = useState<number | 'new' | null>(null);
@@ -189,9 +190,10 @@ export const BonusRareTab = ({ draft, now, disabled }: { draft: HotelViewDraft; 
 
     return (
         <div className="flex flex-col gap-4">
+            <Placement draft={draft} widget="bonusrare" what="the bonus rare" onOpenSlot={onOpenSlot} disabled={disabled} />
             <Panel
                 title="Bonus rare campaigns"
-                description="Shown by a slot holding the Bonus rare widget: the last one started and not ended runs; with none, the widget is hidden. Each is saved at once."
+                description="The last one started and not ended runs; with none, the widget is hidden. Each is saved at once."
                 actions={!disabled && <Button variant="secondary" icon={<Plus />} onClick={() => setOpen('new')} disabled={open === 'new'}>New campaign</Button>}
                 className="overflow-clip"
             >

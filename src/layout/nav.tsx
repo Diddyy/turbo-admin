@@ -71,6 +71,7 @@ const PAGES = {
     settings: { to: '/settings', label: 'Settings', icon: <SlidersHorizontal />, end: false, key: 'e', needs: 'canViewSettings' },
     plugins: { to: '/plugins', label: 'Plugins', icon: <Plug />, end: true, key: 'i', needs: 'canViewPlugins' },
     pluginSchedule: { to: '/plugins/schedule', label: 'Schedule', icon: <CalendarClock />, end: false, needs: 'canViewPlugins' },
+    pluginAi: { to: '/plugins/ai', label: 'AI', icon: <MessagesSquare />, end: false, needs: 'canViewPlugins' },
     console: { to: '/console', label: 'Console', icon: <SquareTerminal />, end: false, key: 'o' },
     account: { to: '/account', label: 'Account', icon: <UserRound />, end: false, key: 'a' },
 } satisfies Record<string, NavItem>;
@@ -104,7 +105,7 @@ const OVERVIEW: NavEntry = { label: 'Overview', icon: <Gauge />, pages: [ 'dashb
 const LOGS: NavEntry = { label: 'Logs', icon: <ScrollText />, pages: [ 'commandLog', 'chatlog', 'messages', 'currencyLog', 'roomVisits', 'permissionLog' ], hint: 'Commands run, chat in rooms, private messages, wallet changes, room visits, permission changes' };
 const MODERATION: NavEntry = { label: 'Moderation', icon: <Flag />, pages: [ 'reports', 'wordFilter' ], hint: 'Calls for help players send, and the word filter' };
 const GROUPS: NavEntry = { label: 'Groups', icon: <Shield />, pages: [ 'groups', 'badgeParts' ], hint: 'Groups, their members, and badge parts' };
-const PLUGINS: NavEntry = { label: 'Plugins', icon: <Plug />, pages: [ 'plugins', 'pluginSchedule' ], hint: 'What the server loaded, turning it off or on, and its scheduled tasks' };
+const PLUGINS: NavEntry = { label: 'Plugins', icon: <Plug />, pages: [ 'plugins', 'pluginSchedule', 'pluginAi' ], hint: 'What the server loaded, turning it off or on, its scheduled tasks and AI' };
 const ACCESS: NavEntry = { label: 'Access', icon: <KeyRound />, pages: [ 'permissions', 'staff' ], hint: 'Groups, nodes and staff passkeys' };
 
 const SECTIONS: NavSection[] = [

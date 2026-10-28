@@ -46,6 +46,7 @@ import { PlayerPage } from '#/pages/permissions/PlayerPage';
 import { PlayersPage } from '#/pages/permissions/PlayersPage';
 import { PlayerPage as PlayerProfilePage } from '#/pages/players/PlayerPage';
 import { PlayersPage as PlayerListPage } from '#/pages/players/PlayersPage';
+import { PluginAiPage } from '#/pages/PluginAiPage';
 import { PatchesPage } from '#/pages/plugins/PatchesPage';
 import { PluginPage } from '#/pages/plugins/PluginPage';
 import { WindowsPage } from '#/pages/plugins/WindowsPage';
@@ -145,6 +146,7 @@ export const App = () => (
             <Route path="settings/:tab?" element={<SettingsPage />} />
             <Route path="plugins" element={<PluginsPage />} />
             <Route path="plugins/schedule" element={<PluginSchedulePage />} />
+            <Route path="plugins/ai" element={<PluginAiPage />} />
             <Route path="plugins/patches" element={<Navigate to="/appearance/patches" replace />} />
             <Route path="plugins/windows/:tab?" element={<OldWindowsPage />} />
             <Route path="plugins/:key/theme" element={<OldThemePage />} />

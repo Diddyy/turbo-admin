@@ -207,3 +207,10 @@ To serve the API from a different origin instead, build with `VITE_API_URL` set 
 React 19, React Router, TanStack Query, Zustand, Tailwind 4 and Vite, on Yarn 4. Passkeys use
 the browser's WebAuthn API directly; the server checks them with the
 [Fido2](https://github.com/passwordless-lib/fido2-net-lib) library.
+
+Hand-item controls are under **Library → Hand items** and a vending definition's **Behaviour**
+section. They use the server's local catalogue and authenticated PNG previews. Selected custom
+IDs and unrelated extra-data properties are retained when the picker edits a definition.
+
+Run `corepack yarn test` for the vending JSON preservation checks, alongside `typecheck`, `lint`
+and `build`.

@@ -8,6 +8,7 @@ import { BundleKindTab } from '#/pages/assets/BundleKindTab';
 import { FiguresTab } from './FiguresTab';
 import { GamedataLoaded, RunningJob } from './frame';
 import { FurnitureTab } from './FurnitureTab';
+import { HandItemsPage } from './HandItemsPage';
 import { useFoundKey, useGamedata } from './state';
 import { UploadDialog } from './UploadDialog';
 
@@ -16,6 +17,7 @@ const TABS = [
     { value: 'clothing', label: 'Clothing' },
     { value: 'effects', label: 'Effects' },
     { value: 'pets', label: 'Pets' },
+    { value: 'hand-items', label: 'Hand items' },
 ].map(x => ({ ...x, to: `/gamedata/library/${x.value}` }));
 
 /**
@@ -39,7 +41,7 @@ export const LibraryPage = () => {
         <>
             <PageHeader
                 title="Library"
-                description="Furniture, clothing, effects and pets: their data and the bundles they're drawn from"
+                description="Furniture, clothing, effects, pets and hand items: their data and artwork"
                 tabs={{ items: TABS, value: tab }}
             >
                 {state.canManage && <Button icon={<Upload />} onClick={() => setUploading(true)}>Upload</Button>}
@@ -53,6 +55,7 @@ export const LibraryPage = () => {
                             {tab === 'clothing' && <FiguresTab key={found} status={status} />}
                             {tab === 'effects' && <BundleKindTab key={found} kind="effect" status={status} canManage={canManageAssets} />}
                             {tab === 'pets' && <BundleKindTab key={found} kind="pet" status={status} canManage={canManageAssets} />}
+                            {tab === 'hand-items' && <HandItemsPage />}
                         </>
                     )}
                 </GamedataLoaded>

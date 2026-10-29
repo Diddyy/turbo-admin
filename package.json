@@ -10,7 +10,8 @@
         "preview": "vite preview",
         "typecheck": "tsc -b",
         "lint": "eslint .",
-        "lint:fix": "eslint . --fix"
+        "lint:fix": "eslint . --fix",
+        "test": "node --experimental-strip-types --test tests/vending-data.test.mjs"
     },
     "dependencies": {
         "@dnd-kit/core": "^6.3.1",

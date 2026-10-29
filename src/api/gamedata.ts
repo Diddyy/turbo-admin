@@ -289,6 +289,50 @@ export interface FurnitureListPage {
     searched: number;
 }
 
+export interface VendingRepairItem {
+    id: number;
+    className: string;
+    version: string;
+    before: string;
+    after: string | null;
+    reason: string | null;
+    handItems: number[];
+    animates: boolean;
+    currentUsagePolicy: number;
+    defaultUsagePolicy: number;
+}
+
+export interface VendingRepairPage {
+    items: VendingRepairItem[];
+    total: number;
+    page: number;
+    pageSize: number;
+}
+
+export interface VendingRepairInput {
+    items: { id: number; version: string; useDefaultUsagePolicy: boolean }[];
+}
+
+export const useVendingRepairPreview = (page = 0, enabled = true) => useQuery({
+    queryKey: [ 'gamedata', 'furniture', 'vending-repair', page ],
+    queryFn: () => api<VendingRepairPage>(`/gamedata/furniture/vending-repair?page=${page}`),
+    enabled,
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+});
+
+export const useVendingRepair = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (input: VendingRepairInput) => post<{ changeSet: ChangeSet | null }>('/gamedata/furniture/vending-repair', input),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: [ 'gamedata' ] });
+        },
+    });
+};
+
 export const useFurnitureList = (text: string, type: 'floor' | 'wall' | '', tag: FurnitureTag | '', page: number) => useQuery({
     queryKey: [ 'gamedata', 'furniture', 'list', text, type, tag, page ],
     queryFn: () => api<FurnitureListPage>(`/gamedata/furniture/list?${new URLSearchParams({ q: text, type, tag, page: String(page) })}`),

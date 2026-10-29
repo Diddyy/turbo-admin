@@ -1,4 +1,4 @@
-import { Box, ChevronRight, Cpu, RotateCcw, Wand2, X } from 'lucide-react';
+import { Box, ChevronRight, Cpu, RotateCcw, Wand2, Wrench, X } from 'lucide-react';
 import { useDeferredValue, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
@@ -20,6 +20,7 @@ import { FurnitureEditor } from './FurnitureEditor';
 import { HabboValuesPanel } from './HabboValuesPanel';
 import { LogicSelect } from './LogicSelect';
 import { FieldChanges, HabboUpdate, ReviewItem } from './parts';
+import { VendingRepairPanel } from './VendingRepairPanel';
 
 /** Habbo's newest release: what taking its furniture in would change. */
 export const HabboFurniture = ({ status, defaultOpen }: { status: GamedataStatus; defaultOpen?: boolean }) => {
@@ -228,6 +229,7 @@ const Definitions = ({ status }: { status: GamedataStatus }) => {
     const [ page, setPage ] = useState(0);
     const [ open, setOpen ] = useState<number | null>(() => Number(params.get('id')) || null);
     const [ bulk, setBulk ] = useState(false);
+    const [ vendingRepair, setVendingRepair ] = useState(false);
     const [ picked, setPicked ] = useState<Set<number>>(() => new Set());
     const q = useDeferredValue(text.trim());
     const unused = tag === UNUSED;
@@ -244,6 +246,7 @@ const Definitions = ({ status }: { status: GamedataStatus }) => {
     return (
         <>
             {bulk && <HabboValuesPanel onClose={() => setBulk(false)} />}
+            {status.canManage && vendingRepair && <div className="mb-4"><VendingRepairPanel onClose={() => setVendingRepair(false)} /></div>}
             <section className="overflow-clip rounded-xl border border-line bg-surface">
                 <ListToolbar
                     watch={[ q, type, tag, page ]}
@@ -276,6 +279,11 @@ const Definitions = ({ status }: { status: GamedataStatus }) => {
                     {status.canManage && !bulk && (
                         <Button variant="ghost" icon={<RotateCcw />} title="Put Habbo's values back in chosen fields, for every furniture Habbo has" onClick={() => setBulk(true)}>
                             Use Habbo's values
+                        </Button>
+                    )}
+                    {status.canManage && !vendingRepair && (
+                        <Button variant="ghost" icon={<Wrench />} title="Preview and repair known vending definitions missing hand items" onClick={() => setVendingRepair(true)}>
+                            Repair vending
                         </Button>
                     )}
                 </ListToolbar>

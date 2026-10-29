@@ -273,7 +273,10 @@ export interface AssetTargetInput {
 
 const JOB_KEY = [ 'asset-job' ];
 
-const refresh = (queryClient: QueryClient) => void queryClient.invalidateQueries({ queryKey: [ 'assets' ] });
+const refresh = (queryClient: QueryClient) => {
+    void queryClient.invalidateQueries({ queryKey: [ 'assets' ] });
+    void queryClient.invalidateQueries({ queryKey: [ 'gamedata', 'hand-items' ] });
+};
 
 /** A job that has just started: polled from now on. */
 const started = (queryClient: QueryClient, job: AssetJob) => {

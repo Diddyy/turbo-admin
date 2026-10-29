@@ -5,8 +5,9 @@ import { Link } from 'react-router';
 import { furniIconUrl, useClientAssets } from '#/api/assets';
 import { downloadBundle, useBundle } from '#/api/bundles';
 import { ApiError } from '#/api/client';
-import { FURNITURE_KINDS, type FurnitureDefinition, furnitureTag, useFurnitureDefinition, useLogicTypes, useUpdateDefinition } from '#/api/gamedata';
+import { FURNITURE_KINDS, type FurnitureDefinition, furnitureTag, useFurnitureDefinition, useHandItems, useLogicTypes, useUpdateDefinition } from '#/api/gamedata';
 import { Modal } from '#/components/Modal';
+import { SearchInput } from '#/components/SearchInput';
 import { toast, toastError } from '#/components/toast';
 import { Badge, Button, ErrorNotice, Input, Loading, Segmented, Select, Switch, Textarea } from '#/components/ui';
 import { cx } from '#/lib/cx';
@@ -14,12 +15,70 @@ import { fromNow } from '#/lib/time';
 import { formatBytes } from '#/pages/assets/format';
 
 import { type FieldInfo, FIELDS, SPECIAL_TYPES, USAGE_POLICIES } from './fields';
+import { HandItemPreview } from './HandItemsPage';
 import { showValue } from './labels';
 import { LogicSelect } from './LogicSelect';
 import { UploadDialog } from './UploadDialog';
+import { parseVendingData, writeVendingData } from './vendingData';
 
 type Item = Record<string, unknown>;
 type Draft = Record<string, string | boolean>;
+
+const VendingEditor = ({ raw, onChange, disabled }: { raw: string; onChange: (value: string) => void; disabled: boolean }) => {
+    const { data, error, isLoading } = useHandItems();
+    const [ search, setSearch ] = useState('');
+    const parsed = parseVendingData(raw);
+    const selected = parsed?.handItems ?? [];
+    const known = new Set((data?.items ?? []).map(item => item.id));
+    const missing = selected.filter(id => !known.has(id));
+    const filtered = (data?.items ?? []).filter(item => !search || `${item.id} ${item.name ?? ''} ${item.library ?? ''}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
+
+    const update = (handItems: number[], animates = parsed?.animates ?? true) => {
+        if (parsed)
+            onChange(writeVendingData(parsed, handItems, animates));
+    };
+    const toggle = (id: number, checked: boolean) => update(checked ? [ ...selected, id ] : selected.filter(value => value !== id));
+
+    return (
+        <section className="flex flex-col gap-3 rounded-xl border border-line bg-canvas/50 p-4">
+            <div>
+                <h4 className="text-sm font-semibold">Items this vending machine gives</h4>
+                <p className="mt-1 text-xs text-muted">Choose one or more hand items. Existing IDs stay selected even when they are not in the current catalogue.</p>
+            </div>
+            {!parsed && <p role="alert" className="rounded-lg bg-bad-soft px-3 py-2 text-xs text-bad">Extra data or its vending section is invalid. Correct it in the raw JSON field below to use these controls; it will not be replaced automatically.</p>}
+            {missing.length > 0 && (
+                <div className="flex flex-wrap gap-1.5" aria-label="Selected IDs missing from the catalogue">
+                    {missing.map(id => <span key={id} className="rounded-full border border-warn-line bg-warn-soft px-2 py-1 text-xs text-warn">Hand item {id} · not in catalogue</span>)}
+                </div>
+            )}
+            {parsed && (
+                <>
+                    <SearchInput value={search} onValueChange={setSearch} placeholder="Search hand items" aria-label="Search hand items for vending" className="w-full" />
+                    {error && <p className="text-xs text-bad">The hand item catalogue could not be loaded. Existing selections are preserved.</p>}
+                    {data?.message && <p className="text-xs text-muted">{data.message} Sync game assets or import text data for missing names and previews.</p>}
+                    {isLoading && <Loading />}
+                    {filtered.length > 0 && (
+                        <ul className="max-h-64 divide-y divide-line overflow-y-auto rounded-lg border border-line bg-surface">
+                            {filtered.map(item => (
+                                <li key={item.id}>
+                                    <label className="flex cursor-pointer items-center gap-3 px-3 py-2 text-sm hover:bg-subtle">
+                                        <input type="checkbox" checked={selected.includes(item.id)} onChange={event => toggle(item.id, event.target.checked)} disabled={disabled} className="size-4 accent-accent" />
+                                        <HandItemPreview key={`${data?.revision}-${item.id}`} item={item} compact />
+                                        <span className="min-w-0 flex-1 truncate">{item.name || `Hand item ${item.id}`}</span>
+                                        <span className="font-mono text-xs text-muted">{item.id}</span>
+                                        <span className="text-xs text-muted">{item.previewAvailable ? 'Preview available' : 'No preview'}</span>
+                                    </label>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                    {data && filtered.length === 0 && <p className="text-xs text-muted">No hand items match that search.</p>}
+                    <Switch label="Animate when giving an item" checked={parsed.animates} onChange={checked => update(selected, checked)} disabled={disabled} />
+                </>
+            )}
+        </section>
+    );
+};
 
 interface Section {
     id: string;
@@ -479,6 +538,9 @@ const EditorBody = ({ definition, canManage, section, onSection, onUnsaved, save
                         return (
                             <div className="flex max-w-3xl flex-col gap-5">
                                 {shown.id === 'placement' && <Footprint width={Number(draft.xdim) || 0} length={Number(draft.ydim) || 0} />}
+                                {shown.id === 'behaviour' && draft.logic === 'vending_machine' && (
+                                    <VendingEditor raw={String(draft.extradata ?? '')} onChange={value => set('extradata', value)} disabled={!canManage} />
+                                )}
                                 {shown.id === 'behaviour' && !habbo && (
                                     <p className="rounded-lg bg-canvas px-3 py-2.5 text-xs text-muted">Habbo has no furniture of this kind and classname: it is the hotel's own, and Habbo's updates never touch it.</p>
                                 )}

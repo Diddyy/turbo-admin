@@ -2,7 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 
 import type { BadgeTone } from '#/components/ui';
 
-import { api, post, put } from './client';
+import { api, apiBlob, post, put } from './client';
 
 /** Floor (0) or wall (1), as the server's ProductType numbers them. */
 export const FURNITURE_KINDS: Record<number, string> = { 0: 'floor', 1: 'wall' };
@@ -216,11 +216,12 @@ export interface FurnitureDefinition {
 }
 
 /** Something to know about a furniture definition at a glance, as the server's FurnitureTag names it. */
-export type FurnitureTag = 'hotel-own' | 'habbo-update' | 'edited' | 'no-bundle' | 'bundle-failed' | 'bundle-outdated' | 'not-sold' | 'logic-mismatch';
+export type FurnitureTag = 'hotel-own' | 'habbo-update' | 'edited' | 'no-bundle' | 'bundle-failed' | 'bundle-outdated' | 'not-sold' | 'logic-mismatch' | 'vending-config-missing';
 
 /** Each tag in the order the list shows them: its words, its colour and what it means. */
 export const FURNITURE_TAGS: { value: FurnitureTag; label: string; tone: BadgeTone; meaning: string }[] = [
     { value: 'logic-mismatch', label: 'wrong logic', tone: 'red', meaning: 'The server has a logic for it but runs it as plain furniture: it does nothing in a room.' },
+    { value: 'vending-config-missing', label: 'vending needs items', tone: 'amber', meaning: 'This vending machine has no valid hand items configured.' },
     { value: 'no-bundle', label: 'no bundle', tone: 'red', meaning: 'No bundle has its asset: the client draws a placeholder.' },
     { value: 'bundle-failed', label: 'bundle failed', tone: 'red', meaning: 'Its bundle could not be downloaded or converted.' },
     { value: 'bundle-outdated', label: 'bundle outdated', tone: 'accent', meaning: 'Habbo has a newer revision of its bundle; a sync takes it.' },
@@ -231,6 +232,29 @@ export const FURNITURE_TAGS: { value: FurnitureTag; label: string; tone: BadgeTo
 ];
 
 export const furnitureTag = (tag: FurnitureTag) => FURNITURE_TAGS.find(x => x.value === tag)!;
+
+export interface HandItem {
+    id: number;
+    name: string | null;
+    assetPartId: number;
+    library: string | null;
+    assetAvailable: boolean;
+    previewAvailable: boolean;
+}
+
+export interface HandItemCatalogue {
+    items: HandItem[];
+    revision: string | null;
+    message: string | null;
+}
+
+export const useHandItems = () => useQuery({
+    queryKey: [ 'gamedata', 'hand-items' ],
+    queryFn: () => api<HandItemCatalogue>('/gamedata/hand-items'),
+    staleTime: 5 * 60_000,
+});
+
+export const handItemPreview = (id: number) => apiBlob(`/gamedata/hand-items/${id}/preview`);
 
 /** A furniture definition in the list. */
 export interface FurnitureListItem {

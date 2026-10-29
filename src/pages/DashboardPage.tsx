@@ -161,6 +161,21 @@ const LogicAlert = () => {
     );
 };
 
+const VendingConfigAlert = () => {
+    const { data } = useFurnitureList('', 'floor', 'vending-config-missing', 0);
+    const count = data?.total ?? 0;
+
+    return count > 0 && (
+        <section className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-warn-line bg-surface px-4 py-3">
+            <div className="min-w-0 flex-[1_1_16rem]">
+                <h2 className="text-[13px] font-semibold tracking-wide text-warn">{`${count} vending ${count === 1 ? 'machine needs' : 'machines need'} hand items`}</h2>
+                <div className="mt-0.5 text-xs text-muted">Choose the items each machine gives in its furniture settings.</div>
+            </div>
+            <TextLink to="/gamedata/library/furniture?tag=vending-config-missing">Review vending machines</TextLink>
+        </section>
+    );
+};
+
 const NO_FILTER = { player: '', command: '', outcome: '', source: '' };
 
 /** The last few commands staff and the console ran, newest first: what has been done lately, a click from the whole log. */
@@ -233,6 +248,7 @@ export const DashboardPage = () => {
                 {error && <ErrorNotice error={error} />}
                 {canViewPlugins && <PluginAlerts />}
                 {canViewGamedata && <LogicAlert />}
+                {canViewGamedata && <VendingConfigAlert />}
                 {isPending && <Loading />}
                 {data && (
                     <>

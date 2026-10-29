@@ -48,7 +48,7 @@ const PAGES = {
     onlineRewards: { to: '/online-rewards', label: 'Online rewards', icon: <Timer />, end: false, needs: 'canViewSettings' },
     content: { to: '/content', label: 'Content', icon: <Puzzle />, end: false, key: 't', needs: 'canViewContent', words: 'achievements badges pets currencies daily tasks' },
     updates: { to: '/gamedata/updates', label: 'Habbo updates', icon: <CloudDownload />, end: false, key: 'g', needs: 'canViewGamedata' },
-    library: { to: '/gamedata/library', label: 'Library', icon: <Armchair />, end: false, key: 'f', needs: 'canViewGamedata', words: 'furniture definitions furnidata logic bundles clothing figures effects pets' },
+    library: { to: '/gamedata/library', label: 'Library', icon: <Armchair />, end: false, key: 'f', needs: 'canViewGamedata', words: 'furniture definitions furnidata logic bundles clothing figures effects pets hand items vending' },
     media: { to: '/gamedata/media', label: 'Media library', icon: <Images />, end: false, needs: 'canViewGamedata', words: 'images pictures upload picker web_promo c_images badges icons assets photos' },
     texts: { to: '/gamedata/products', also: [ '/gamedata/texts', '/gamedata/variables' ], label: 'Texts & variables', icon: <Languages />, end: false, key: 'x', needs: 'canViewGamedata', words: 'product data external texts variables' },
     publish: { to: '/gamedata/publish', label: 'Publish', icon: <Send />, end: false, key: 'n', needs: 'canViewGamedata' },
@@ -148,7 +148,7 @@ const SECTIONS: NavSection[] = [
         label: 'Gamedata',
         entries: [
             { label: 'Habbo updates', icon: <CloudDownload />, pages: [ 'updates' ], hint: 'What Habbo has that the hotel hasn\'t taken in' },
-            { label: 'Library', icon: <Armchair />, pages: [ 'library' ], hint: 'Furniture, clothing, effects and pets' },
+            { label: 'Library', icon: <Armchair />, pages: [ 'library' ], hint: 'Furniture, clothing, effects, pets and hand items' },
             { label: 'Media library', icon: <Images />, pages: [ 'media' ], hint: 'Every image the hotel shows: find, upload, see where it is used' },
             { label: 'Texts & variables', icon: <Languages />, pages: [ 'texts' ], hint: 'Product data, external texts and variables' },
             { label: 'Publish', icon: <Send />, pages: [ 'publish' ], hint: 'Publish targets, client files and checks' },
